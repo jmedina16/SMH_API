@@ -3207,3 +3207,40 @@ Stack trace:
 #3 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('10012', NULL, NULL, NULL, NULL, 'Active', 'Pending')
 #4 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('vpinBl9VANmX1f2...', 'I-2S75BNCUA6VF', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Test', 'User', 'user2@smh.com', 'Z2NPJYZKK2RSY', 'US', 'Pending', '7H0129848T91050...', 'instant', '04:04:32 Mar 29...')
 #5 [internal  in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
+[05-Apr-2017 03:15:52 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'Exception' with message 'String could not be parsed as XML' in /var/www/vhosts/api/application/libraries/SMPortal.php:59
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/SMPortal.php(59): SimpleXMLElement->__construct('')
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(202): SMPortal->impersonate('10012')
+#2 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2693): SMPortal->get_entry_details('10012', '')
+#3 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('10012', NULL, NULL, NULL, NULL, 'Active', 'Pending')
+#4 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('vpinBl9VANmX1f2...', 'I-GVGLAVFLP465', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Test', 'User', 'user2@smh.com', 'Z2NPJYZKK2RSY', 'US', 'Pending', '0BC42875S520354...', 'instant', '03:14:46 Apr 05...')
+#5 [internal function]: Ppv_orders->insert_ipn_recurr_order_ge in /var/www/vhosts/api/application/libraries/SMPortal.php on line 59
+[05-Apr-2017 03:15:52 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'Exception' with message 'String could not be parsed as XML' in /var/www/vhosts/api/application/libraries/SMPortal.php:59
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/SMPortal.php(59): SimpleXMLElement->__construct('')
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(202): SMPortal->impersonate('10012')
+#2 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2693): SMPortal->get_entry_details('10012', '')
+#3 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('10012', NULL, NULL, NULL, NULL, 'Active', 'Pending')
+#4 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('vpinBl9VANmX1f2...', 'I-71GMAVHX9JEJ', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Test', 'User', 'user2@smh.com', 'Z2NPJYZKK2RSY', 'US', 'Pending', '4JF19048KC98555...', 'instant', '03:14:57 Apr 05...')
+#5 [internal function]: Ppv_orders->insert_ipn_recurr_order_ge in /var/www/vhosts/api/application/libraries/SMPortal.php on line 59
+[05-Apr-2017 03:16:01 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'Exception' with message 'String could not be parsed as XML' in /var/www/vhosts/api/application/libraries/SMPortal.php:59
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/SMPortal.php(59): SimpleXMLElement->__construct('')
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(202): SMPortal->impersonate('10012')
+#2 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2693): SMPortal->get_entry_details('10012', '')
+#3 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('10012', NULL, NULL, NULL, NULL, 'Active', 'Pending')
+#4 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('vpinBl9VANmX1f2...', 'I-2S75BNCUA6VF', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Test', 'User', 'user2@smh.com', 'Z2NPJYZKK2RSY', 'US', 'Pending', '1Y108497MR36980...', 'instant', '03:15:07 Apr 05...')
+#5 [internal function]: Ppv_orders->insert_ipn_recurr_order_ge in /var/www/vhosts/api/application/libraries/SMPortal.php on line 59
+[05-Apr-2017 03:18:24 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaClientException' with message 'Invalid partner id' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:1191
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/SMPortal.php(205): KalturaConfiguration->__construct('\xB8\n@+"<h6_$\xC7\xD7\x13\x81<...')
+#1 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2693): SMPortal->get_entry_details('\xB8\n@+"<h6_$\xC7\xD7\x13\x81<...', '')
+#2 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('\xB8\n@+"<h6_$\xC7\xD7\x13\x81<...', NULL, NULL, NULL, NULL, 'Active', 'Pending')
+#3 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('1470411527:0 D:...', 'I-KK69XCRSXEHV', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Test', 'User', 'user2@smh.com', 'Z2NPJYZKK2RSY', 'US', 'Pending', '4D511977A309781...', 'instant', '03:17:26 Apr 05...')
+#4 [internal function]: Ppv_orders->insert_ in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 1191
+[05-Apr-2017 03:19:09 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaClientException' with message 'Invalid partner id' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:1191
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/SMPortal.php(205): KalturaConfiguration->__construct('\xE3vt\x8D\x8B9\xBA\xDB\vR\xCFA\x15\xE2\x8C...')
+#1 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2693): SMPortal->get_entry_details('\xE3vt\x8D\x8B9\xBA\xDB\vR\xCFA\x15\xE2\x8C...', '')
+#2 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('\xE3vt\x8D\x8B9\xBA\xDB\vR\xCFA\x15\xE2\x8C...', NULL, NULL, NULL, NULL, 'Active', 'Pending')
+#3 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('1470413816:0 D:...', 'I-T5LJD9WG2G3A', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Jorge', 'Medina', 'jmedina616@gmai...', '853NLG6TBL9TC', 'US', 'Pending', '53F74430A255046...', 'instant', '03:18:56 Apr 05...') in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 1191
