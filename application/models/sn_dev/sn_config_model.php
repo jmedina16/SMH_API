@@ -2223,10 +2223,77 @@ class Sn_config_model extends CI_Model {
                 }
             }
             if ($is_facebook_live) {
-                
+                $get_user_settings = $this->get_facebook_user_settings($pid);
+                if ($get_user_settings['success']) {
+                    $create_new_livestream = $this->create_new_fb_livestream($pid, $get_user_settings['userSettings']['stream_to'], $get_user_settings['userSettings']['asset_id'], $get_user_settings['userSettings']['privacy'], $get_user_settings['userSettings']['create_vod'], $get_user_settings['userSettings']['cont_streaming']);
+                    if ($create_new_livestream['success']) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false, 'message' => $create_new_livestream['message']);
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not get Facebook user settings');
+                }
             }
         } else {
             $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+
+        return $success;
+    }
+
+    public function get_facebook_user_settings($pid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('facebook_user_settings')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            $userSettings = array();
+            foreach ($result as $res) {
+                $stream_to = $res['stream_to'];
+                $asset_id = $res['asset_id'];
+                $privacy = $res['privacy'];
+                $create_vod = ($res['create_vod']) ? 'true' : 'false';
+                $cont_streaming = ($res['cont_streaming']) ? 'true' : 'false';
+            }
+            array_push($userSettings, array('asset_id' => $asset_id, 'stream_to' => $stream_to, 'privacy' => $privacy, 'create_vod' => $create_vod, 'cont_streaming' => $cont_streaming));
+            $success = array('success' => true, 'userSettings' => $ingestionSettings);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function create_new_fb_livestream($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming) {
+        $success = array('success' => false);
+        $access_token = $this->validate_facebook_token($pid);
+        if ($access_token['success']) {
+            $get_asset = $this->get_asset($pid, $stream_to, $asset_id, $access_token['access_token']);
+            if ($get_asset['success']) {
+                $livestream = $this->facebook_client_api->createLiveStream($get_asset['asset'], $privacy, $create_vod, $cont_streaming);
+                if ($livestream['success']) {
+                    $add_fb_livestream = $this->add_fb_livestream($pid, $livestream['address'], $livestream['stream_name'], $livestream['embed_code'], $livestream['live_id']);
+                    if ($add_fb_livestream['success']) {
+                        $add_fb_settings = $this->add_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming);
+                        if ($add_fb_settings['success']) {
+                            $success = array('success' => true);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not add Facebook settings');
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not add Facebook live stream');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Facebook: could not create live stream');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Could not get asset Id');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Facebook: invalid access token');
         }
 
         return $success;
