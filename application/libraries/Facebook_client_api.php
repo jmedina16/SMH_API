@@ -146,7 +146,7 @@ class Facebook_client_api {
                 'app_secret' => $this->OAUTH2_CLIENT_SECRET,
                 'default_graph_version' => $this->GRAPH_VERSION,
             ]);
-            $requestPicture = $fb->get('/' . $user_id . '/picture?redirect=false&height=300', $access_token);
+            $requestPicture = $fb->get('/' . $user_id . '/picture?redirect=false&width=240&height=240', $access_token);
             $picture = $requestPicture->getGraphUser();
             $success = array('success' => true, 'user_pic' => $picture['url']);
             return $success;
