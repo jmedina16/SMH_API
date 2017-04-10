@@ -887,7 +887,7 @@ class Sn_config_model extends CI_Model {
         $data = array(
             'live_id' => $live_id,
             'streamName' => $stream_name,
-            'ingestionAddress' => $address,
+            'ingestionAddress' => $this->finalize_address_url($address),
             'status' => 'ready',
             'embed_code' => $embed_code,
             'updated_at' => date("Y-m-d h:i:s")
@@ -909,7 +909,7 @@ class Sn_config_model extends CI_Model {
             'partner_id' => $pid,
             'live_id' => $live_id,
             'streamName' => $stream_name,
-            'ingestionAddress' => $address,
+            'ingestionAddress' => $this->finalize_address_url($address),
             'status' => 'ready',
             'embed_code' => $embed_code,
             'created_at' => date("Y-m-d h:i:s")
@@ -1359,7 +1359,7 @@ class Sn_config_model extends CI_Model {
             'liveBroadcastId' => $this->smcipher->encrypt($liveBroadcastId),
             'liveStreamId' => $this->smcipher->encrypt($liveStreamId),
             'streamName' => $this->smcipher->encrypt($streamName),
-            'ingestionAddress' => $this->smcipher->encrypt($ingestionAddress),
+            'ingestionAddress' => $this->smcipher->encrypt($this->finalize_address_url($ingestionAddress)),
             'projection' => $projection
         );
         $this->config->insert('youtube_live_events', $data);
@@ -1554,7 +1554,7 @@ class Sn_config_model extends CI_Model {
         $data = array(
             'liveStreamId' => $this->smcipher->encrypt($lid),
             'streamName' => $this->smcipher->encrypt($streamName),
-            'ingestionAddress' => $this->smcipher->encrypt($ingestionAddress)
+            'ingestionAddress' => $this->smcipher->encrypt($this->finalize_address_url($ingestionAddress))
         );
         $this->config->where('partner_id', $pid);
         $this->config->where('entryId', $eid);
@@ -2384,6 +2384,16 @@ class Sn_config_model extends CI_Model {
         }
 
         return $success;
+    }
+
+    public function finalize_address_url($url) {
+        $parse_url = parse_url($url);
+        $scheme = $parse_url['scheme'];
+        $host = $parse_url['host'];
+        $port = ($parse_url['port']) ? $parse_url['port'] : 1935;
+        $path = rtrim($parse_url['path'], '/');
+        $final_url = $scheme . '://' . $host . ':' . $port . $path;
+        return $final_url;
     }
 
     public function verfiy_ks($pid, $ks) {
