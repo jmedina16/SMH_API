@@ -2271,8 +2271,10 @@ class Sn_config_model extends CI_Model {
         $success = array('success' => false);
         $access_token = $this->validate_facebook_token($pid);
         if ($access_token['success']) {
+            syslog(LOG_NOTICE, "SMH DEBUG : create_new_fb_livestream1: $pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming");
             $get_asset = $this->get_asset($pid, $stream_to, $asset_id, $access_token['access_token']);
             if ($get_asset['success']) {
+                 syslog(LOG_NOTICE, "SMH DEBUG : create_new_fb_livestream2: " . print_r($get_asset, true));
                 $livestream = $this->facebook_client_api->createLiveStream($get_asset['asset'], $privacy, $create_vod, $cont_streaming);
                 if ($livestream['success']) {
                     $add_fb_livestream = $this->add_fb_livestream($pid, $livestream['address'], $livestream['stream_name'], $livestream['embed_code'], $livestream['live_id']);
