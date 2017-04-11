@@ -535,22 +535,30 @@ class Sn_config_model extends CI_Model {
 
     public function remove_fb_settings($pid) {
         $success = array('success' => false);
-        $this->config->where('partner_id = "' . $pid . '"');
-        $this->config->delete('facebook_user_settings');
-        if ($this->config->affected_rows() > 0) {
-            $success = array('success' => true);
+        if ($this->check_fb_settings($pid)) {
+            $this->config->where('partner_id = "' . $pid . '"');
+            $this->config->delete('facebook_user_settings');
+            if ($this->config->affected_rows() > 0) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false);
+            }
         } else {
-            $success = array('success' => false);
+            $success = array('success' => true);
         }
         return $success;
     }
 
     public function remove_fb_pages($pid) {
         $success = array('success' => false);
-        $this->config->where('partner_id = "' . $pid . '"');
-        $this->config->delete('facebook_user_pages');
-        if ($this->config->affected_rows() > 0) {
-            $success = array('success' => true);
+        if ($this->check_fb_settings($pid)) {
+            $this->config->where('partner_id = "' . $pid . '"');
+            $this->config->delete('facebook_user_pages');
+            if ($this->config->affected_rows() > 0) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false);
+            }
         } else {
             $success = array('success' => true);
         }
@@ -559,12 +567,16 @@ class Sn_config_model extends CI_Model {
 
     public function remove_fb_livestream($pid) {
         $success = array('success' => false);
-        $this->config->where('partner_id = "' . $pid . '"');
-        $this->config->delete('facebook_live_streams');
-        if ($this->config->affected_rows() > 0) {
-            $success = array('success' => true);
+        if ($this->check_fb_livestream($pid)) {
+            $this->config->where('partner_id = "' . $pid . '"');
+            $this->config->delete('facebook_live_streams');
+            if ($this->config->affected_rows() > 0) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false);
+            }
         } else {
-            $success = array('success' => false);
+            $success = array('success' => true);
         }
         return $success;
     }
@@ -596,6 +608,21 @@ class Sn_config_model extends CI_Model {
         } else {
             $success = array('success' => true);
         }
+        return $success;
+    }
+
+    public function check_fb_pages($pid) {
+        $success = false;
+        $this->config->select('*')
+                ->from('facebook_user_pages')
+                ->where('partner_id', $pid);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
         return $success;
     }
 
