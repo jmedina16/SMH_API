@@ -137,7 +137,6 @@ class Google_client_api {
     }
 
     public function createLiveStream($access_token, $name, $desc, $res, $eid, $default_thumb, $projection, $embed) {
-        syslog(LOG_NOTICE, "SMH DEBUG : createLiveStream: " .print_r($access_token,true));
         $success = array('success' => false);
         try {
             $client = new Google_Client();
