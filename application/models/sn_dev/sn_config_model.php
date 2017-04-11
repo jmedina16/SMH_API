@@ -551,7 +551,7 @@ class Sn_config_model extends CI_Model {
 
     public function remove_fb_pages($pid) {
         $success = array('success' => false);
-        if ($this->check_fb_settings($pid)) {
+        if ($this->check_fb_pages($pid)) {
             $this->config->where('partner_id = "' . $pid . '"');
             $this->config->delete('facebook_user_pages');
             if ($this->config->affected_rows() > 0) {
