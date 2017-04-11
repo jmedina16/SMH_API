@@ -2225,7 +2225,7 @@ class Sn_config_model extends CI_Model {
             if ($is_facebook_live) {
                 $get_user_settings = $this->get_facebook_user_settings($pid);
                 if ($get_user_settings['success']) {
-                    $create_new_livestream = $this->create_new_fb_livestream($pid, $get_user_settings['userSettings']['stream_to'], $get_user_settings['userSettings']['asset_id'], $get_user_settings['userSettings']['privacy'], $get_user_settings['userSettings']['create_vod'], $get_user_settings['userSettings']['cont_streaming']);
+                    $create_new_livestream = $this->create_new_fb_livestream($pid, $get_user_settings['userSettings'][0]['stream_to'], $get_user_settings['userSettings'][0]['asset_id'], $get_user_settings['userSettings'][0]['privacy'], $get_user_settings['userSettings'][0]['create_vod'], $get_user_settings['userSettings'][0]['cont_streaming']);
                     if ($create_new_livestream['success']) {
                         $success = array('success' => true);
                     } else {
@@ -2254,13 +2254,13 @@ class Sn_config_model extends CI_Model {
             $userSettings = array();
             foreach ($result as $res) {
                 $stream_to = $res['stream_to'];
-                $asset_id = $res['asset_id'];
+                $asset_id = $res['asset_Id'];
                 $privacy = $res['privacy'];
                 $create_vod = ($res['create_vod']) ? 'true' : 'false';
                 $cont_streaming = ($res['cont_streaming']) ? 'true' : 'false';
             }
             array_push($userSettings, array('asset_id' => $asset_id, 'stream_to' => $stream_to, 'privacy' => $privacy, 'create_vod' => $create_vod, 'cont_streaming' => $cont_streaming));
-            $success = array('success' => true, 'userSettings' => $ingestionSettings);
+            $success = array('success' => true, 'userSettings' => $userSettings);
         } else {
             $success = array('success' => false);
         }
@@ -2271,10 +2271,8 @@ class Sn_config_model extends CI_Model {
         $success = array('success' => false);
         $access_token = $this->validate_facebook_token($pid);
         if ($access_token['success']) {
-            syslog(LOG_NOTICE, "SMH DEBUG : create_new_fb_livestream1: $pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming");
             $get_asset = $this->get_asset($pid, $stream_to, $asset_id, $access_token['access_token']);
             if ($get_asset['success']) {
-                 syslog(LOG_NOTICE, "SMH DEBUG : create_new_fb_livestream2: " . print_r($get_asset, true));
                 $livestream = $this->facebook_client_api->createLiveStream($get_asset['asset'], $privacy, $create_vod, $cont_streaming);
                 if ($livestream['success']) {
                     $add_fb_livestream = $this->add_fb_livestream($pid, $livestream['address'], $livestream['stream_name'], $livestream['embed_code'], $livestream['live_id']);
