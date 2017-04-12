@@ -693,7 +693,7 @@ class Sn_config_model extends CI_Model {
             'user_id' => $user['user_id'],
             'name' => $user['user_name'],
             'user_access_token' => $user['access_token'],
-            'updated_at' => date("Y-m-d h:i:s")
+            'updated_at' => date("Y-m-d H:i:s")
         );
         $this->config->where('partner_id', $pid);
         $this->config->update('facebook_user_profile', $data);
@@ -712,7 +712,7 @@ class Sn_config_model extends CI_Model {
             'user_id' => $user['user_id'],
             'name' => $user['user_name'],
             'user_access_token' => $user['access_token'],
-            'created_at' => date("Y-m-d h:i:s")
+            'created_at' => date("Y-m-d H:i:s")
         );
         $this->config->insert('facebook_user_profile', $data);
         $this->config->limit(1);
@@ -734,7 +734,7 @@ class Sn_config_model extends CI_Model {
                     'page_id' => $page['page_id'],
                     'name' => $page['page_name'],
                     'page_access_token' => $page['access_token'],
-                    'created_at' => date("Y-m-d h:i:s")
+                    'created_at' => date("Y-m-d H:i:s")
                 );
                 $this->config->insert('facebook_user_pages', $data);
                 $this->config->limit(1);
@@ -768,7 +768,7 @@ class Sn_config_model extends CI_Model {
                 'page_id' => $page['page_id'],
                 'name' => $page['page_name'],
                 'page_access_token' => $page['access_token'],
-                'created_at' => date("Y-m-d h:i:s")
+                'created_at' => date("Y-m-d H:i:s")
             );
             $this->config->insert('facebook_user_pages', $data);
             $this->config->limit(1);
@@ -859,7 +859,7 @@ class Sn_config_model extends CI_Model {
             'privacy' => $privacy,
             'create_vod' => ($create_vod == 'true') ? true : false,
             'cont_streaming' => ($cont_streaming == 'true') ? true : false,
-            'updated_at' => date("Y-m-d h:i:s")
+            'updated_at' => date("Y-m-d H:i:s")
         );
         $this->config->where('partner_id', $pid);
         $this->config->update('facebook_user_settings', $data);
@@ -881,7 +881,7 @@ class Sn_config_model extends CI_Model {
             'privacy' => $privacy,
             'create_vod' => ($create_vod == 'true') ? true : false,
             'cont_streaming' => ($cont_streaming == 'true') ? true : false,
-            'created_at' => date("Y-m-d h:i:s")
+            'created_at' => date("Y-m-d H:i:s")
         );
 
         $this->config->insert('facebook_user_settings', $data);
@@ -917,7 +917,7 @@ class Sn_config_model extends CI_Model {
             'ingestionAddress' => $this->finalize_address_url($address),
             'status' => 'ready',
             'embed_code' => $embed_code,
-            'updated_at' => date("Y-m-d h:i:s")
+            'updated_at' => date("Y-m-d H:i:s")
         );
         $this->config->where('partner_id', $pid);
         $this->config->update('facebook_live_streams', $data);
@@ -939,7 +939,7 @@ class Sn_config_model extends CI_Model {
             'ingestionAddress' => $this->finalize_address_url($address),
             'status' => 'ready',
             'embed_code' => $embed_code,
-            'created_at' => date("Y-m-d h:i:s")
+            'created_at' => date("Y-m-d H:i:s")
         );
 
         $this->config->insert('facebook_live_streams', $data);
@@ -1263,7 +1263,7 @@ class Sn_config_model extends CI_Model {
         $success = array('success' => false);
         $data = array(
             'live_stream_id' => $live_id,
-            'updated_at' => date("Y-m-d h:i:s")
+            'updated_at' => date("Y-m-d H:i:s")
         );
 
         $this->config->where('partner_id', $pid);
@@ -1284,7 +1284,7 @@ class Sn_config_model extends CI_Model {
             'partner_id' => $pid,
             'entryId' => $eid,
             'live_stream_id' => $live_id,
-            'created_at' => date("Y-m-d h:i:s")
+            'created_at' => date("Y-m-d H:i:s")
         );
         $this->config->insert('facebook_live_entries', $data);
         $this->config->limit(1);
@@ -2158,7 +2158,7 @@ class Sn_config_model extends CI_Model {
             'partner_id' => $pid,
             'entryId' => $eid,
             'status' => $status,
-            'created_at' => date("Y-m-d h:i:s")
+            'created_at' => date("Y-m-d H:i:s")
         );
         $this->config->insert('youtube_live_entries', $data);
         $this->config->limit(1);
@@ -2174,7 +2174,7 @@ class Sn_config_model extends CI_Model {
         $success = array('success' => false);
         $data = array(
             'status' => $status,
-            'updated_at' => date("Y-m-d h:i:s")
+            'updated_at' => date("Y-m-d H:i:s")
         );
 
         $this->config->where('partner_id', $pid);
@@ -2192,7 +2192,7 @@ class Sn_config_model extends CI_Model {
         $success = array('success' => false);
         $data = array(
             'status' => $status,
-            'updated_at' => date("Y-m-d h:i:s")
+            'updated_at' => date("Y-m-d H:i:s")
         );
 
         $this->config->where('partner_id', $pid);
@@ -2207,7 +2207,61 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function sn_routine() {
+        $check_youtube_entries = $this->check_youtube_entries();
+        if ($check_youtube_entries['success']) {
+            
+        }
+    }
+
+    public function check_facebook_livestreams() {
+        $success = array('success' => false);
+        $livestreams = $this->get_fb_livestreams();
+        if ($livestreams['success']) {
+            
+        } else {
+            $success = array('success' => true);
+        }
+        return $success;
+    }
+    
+    public function update_expired_fb_livestreams($livestreams){
+        $today = date("Y-m-d H:i:s");
+        foreach($livestreams as $livestream){
+            if($livestream['created_at']){
+                
+            }
+        }
+    }
+
+    public function get_fb_livestreams() {
+        $success = array('success' => false);
+        $livestreams = array();
+        $this->config->select('*')
+                ->from('facebook_live_streams');
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $id = $res['id'];
+                $pid = $res['partner_id'];
+                $lid = $res['live_id'];
+                $status = $res['status'];
+                $created_at = $res['created_at'];
+            }
+            if ($status == 'ready') {
+                array_push($livestreams, array('id' => $id, 'pid' => $pid, 'lid' => $lid, 'created_at' => $created_at));
+            }
+            $success = array('success' => true, 'livestreams' => $livestreams);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
     public function check_youtube_entries() {
+        $success = array('success' => false);
         $entries = $this->get_youtube_entries();
         if ($entries['success']) {
             if (count($entries['ready_entries'])) {
@@ -2217,7 +2271,8 @@ class Sn_config_model extends CI_Model {
                 $this->removeCompletedEntries();
             }
         }
-        return array('success' => true);
+        $success = array('success' => true);
+        return $success;
     }
 
     public function removeCompletedEntries() {
