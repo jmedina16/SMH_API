@@ -391,6 +391,17 @@ class Sn_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code 
     }
 
+    public function sn_routine_get() {
+        $result = $this->sn_config_model->sn_routine();
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code 
+    }
+
     public function check_youtube_entries_get() {
         $result = $this->sn_config_model->check_youtube_entries();
 
