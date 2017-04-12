@@ -1112,67 +1112,37 @@ class Sn_config_model extends CI_Model {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
                 $snConfig = $this->buildSnConfig($platforms);
+                $youtube_success = array('youtube_success' => false);
+                $facebook_success = array('facebook_success' => false);
                 $youtube_broadcast_id = null;
-                $facebook_live_id = null;
                 $youtube_embed = true;
+                $facebook_live_id = null;
+
+                if ($snConfig['youtube']) {
+                    $create_youtube_live_stream = $this->create_youtube_live_stream($pid, $name, $desc, $eid, $snConfig, $projection);
+                    if ($create_youtube_live_stream['success']) {
+                        $youtube_success['youtube_success'] = true;
+                        $youtube_broadcast_id = $create_youtube_live_stream['broadcast_id'];
+                        $youtube_embed = $create_youtube_live_stream['youtube_embed'];
+                    } else {
+                        $youtube_success['youtube_success'] = false;
+                        $youtube_success['youtube_message'] = $create_youtube_live_stream['message'];
+                    }
+                }
+                if ($snConfig['facebook']) {
+                    $create_facebook_live_stream = $this->create_facebook_live_stream($pid, $eid);
+                    if ($update_facebook_live_stream['success']) {
+                        $facebook_success['facebook_success'] = true;
+                        $facebook_live_id = $create_facebook_live_stream['live_id'];
+                        syslog(LOG_NOTICE, "SMH DEBUG : create_sn_livestreams1: " . print_r($create_facebook_live_stream, true));
+                    } else {
+                        $facebook_success['facebook_success'] = false;
+                        $facebook_success['facebook_message'] = $create_facebook_live_stream['message'];
+                    }
+                }
                 if ($snConfig['facebook'] || $snConfig['youtube']) {
-                    if ($snConfig['youtube']) {
-                        $access_token = $this->validate_youtube_token($valid['pid']);
-                        if ($access_token['success']) {
-                            $thumbnail = array('use_default' => true);
-                            $livestream = $this->google_client_api->createLiveStream($access_token['access_token'], $name, $desc, $snConfig['youtube_res'], $eid, $thumbnail, $projection, $youtube_embed);
-                            if ($livestream['success']) {
-                                $insert_live_event = $this->insert_youtube_live_event($pid, $eid, $livestream['liveBroadcastId'], $livestream['liveStreamId'], $livestream['streamName'], $livestream['ingestionAddress'], $projection);
-                                if ($insert_live_event['success']) {
-                                    $update_embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
-                                    if ($update_embed_status['success']) {
-                                        $youtube_broadcast_id = $livestream['liveBroadcastId'];
-                                    } else {
-                                        $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
-                                    }
-                                } else {
-                                    $success = array('success' => false, 'message' => 'Could not insert YouTube Live Event');
-                                }
-                            } else if (isset($livestream['retry'])) {
-                                $youtube_embed = false;
-                                $livestream = $this->google_client_api->createLiveStream($access_token['access_token'], $name, $desc, $snConfig['youtube_res'], $eid, $thumbnail, $projection, $youtube_embed);
-                                if ($livestream['success']) {
-                                    $insert_live_event = $this->insert_youtube_live_event($pid, $eid, $livestream['liveBroadcastId'], $livestream['liveStreamId'], $livestream['streamName'], $livestream['ingestionAddress'], $projection);
-                                    if ($insert_live_event['success']) {
-                                        $update_embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
-                                        if ($update_embed_status['success']) {
-                                            $youtube_broadcast_id = $livestream['liveBroadcastId'];
-                                        } else {
-                                            $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
-                                        }
-                                    } else {
-                                        $success = array('success' => false, 'message' => 'Could not insert YouTube Live Event');
-                                    }
-                                } else {
-                                    $success = array('success' => false, 'message' => 'YouTube: could not create Live Event');
-                                }
-                            } else {
-                                $success = array('success' => false, 'message' => 'YouTube: could not create Live Event');
-                            }
-                        } else {
-                            $success = array('success' => false, 'message' => 'YouTube: invalid access token');
-                        }
-                    }
-                    if ($snConfig['facebook']) {
-                        $access_token = $this->validate_facebook_token($valid['pid']);
-                        if ($access_token['success']) {
-                            $livestream_ids = $this->get_fb_livestream($pid);
-                            $add_live_entry = $this->add_fb_live_entry($pid, $eid, $livestream_ids['id']);
-                            if ($add_live_entry['success']) {
-                                $facebook_live_id = $livestream_ids['live_id'];
-                            } else {
-                                $success = array('success' => false, 'message' => 'Could not insert Facebook Live Entry');
-                            }
-                        } else {
-                            $success = array('success' => false, 'message' => 'Facebook: invalid access token');
-                        }
-                    }
                     $update_sn_config = $this->insert_into_sn_config($youtube_broadcast_id, $facebook_live_id, $snConfig['sn_config']);
+                    syslog(LOG_NOTICE, "SMH DEBUG : create_sn_livestreams2: " . print_r($update_sn_config, true));
                     $partnerData = $this->update_sn_partnerData($pid, $eid, $update_sn_config['sn_config']);
                     if ($partnerData['success']) {
                         $platf = $this->getPlatforms(json_decode($partnerData['partnerData']));
@@ -1198,6 +1168,69 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
         }
 
+        return $success;
+    }
+
+    public function create_youtube_live_stream($pid, $name, $desc, $eid, $snConfig, $projection) {
+        $success = array('success' => false);
+        $youtube_embed = true;
+        $access_token = $this->validate_youtube_token($pid);
+        if ($access_token['success']) {
+            $thumbnail = array('use_default' => true);
+            $livestream = $this->google_client_api->createLiveStream($access_token['access_token'], $name, $desc, $snConfig['youtube_res'], $eid, $thumbnail, $projection, $youtube_embed);
+            if ($livestream['success']) {
+                $insert_live_event = $this->insert_youtube_live_event($pid, $eid, $livestream['liveBroadcastId'], $livestream['liveStreamId'], $livestream['streamName'], $livestream['ingestionAddress'], $projection);
+                if ($insert_live_event['success']) {
+                    $update_embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
+                    if ($update_embed_status['success']) {
+                        $success = array('success' => true, 'broadcast_id' => $livestream['liveBroadcastId'], 'youtube_embed' => $youtube_embed);
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not insert YouTube Live Event');
+                }
+            } else if (isset($livestream['retry'])) {
+                $youtube_embed = false;
+                $livestream = $this->google_client_api->createLiveStream($access_token['access_token'], $name, $desc, $snConfig['youtube_res'], $eid, $thumbnail, $projection, $youtube_embed);
+                if ($livestream['success']) {
+                    $insert_live_event = $this->insert_youtube_live_event($pid, $eid, $livestream['liveBroadcastId'], $livestream['liveStreamId'], $livestream['streamName'], $livestream['ingestionAddress'], $projection);
+                    if ($insert_live_event['success']) {
+                        $update_embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
+                        if ($update_embed_status['success']) {
+                            $success = array('success' => true, 'broadcast_id' => $livestream['liveBroadcastId'], 'youtube_embed' => $youtube_embed);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not insert YouTube Live Event');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'YouTube: could not create Live Event');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'YouTube: could not create Live Event');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'YouTube: invalid access token');
+        }
+        return $success;
+    }
+
+    public function create_facebook_live_stream($pid, $eid) {
+        $success = array('success' => false);
+        $access_token = $this->validate_facebook_token($pid);
+        if ($access_token['success']) {
+            $livestream_ids = $this->get_fb_livestream($pid);
+            $add_live_entry = $this->add_fb_live_entry($pid, $eid, $livestream_ids['id']);
+            if ($add_live_entry['success']) {
+                $success = array('success' => true, 'live_id' => $livestream_ids['live_id']);
+            } else {
+                $success = array('success' => false, 'message' => 'Could not insert Facebook Live Entry');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Facebook: invalid access token');
+        }
         return $success;
     }
 
@@ -1333,6 +1366,8 @@ class Sn_config_model extends CI_Model {
     }
 
     public function insert_into_sn_config($youtube_broadcast_id, $facebook_live_id, $platforms_config) {
+        syslog(LOG_NOTICE, "SMH DEBUG : insert_into_sn_config1: $youtube_broadcast_id, $facebook_live_id");
+        syslog(LOG_NOTICE, "SMH DEBUG : insert_into_sn_config2: " . print_r($platforms_config, true));
         $new_platforms_config = array();
         foreach ($platforms_config as $platform) {
             if ($platform['platform'] == 'facebook_live') {
