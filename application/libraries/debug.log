@@ -3258,3 +3258,27 @@ Stack trace:
 #2 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2693): SMPortal->get_entry_details('\xE3vt\x85k\xBC\x9A\xFB\vR\xCFA\x15\xE2\x8C...', '')
 #3 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('\xE3vt\x85k\xBC\x9A\xFB\vR\xCFA\x15\xE2\x8C...', NULL, NULL, NULL, NULL, 'Active', 'Pending')
 #4 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('1470671594:0 D:...', 'I-L1EPMNH8HD4R', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Jorge', 'Medina', 'jmedina616@gmai...', '853NLG6TBL9TC', 'US in /var/www/vhosts/api/application/libraries/SMPortal.php on line 59
+[12-Apr-2017 04:25:37 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Entry id "" not found' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(457): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(209): KalturaBaseEntryService->get('', NULL)
+#2 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2693): SMPortal->get_entry_details('10012', '')
+#3 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('10012', NULL, NULL, NULL, NULL, 'Active', 'Pending')
+#4 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('vpinBl9VANmX1f2...', 'I-71GMAVHX9JEJ', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Test', 'User', 'user2@smh.com', 'Z2NPJYZKK2RSY', 'US', 'Pending', '0SE57794FN78548...', 'instant', '03:59:12 Apr 12...')
+#5 [internal  in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
+[12-Apr-2017 04:25:37 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Entry id "" not found' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(457): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(209): KalturaBaseEntryService->get('', NULL)
+#2 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2693): SMPortal->get_entry_details('10012', '')
+#3 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('10012', NULL, NULL, NULL, NULL, 'Active', 'Pending')
+#4 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('vpinBl9VANmX1f2...', 'I-GVGLAVFLP465', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Test', 'User', 'user2@smh.com', 'Z2NPJYZKK2RSY', 'US', 'Pending', '90873529FK83952...', 'instant', '03:58:43 Apr 12...')
+#5 [internal  in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
+[12-Apr-2017 04:25:37 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Entry id "" not found' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(457): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(209): KalturaBaseEntryService->get('', NULL)
+#2 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2693): SMPortal->get_entry_details('10012', '')
+#3 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('10012', NULL, NULL, NULL, NULL, 'Active', 'Pending')
+#4 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('vpinBl9VANmX1f2...', 'I-2S75BNCUA6VF', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Test', 'User', 'user2@smh.com', 'Z2NPJYZKK2RSY', 'US', 'Pending', '9K773738LA15578...', 'instant', '03:59:22 Apr 12...')
+#5 [internal  in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
