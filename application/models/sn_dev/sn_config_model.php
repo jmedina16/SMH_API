@@ -1131,10 +1131,9 @@ class Sn_config_model extends CI_Model {
                 }
                 if ($snConfig['facebook']) {
                     $create_facebook_live_stream = $this->create_facebook_live_stream($pid, $eid);
-                    if ($update_facebook_live_stream['success']) {
+                    if ($create_facebook_live_stream['success']) {
                         $facebook_success['facebook_success'] = true;
                         $facebook_live_id = $create_facebook_live_stream['live_id'];
-                        syslog(LOG_NOTICE, "SMH DEBUG : create_sn_livestreams1: " . print_r($create_facebook_live_stream, true));
                     } else {
                         $facebook_success['facebook_success'] = false;
                         $facebook_success['facebook_message'] = $create_facebook_live_stream['message'];
@@ -1142,7 +1141,6 @@ class Sn_config_model extends CI_Model {
                 }
                 if ($snConfig['facebook'] || $snConfig['youtube']) {
                     $update_sn_config = $this->insert_into_sn_config($youtube_broadcast_id, $facebook_live_id, $snConfig['sn_config']);
-                    syslog(LOG_NOTICE, "SMH DEBUG : create_sn_livestreams2: " . print_r($update_sn_config, true));
                     $partnerData = $this->update_sn_partnerData($pid, $eid, $update_sn_config['sn_config']);
                     if ($partnerData['success']) {
                         $platf = $this->getPlatforms(json_decode($partnerData['partnerData']));
@@ -1366,8 +1364,6 @@ class Sn_config_model extends CI_Model {
     }
 
     public function insert_into_sn_config($youtube_broadcast_id, $facebook_live_id, $platforms_config) {
-        syslog(LOG_NOTICE, "SMH DEBUG : insert_into_sn_config1: $youtube_broadcast_id, $facebook_live_id");
-        syslog(LOG_NOTICE, "SMH DEBUG : insert_into_sn_config2: " . print_r($platforms_config, true));
         $new_platforms_config = array();
         foreach ($platforms_config as $platform) {
             if ($platform['platform'] == 'facebook_live') {
@@ -1772,22 +1768,7 @@ class Sn_config_model extends CI_Model {
                 if ($platforms_status['success']) {
                     if (count($platforms_status['platforms_status'])) {
                         if ($platforms_status['platforms_status']['youtube']) {
-                            $youtube_ids = $this->get_youtube_event_ids($pid, $eid);
-                            if ($youtube_ids['success']) {
-                                $access_token = $this->validate_youtube_token($valid['pid']);
-                                if ($access_token['success']) {
-                                    $updateMetaData = $this->google_client_api->updateMetaData($access_token['access_token'], $youtube_ids['bid'], $name, $desc);
-                                    if ($updateMetaData['success']) {
-                                        $success = array('success' => true);
-                                    } else {
-                                        $success = array('success' => false, 'message' => 'YouTube: Could not update metadata');
-                                    }
-                                } else {
-                                    $success = array('success' => false, 'message' => 'YouTube: invalid access token');
-                                }
-                            } else {
-                                $success = array('success' => true);
-                            }
+                            $success = $this->update_youtube_metadata($pid, $name, $desc, $eid);
                         } else {
                             $success = array('success' => true, 'message' => 'Social network: nothing to update');
                         }
@@ -1804,6 +1785,27 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
         }
 
+        return $success;
+    }
+
+    public function update_youtube_metadata($pid, $name, $desc, $eid) {
+        $success = array('success' => false);
+        $youtube_ids = $this->get_youtube_event_ids($pid, $eid);
+        if ($youtube_ids['success']) {
+            $access_token = $this->validate_youtube_token($pid);
+            if ($access_token['success']) {
+                $updateMetaData = $this->google_client_api->updateMetaData($access_token['access_token'], $youtube_ids['bid'], $name, $desc);
+                if ($updateMetaData['success']) {
+                    $success = array('success' => true);
+                } else {
+                    $success = array('success' => false, 'message' => 'YouTube: Could not update metadata');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'YouTube: invalid access token');
+            }
+        } else {
+            $success = array('success' => true);
+        }
         return $success;
     }
 
@@ -1843,23 +1845,7 @@ class Sn_config_model extends CI_Model {
                 if ($platforms_status['success']) {
                     if (count($platforms_status['platforms_status'])) {
                         if ($platforms_status['platforms_status']['youtube']) {
-                            $youtube_ids = $this->get_youtube_event_ids($pid, $eid);
-                            if ($youtube_ids['success']) {
-                                $access_token = $this->validate_youtube_token($valid['pid']);
-                                if ($access_token['success']) {
-                                    $thumbnail = $this->smportal->get_default_thumb($pid, $eid, $ks);
-                                    $updateThumbnail = $this->google_client_api->updateThumbnail($access_token['access_token'], $youtube_ids['bid'], $thumbnail);
-                                    if ($updateThumbnail['success']) {
-                                        $success = array('success' => true);
-                                    } else {
-                                        $success = array('success' => false, 'message' => 'YouTube: Could not update metadata');
-                                    }
-                                } else {
-                                    $success = array('success' => false, 'message' => 'YouTube: invalid access token');
-                                }
-                            } else {
-                                $success = array('success' => true);
-                            }
+                            $success = $this->update_youtube_thumbnail($pid, $eid, $ks);
                         } else {
                             $success = array('success' => true, 'message' => 'Social network: nothing to update');
                         }
@@ -1879,6 +1865,28 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function update_youtube_thumbnail($pid, $eid, $ks) {
+        $success = array('success' => false);
+        $youtube_ids = $this->get_youtube_event_ids($pid, $eid);
+        if ($youtube_ids['success']) {
+            $access_token = $this->validate_youtube_token($pid);
+            if ($access_token['success']) {
+                $thumbnail = $this->smportal->get_default_thumb($pid, $eid, $ks);
+                $updateThumbnail = $this->google_client_api->updateThumbnail($access_token['access_token'], $youtube_ids['bid'], $thumbnail);
+                if ($updateThumbnail['success']) {
+                    $success = array('success' => true);
+                } else {
+                    $success = array('success' => false, 'message' => 'YouTube: Could not update metadata');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'YouTube: invalid access token');
+            }
+        } else {
+            $success = array('success' => true);
+        }
+        return $success;
+    }
+
     public function delete_sn_livestream($pid, $ks, $eid) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
@@ -1889,35 +1897,10 @@ class Sn_config_model extends CI_Model {
                 if ($platforms_status['success']) {
                     if (count($platforms_status['platforms_status'])) {
                         if ($platforms_status['platforms_status']['youtube']) {
-                            $youtube_ids = $this->get_youtube_event_ids($pid, $eid);
-                            if ($youtube_ids['success']) {
-                                $access_token = $this->validate_youtube_token($valid['pid']);
-                                if ($access_token['success']) {
-                                    $removeLiveStream = $this->google_client_api->removeLiveStream($access_token['access_token'], $youtube_ids['bid'], $youtube_ids['lid']);
-                                    if ($removeLiveStream['success']) {
-                                        $removeLiveEvent = $this->removeLiveEvent($pid, $eid);
-                                        if ($removeLiveEvent['success']) {
-                                            $success = array('success' => true);
-                                        } else {
-                                            $success = array('success' => false, 'message' => 'Could not remove live event');
-                                        }
-                                    } else {
-                                        $success = array('success' => false, 'message' => 'YouTube: Could not remove livestream');
-                                    }
-                                } else {
-                                    $success = array('success' => false, 'message' => 'YouTube: invalid access token');
-                                }
-                            } else {
-                                $success = array('success' => true);
-                            }
+                            $success = $this->delete_youtube_livestream($pid, $eid);
                         }
                         if ($platforms_status['platforms_status']['facebook']) {
-                            $remove_live_entry = $this->remove_fb_live_entry($pid, $eid);
-                            if ($remove_live_entry['success']) {
-                                $success = array('success' => true);
-                            } else {
-                                $success = array('success' => false, 'message' => 'Could not insert Facebook Live Entry');
-                            }
+                            $success = $this->delete_facebook_livestream($pid, $eid);
                         }
                         if (!$platforms_status['platforms_status']['youtube'] && !$platforms_status['platforms_status']['facebook']) {
                             $success = array('success' => true, 'message' => 'Social network: nothing to update');
@@ -1935,6 +1918,43 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
         }
 
+        return $success;
+    }
+
+    public function delete_youtube_livestream($pid, $eid) {
+        $success = array('success' => false);
+        $youtube_ids = $this->get_youtube_event_ids($pid, $eid);
+        if ($youtube_ids['success']) {
+            $access_token = $this->validate_youtube_token($pid);
+            if ($access_token['success']) {
+                $removeLiveStream = $this->google_client_api->removeLiveStream($access_token['access_token'], $youtube_ids['bid'], $youtube_ids['lid']);
+                if ($removeLiveStream['success']) {
+                    $removeLiveEvent = $this->removeLiveEvent($pid, $eid);
+                    if ($removeLiveEvent['success']) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not remove live event');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'YouTube: Could not remove livestream');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'YouTube: invalid access token');
+            }
+        } else {
+            $success = array('success' => true);
+        }
+        return $success;
+    }
+
+    public function delete_facebook_livestream($pid, $eid) {
+        $success = array('success' => false);
+        $remove_live_entry = $this->remove_fb_live_entry($pid, $eid);
+        if ($remove_live_entry['success']) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false, 'message' => 'Could not insert Facebook Live Entry');
+        }
         return $success;
     }
 
