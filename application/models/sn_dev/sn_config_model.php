@@ -1234,12 +1234,16 @@ class Sn_config_model extends CI_Model {
 
     public function remove_fb_live_entry($pid, $eid) {
         $success = array('success' => false);
-        $this->config->where('partner_id = "' . $pid . '" AND entryId = "' . $eid . '"');
-        $this->config->delete('facebook_live_entries');
-        if ($this->config->affected_rows() > 0) {
-            $success = array('success' => true);
+        if ($this->check_fb_live_entry($pid, $eid)) {
+            $this->config->where('partner_id = "' . $pid . '" AND entryId = "' . $eid . '"');
+            $this->config->delete('facebook_live_entries');
+            if ($this->config->affected_rows() > 0) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false);
+            }
         } else {
-            $success = array('success' => false);
+            $success = array('success' => true);
         }
         return $success;
     }
@@ -1629,7 +1633,7 @@ class Sn_config_model extends CI_Model {
         } else if (!$snConfig['youtube']) {
             $youtube_ids = $this->get_youtube_event_ids($pid, $eid);
             if ($youtube_ids['success']) {
-                $access_token = $this->validate_youtube_token($valid['pid']);
+                $access_token = $this->validate_youtube_token($pid);
                 if ($access_token['success']) {
                     $removeLiveStream = $this->google_client_api->removeLiveStream($access_token['access_token'], $youtube_ids['bid'], $youtube_ids['lid']);
                     if ($removeLiveStream['success']) {
