@@ -2238,12 +2238,12 @@ class Sn_config_model extends CI_Model {
     }
 
     public function update_expired_fb_livestreams($livestreams) {
+        date_default_timezone_set('America/Los_Angeles');
         $success = array('success' => true);
-        //$dateTwentyThreeHoursAgo = strtotime("-23 hours");
-        $dateTwentyThreeHoursAgo = strtotime("-5 minutes");
+        $dateTwentyThreeHoursAgo = strtotime("-23 hours");
         foreach ($livestreams as $livestream) {
-            $created_at = strtotime($livestream['created_at']);
-            if ($created_at <= $dateTwentyThreeHoursAgo) {
+            $date = strtotime($livestream['date']);
+            if ($date <= $dateTwentyThreeHoursAgo) {
                 $get_user_settings = $this->get_facebook_user_settings($livestream['pid']);
                 if ($get_user_settings['success']) {
                     $create_new_livestream = $this->create_new_fb_livestream($livestream['pid'], $get_user_settings['userSettings'][0]['stream_to'], $get_user_settings['userSettings'][0]['asset_id'], $get_user_settings['userSettings'][0]['privacy'], $get_user_settings['userSettings'][0]['create_vod'], $get_user_settings['userSettings'][0]['cont_streaming']);
@@ -2274,10 +2274,14 @@ class Sn_config_model extends CI_Model {
                 $pid = $res['partner_id'];
                 $lid = $res['live_id'];
                 $status = $res['status'];
-                $created_at = $res['created_at'];
+                if ($res['updated_at']) {
+                    $date = $res['updated_at'];
+                } else {
+                    $date = $res['created_at'];
+                }
             }
             if ($status == 'ready') {
-                array_push($livestreams, array('id' => $id, 'pid' => $pid, 'lid' => $lid, 'created_at' => $created_at));
+                array_push($livestreams, array('id' => $id, 'pid' => $pid, 'lid' => $lid, 'date' => $date));
             }
             $success = array('success' => true, 'livestreams' => $livestreams);
         } else {
