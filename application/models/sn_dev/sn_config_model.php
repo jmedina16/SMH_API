@@ -2208,30 +2208,56 @@ class Sn_config_model extends CI_Model {
     }
 
     public function sn_routine() {
+        $success = array('success' => false);
         $check_youtube_entries = $this->check_youtube_entries();
         if ($check_youtube_entries['success']) {
-            
+            $check_facebook_livestreams = $this->check_facebook_livestreams();
+            if ($check_facebook_livestreams['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false);
+            }
         }
+        return $success;
     }
 
     public function check_facebook_livestreams() {
         $success = array('success' => false);
         $livestreams = $this->get_fb_livestreams();
         if ($livestreams['success']) {
-            
+            $update_expired_fb_livestreams = $this->update_expired_fb_livestreams($livestreams['livestreams']);
+            if ($update_expired_fb_livestreams['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false);
+            }
         } else {
             $success = array('success' => true);
         }
         return $success;
     }
-    
-    public function update_expired_fb_livestreams($livestreams){
-        $today = date("Y-m-d H:i:s");
-        foreach($livestreams as $livestream){
-            if($livestream['created_at']){
-                
+
+    public function update_expired_fb_livestreams($livestreams) {
+        $success = array('success' => true);
+        //$dateTwentyThreeHoursAgo = strtotime("-23 hours");
+        $dateTwentyThreeHoursAgo = strtotime("-5 minutes");
+        foreach ($livestreams as $livestream) {
+            $created_at = strtotime($livestream['created_at']);
+            if ($created_at <= $dateTwentyThreeHoursAgo) {
+                $get_user_settings = $this->get_facebook_user_settings($livestream['pid']);
+                if ($get_user_settings['success']) {
+                    $create_new_livestream = $this->create_new_fb_livestream($livestream['pid'], $get_user_settings['userSettings'][0]['stream_to'], $get_user_settings['userSettings'][0]['asset_id'], $get_user_settings['userSettings'][0]['privacy'], $get_user_settings['userSettings'][0]['create_vod'], $get_user_settings['userSettings'][0]['cont_streaming']);
+                    if ($create_new_livestream['success']) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false, 'message' => $create_new_livestream['message']);
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not get Facebook user settings');
+                }
             }
         }
+        return $success;
     }
 
     public function get_fb_livestreams() {
@@ -2459,12 +2485,7 @@ class Sn_config_model extends CI_Model {
                 if ($livestream['success']) {
                     $add_fb_livestream = $this->add_fb_livestream($pid, $livestream['address'], $livestream['stream_name'], $livestream['embed_code'], $livestream['live_id']);
                     if ($add_fb_livestream['success']) {
-                        $add_fb_settings = $this->add_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming);
-                        if ($add_fb_settings['success']) {
-                            $success = array('success' => true);
-                        } else {
-                            $success = array('success' => false, 'message' => 'Could not add Facebook settings');
-                        }
+                        $success = array('success' => true);
                     } else {
                         $success = array('success' => false, 'message' => 'Could not add Facebook live stream');
                     }
