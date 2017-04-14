@@ -384,11 +384,16 @@ class Sn_config_model extends CI_Model {
                     if ($tokens_valid['success']) {
                         $remove_yt_live = $this->remove_youtube_live($pid);
                         if ($remove_yt_live['success']) {
-                            $update_status = $this->update_sn_config($pid, 'youtube', 0);
-                            if ($update_status['success']) {
-                                $success = array('success' => true);
+                            $remove_yt_live_events = $this->remove_yt_live_events($pid);
+                            if ($remove_yt_live_events['success']) {
+                                $update_status = $this->update_sn_config($pid, 'youtube', 0);
+                                if ($update_status['success']) {
+                                    $success = array('success' => true);
+                                } else {
+                                    $success = array('success' => false);
+                                }
                             } else {
-                                $success = array('success' => false);
+                                $success = array('success' => false, 'message' => $remove_yt_live_events['message']);
                             }
                         } else {
                             $success = array('success' => false);
@@ -581,6 +586,36 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function remove_yt_live_events($pid) {
+        $success = array('success' => false);
+        $events = $this->get_yt_live_events($pid);
+        if (count($events['events']) > 0) {
+            foreach ($events['events'] as $eid) {
+                $delete_youtube_livestream = $this->delete_youtube_livestream($pid, $eid);
+                if ($delete_youtube_livestream['success']) {
+                    $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
+                    if ($partnerData['success']) {
+                        $platforms = $this->getPlatforms(json_decode($partnerData['partnerData']));
+                        $update_sn_config = $this->set_youtube_config_false($platforms['platforms']);
+                        $partnerData = $this->update_sn_partnerData($pid, $eid, $update_sn_config['sn_config']);
+                        if ($partnerData['success']) {
+                            $success = array('success' => true);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not update entry partnerData');
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not get entry partnerData');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => $delete_youtube_livestream['message']);
+                }
+            }
+        } else {
+            $success = array('success' => true);
+        }
+        return $success;
+    }
+
     public function remove_fb_live_entries($pid) {
         $success = array('success' => false);
         $entries = $this->get_fb_live_entries($pid);
@@ -623,6 +658,27 @@ class Sn_config_model extends CI_Model {
             $success = false;
         }
 
+        return $success;
+    }
+
+    public function get_yt_live_events($pid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('youtube_live_events')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            $events = array();
+            foreach ($result as $res) {
+                $id = $res['entryId'];
+                array_push($events, $id);
+            }
+            $success = array('success' => true, 'events' => $events);
+        } else {
+            $success = array('success' => false);
+        }
         return $success;
     }
 
@@ -1405,10 +1461,29 @@ class Sn_config_model extends CI_Model {
                 array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => false));
             } else if ($platform['platform'] == 'youtube_live') {
                 if ($platform['status']) {
-                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status'], 'broadcastId' => $platform['broadcastId'], 'embed' => $platform['embed']));
+                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status'], 'broadcastId' => $platform['broadcastId']));
                 } else {
                     array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status']));
                 }
+            } else {
+                array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status']));
+            }
+        }
+        $success = array('success' => true, 'sn_config' => $new_platforms_config);
+        return $success;
+    }
+
+    public function set_youtube_config_false($platforms_config) {
+        $new_platforms_config = array();
+        foreach ($platforms_config as $platform) {
+            if ($platform['platform'] == 'facebook_live') {
+                if ($platform['status']) {
+                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status'], 'liveId' => $platform['liveId']));
+                } else {
+                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status']));
+                }
+            } else if ($platform['platform'] == 'youtube_live') {
+                array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => false));
             } else {
                 array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status']));
             }
