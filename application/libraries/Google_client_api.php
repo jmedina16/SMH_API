@@ -124,7 +124,7 @@ class Google_client_api {
             if ($client->revokeToken($access_token)) {
                 $success = array('success' => true);
             } else {
-                $success = array('success' => false);
+                $success = array('success' => false, 'message' => 'YouTube: could not remove authorization');
             }
             return $success;
         } catch (Google_Service_Exception $e) {
