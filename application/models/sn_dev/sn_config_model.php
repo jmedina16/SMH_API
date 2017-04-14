@@ -380,29 +380,29 @@ class Sn_config_model extends CI_Model {
                     foreach ($result as $res) {
                         $access_token = $this->smcipher->decrypt($res['access_token']);
                     }
-                    $tokens_valid = $this->google_client_api->removeAuth($access_token);
-                    if ($tokens_valid['success']) {
-                        $remove_yt_live = $this->remove_youtube_live($pid);
-                        if ($remove_yt_live['success']) {
-                            $remove_yt_live_events = $this->remove_yt_live_events($pid);
-                            if ($remove_yt_live_events['success']) {
+                    $remove_yt_live_events = $this->remove_yt_live_events($pid);
+                    if ($remove_yt_live_events['success']) {
+                        $removeAuth = $this->google_client_api->removeAuth($access_token);
+                        if ($removeAuth['success']) {
+                            $remove_yt_live = $this->remove_youtube_live($pid);
+                            if ($remove_yt_live['success']) {
                                 $update_status = $this->update_sn_config($pid, 'youtube', 0);
                                 if ($update_status['success']) {
                                     $success = array('success' => true);
                                 } else {
-                                    $success = array('success' => false);
+                                    $success = array('success' => false, 'message' => 'Could not update platform status');
                                 }
                             } else {
-                                $success = array('success' => false, 'message' => $remove_yt_live_events['message']);
+                                $success = array('success' => false, 'message' => $remove_yt_live['message']);
                             }
                         } else {
-                            $success = array('success' => false);
+                            $success = array('success' => false, 'message' => $removeAuth['message']);
                         }
                     } else {
-                        $success = array('success' => false);
+                        $success = array('success' => false, 'message' => $remove_yt_live_events['message']);
                     }
                 } else {
-                    $success = array('success' => false);
+                    $success = array('success' => false, 'message' => 'YouTube access token not found');
                 }
             } else {
                 $success = array('success' => false, 'message' => 'Social network service not active');
@@ -421,7 +421,7 @@ class Sn_config_model extends CI_Model {
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
         } else {
-            $success = array('success' => false);
+            $success = array('success' => false, 'message' => 'Could not remove YouTube access token');
         }
         return $success;
     }
