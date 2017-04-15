@@ -458,6 +458,71 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function facebook_deauthorization($signed_request) {
+        $success = array('success' => false);
+        $user_id = $this->facebook_client_api->get_user_id($signed_request);
+        if ($user_id['success']) {
+            $pid = $this->get_fb_pid_from_uid($user_id['user_id']);
+            if ($pid['success']) {
+                $remove_profile = $this->remove_fb_profile($pid['pid']);
+                if ($remove_profile['success']) {
+                    $remove_settings = $this->remove_fb_settings($pid['pid']);
+                    if ($remove_settings['success']) {
+                        $remove_pages = $this->remove_fb_pages($pid['pid']);
+                        if ($remove_pages['success']) {
+                            $remove_livestream = $this->remove_fb_livestream($pid['pid']);
+                            if ($remove_livestream['success']) {
+                                $remove_live_entries = $this->remove_fb_live_entries($pid['pid']);
+                                if ($remove_live_entries['success']) {
+                                    $update_status = $this->update_sn_config($pid['pid'], 'facebook', 0);
+                                    if ($update_status['success']) {
+                                        $success = array('success' => true);
+                                    } else {
+                                        $success = array('success' => false);
+                                    }
+                                } else {
+                                    $success = array('success' => false, 'message' => 'Could not remove facebook live entries');
+                                }
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not remove facebook user livestream');
+                            }
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not remove facebook user pages');
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not remove facebook user settings');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not remove facebook user profile');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Could not get facebook partner id');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Could not get facebook user id');
+        }
+        return $success;
+    }
+
+    public function get_fb_pid_from_uid($uid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('facebook_user_profile')
+                ->where('user_id', $uid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $pid = $res['partner_id'];
+            }
+            $success = array('success' => true, 'pid' => $pid);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
     public function remove_facebook_authorization($pid, $ks) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
