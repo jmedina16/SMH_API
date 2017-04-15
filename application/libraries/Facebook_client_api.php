@@ -113,6 +113,24 @@ class Facebook_client_api {
         return $success;
     }
 
+    public function get_code($access_token) {
+        $success = array('success' => false);
+        $redirect_uri = 'https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/fb-callback.php';
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "https://graph.facebook.com/oauth/client_code?client_id=" . $this->OAUTH2_CLIENT_ID . "&client_secret=" . $this->OAUTH2_CLIENT_SECRET . "&redirect_uri=" . $redirect_uri . "&access_token=" . $access_token);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $response = curl_exec($ch);
+        $response = json_decode($response, true);
+
+        if (isset($response['code'])) {
+            $success = array('success' => true, 'code' => $response['code']);
+        } else {
+            $success = array('success' => false);
+        }
+        curl_close($ch);
+        return $success;
+    }
+
     public function checkAuthToken($access_token) {
         $success = array('success' => false);
         try {
@@ -124,9 +142,19 @@ class Facebook_client_api {
             $oAuth2Client = $fb->getOAuth2Client();
             $tokenMetadata = $oAuth2Client->debugToken($access_token);
             if ($tokenMetadata->getIsValid()) {
-                $success = array('success' => true, 'message' => 'valid_access_token', 'access_token' => $access_token);
+                $get_code = $this->get_code($access_token);
+                if ($get_code['success']) {
+                    $new_access_token = $this->get_user_access_token($get_code['code']);
+                    if ($new_access_token['success']) {
+                        $success = array('success' => true, 'message' => 'valid_access_token', 'access_token' => $new_access_token['access_token']);
+                    } else {
+                        $success = array('success' => false, 'message' => 'Facebook: Could not get user access token');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Facebook: Could not get code');
+                }
             } else {
-                $success = array('success' => false);
+                $success = array('success' => false, 'message' => 'Facebook: User token not valid');
             }
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
