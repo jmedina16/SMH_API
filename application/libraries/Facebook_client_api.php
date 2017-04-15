@@ -265,4 +265,37 @@ class Facebook_client_api {
         }
     }
 
+    public function get_user_id($signed_request) {
+        $success = array('success' => false);
+        $parse_signed_request = $this->parse_signed_request($signed_request);
+        if (isset($parse_signed_request['user_id'])) {
+            $success = array('success' => true, 'user_id' => $parse_signed_request['user_id']);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function parse_signed_request($signed_request) {
+        list($encoded_sig, $payload) = explode('.', $signed_request, 2);
+
+        $secret = $this->OAUTH2_CLIENT_SECRET; // Use your app secret here
+        // decode the data
+        $sig = $this->base64_url_decode($encoded_sig);
+        $data = json_decode($this->base64_url_decode($payload), true);
+
+        // confirm the signature
+        $expected_sig = hash_hmac('sha256', $payload, $secret, $raw = true);
+        if ($sig !== $expected_sig) {
+            error_log('Bad Signed JSON signature!');
+            return null;
+        }
+
+        return $data;
+    }
+
+    public function base64_url_decode($input) {
+        return base64_decode(strtr($input, '-_', '+/'));
+    }
+
 }
