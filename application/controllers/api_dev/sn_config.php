@@ -118,6 +118,24 @@ class Sn_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code
     }
 
+    public function facebook_deauthorization_get() {
+        $signed_request = $this->get('signed_request');
+
+        if (!isset($signed_request) || $signed_request == null) {
+
+            $this->response(array('error' => 'Missing signed_request'), 200);
+        }
+
+        $result = $this->sn_config_model->facebook_deauthorization($signed_request);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code
+    }
+
     public function remove_youtube_authorization_get() {
         $pid = $this->get('pid');
         $ks = $this->get('ks');
