@@ -3290,3 +3290,4 @@ Stack trace:
 #3 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('1471081808:0 D:...', 'I-72796G1VEAR9', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Jorge', 'Medina', 'jmedina616@gmai...', '853NLG6TBL9TC', 'US', 'Pending', '30P180943133611...', 'instant', '03:36:21 Apr 13...')
 #4 [internal function]: in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 1191
 [13-Apr-2017 17:37:03 America/Los_Angeles] PHP Fatal error:  Call to undefined method Sn_config_model::get_yt_live_entries() in /var/www/vhosts/api/application/models/sn_dev/sn_config_model.php on line 591
+[17-Apr-2017 14:11:33 America/Los_Angeles] Bad Signed JSON signature!

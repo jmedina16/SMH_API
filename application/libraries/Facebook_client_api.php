@@ -14,8 +14,8 @@ class Facebook_client_api {
     protected $GRAPH_VERSION;
 
     public function __construct() {
-        $this->OAUTH2_CLIENT_ID = '753618154817279';
-        $this->OAUTH2_CLIENT_SECRET = 'd6606e1a0e3490c6294ca2507cd36e7e';
+        $this->OAUTH2_CLIENT_ID = '1880095552209614';
+        $this->OAUTH2_CLIENT_SECRET = 'e52af82e8fe68106197f87138355436c';
         $this->GRAPH_VERSION = 'v2.8';
     }
 
