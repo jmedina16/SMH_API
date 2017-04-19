@@ -202,7 +202,7 @@ class Facebook_client_api {
             } else if ($privacy == 2) {
                 $value = 'ALL_FRIENDS';
             } else if ($privacy == 3) {
-                $vaule = 'SELF';
+                $value = 'SELF';
             }
 
             $privacy_value = array(
