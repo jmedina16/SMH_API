@@ -241,6 +241,37 @@ class Facebook_client_api {
         }
     }
 
+    public function updateLiveStream($asset_id, $name, $desc, $access_token) {
+        $success = array('success' => false);
+        try {
+            $fb = new Facebook\Facebook([
+                'app_id' => $this->OAUTH2_CLIENT_ID,
+                'app_secret' => $this->OAUTH2_CLIENT_SECRET,
+                'default_graph_version' => $this->GRAPH_VERSION,
+            ]);
+
+            $data = array(
+                'title' => $name,
+                'description' => $desc
+            );
+
+            $updateLiveStream = $fb->post('/' . $asset_id, $data, $access_token);
+            $updateLiveStream = $updateLiveStream->getGraphNode()->asArray();
+            if (isset($updateLiveStream['id'])) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false);
+            }
+            return $success;
+        } catch (\Facebook\Exceptions\FacebookResponseException $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
+            exit;
+        } catch (\Facebook\Exceptions\FacebookSDKException $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
+            exit;
+        }
+    }
+
     public function removeAuth($access_token, $user_id) {
         $success = array('success' => false);
         try {
