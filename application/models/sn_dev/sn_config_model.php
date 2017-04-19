@@ -2160,7 +2160,7 @@ class Sn_config_model extends CI_Model {
                         if (count($platforms_status['platforms_status'])) {
                             array_push($platforms, array('platform' => 'edgecast', 'status' => $platforms_status['platforms_status']['smh']));
 
-                            $build_fb_ingestion = $this->build_fb_ingestion($pid, $facebook_status, $platforms_status);
+                            $build_fb_ingestion = $this->build_fb_ingestion($pid, $eid, $facebook_status, $platforms_status);
                             if ($build_fb_ingestion['success']) {
                                 array_push($platforms, $build_fb_ingestion['fb_platform']);
                             } else {
@@ -2200,29 +2200,56 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function build_fb_ingestion($pid, $facebook_status, $platforms_status) {
+    public function build_fb_ingestion($pid, $eid, $facebook_status, $platforms_status) {
         $success = array('success' => false);
         $fb_platform = array();
         if ($facebook_status['status']) {
             if ($platforms_status['platforms_status']['facebook']) {
-                $ingestionSettings = $this->get_facebook_ingestion_settings($pid);
-                if ($ingestionSettings['success']) {
-                    $update_facebook_ls_status = $this->update_facebook_ls_status($pid, 'live');
-                    if ($update_facebook_ls_status['success']) {
-                        array_push($fb_platform, array('platform' => 'facebook', 'status' => $platforms_status['platforms_status']['facebook'], 'ingestionSettings' => $ingestionSettings['ingestionSettings']));
+                $update_fb_ls_details = $this->update_fb_ls_details($pid, $eid);
+                if ($update_fb_ls_details['success']) {
+                    $ingestionSettings = $this->get_facebook_ingestion_settings($pid);
+                    if ($ingestionSettings['success']) {
+                        $update_facebook_ls_status = $this->update_facebook_ls_status($pid, 'live');
+                        if ($update_facebook_ls_status['success']) {
+                            array_push($fb_platform, array('platform' => 'facebook', 'status' => $platforms_status['platforms_status']['facebook'], 'ingestionSettings' => $ingestionSettings['ingestionSettings']));
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not update facebook live stream status');
+                        }
                     } else {
-                        $success = array('success' => false, 'message' => 'Could not update facebook live stream status');
+                        array_push($fb_platform, array('platform' => 'facebook', 'status' => false));
                     }
                 } else {
-                    array_push($fb_platform, array('platform' => 'facebook', 'status' => $platforms_status['platforms_status']['facebook']));
+                    $success = array('success' => false, 'message' => $update_fb_ls_details['message']);
                 }
             } else {
-                array_push($fb_platform, array('platform' => 'facebook', 'status' => $platforms_status['platforms_status']['facebook']));
+                array_push($fb_platform, array('platform' => 'facebook', 'status' => false));
             }
         } else {
             array_push($fb_platform, array('platform' => 'facebook', 'status' => false));
         }
         $success = array('success' => true, 'fb_platform' => $fb_platform[0]);
+        return $success;
+    }
+
+    public function update_fb_ls_details($pid, $eid) {
+        $success = array('success' => false);
+        $get_fb_livestream = $this->get_fb_livestream($pid);
+        if ($get_fb_livestream['success']) {
+            $access_token = $this->validate_facebook_token($pid);
+            if ($access_token['success']) {
+                $entry_details = $this->smportal->get_entry_details($pid, $eid);
+                $updateLiveStream = $this->facebook_client_api->updateLiveStream($get_fb_livestream['live_id'], $entry_details['name'], $entry_details['desc'], $access_token['access_token']);
+                if ($updateLiveStream['success']) {
+                    $success = array('success' => true);
+                } else {
+                    $success = array('success' => false, 'message' => 'Facebook: Could not update live stream');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Facebook: invalid access token');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Could not get Facebook live stream id');
+        }
         return $success;
     }
 
@@ -2240,10 +2267,10 @@ class Sn_config_model extends CI_Model {
                         $success = array('success' => false, 'message' => 'Could not insert youtube entry');
                     }
                 } else {
-                    array_push($yt_platform, array('platform' => 'youtube', 'status' => $platforms_status['platforms_status']['youtube']));
+                    array_push($yt_platform, array('platform' => 'youtube', 'status' => false));
                 }
             } else {
-                array_push($yt_platform, array('platform' => 'youtube', 'status' => $platforms_status['platforms_status']['youtube']));
+                array_push($yt_platform, array('platform' => 'youtube', 'status' => false));
             }
         } else {
             array_push($yt_platform, array('platform' => 'youtube', 'status' => false));
@@ -2256,6 +2283,7 @@ class Sn_config_model extends CI_Model {
         $success = array('success' => false);
         $this->config->select('*')
                 ->from('facebook_live_streams')
+                ->where('status', 'ready')
                 ->where('partner_id', $pid);
 
         $query = $this->config->get();
@@ -2795,5 +2823,4 @@ class Sn_config_model extends CI_Model {
 
         return $has_service;
     }
-
 }
