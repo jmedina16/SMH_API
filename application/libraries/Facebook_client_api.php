@@ -187,7 +187,7 @@ class Facebook_client_api {
         }
     }
 
-    public function createLiveStream($asset, $privacy, $create_vod, $cont_streaming) {
+    public function createLiveStream($asset, $privacy, $create_vod, $cont_streaming, $projection) {
         $success = array('success' => false);
         try {
             $fb = new Facebook\Facebook([
@@ -214,6 +214,9 @@ class Facebook_client_api {
                 'save_vod' => ($create_vod == 'true') ? true : false,
                 'stream_type' => ($cont_streaming == 'true') ? 'AMBIENT' : 'REGULAR'
             );
+            if ($projection === '360') {
+                $data['is_spherical'] = true;
+            }
             $createLiveVideo = $fb->post('/' . $asset['asset_id'] . '/live_videos', $data, $asset['access_token']);
             $createLiveVideo = $createLiveVideo->getGraphNode()->asArray();
             if (isset($createLiveVideo['id'])) {
