@@ -1568,7 +1568,8 @@ class Sn_config_model extends CI_Model {
             'liveStreamId' => $this->smcipher->encrypt($liveStreamId),
             'streamName' => $this->smcipher->encrypt($streamName),
             'ingestionAddress' => $this->smcipher->encrypt($this->finalize_address_url($ingestionAddress)),
-            'projection' => $projection
+            'projection' => $projection,
+            'created_at' => date("Y-m-d H:i:s")
         );
         $this->config->insert('youtube_live_events', $data);
         $this->config->limit(1);
@@ -1803,7 +1804,8 @@ class Sn_config_model extends CI_Model {
         $data = array(
             'liveStreamId' => $this->smcipher->encrypt($lid),
             'streamName' => $this->smcipher->encrypt($streamName),
-            'ingestionAddress' => $this->smcipher->encrypt($this->finalize_address_url($ingestionAddress))
+            'ingestionAddress' => $this->smcipher->encrypt($this->finalize_address_url($ingestionAddress)),
+            'updated_at' => date("Y-m-d H:i:s")
         );
         $this->config->where('partner_id', $pid);
         $this->config->where('entryId', $eid);
@@ -1820,7 +1822,8 @@ class Sn_config_model extends CI_Model {
     public function update_youtube_live_event_bid($pid, $eid, $bid) {
         $success = array('success' => false);
         $data = array(
-            'liveBroadcastId' => $this->smcipher->encrypt($bid)
+            'liveBroadcastId' => $this->smcipher->encrypt($bid),
+            'updated_at' => date("Y-m-d H:i:s")
         );
         $this->config->where('partner_id', $pid);
         $this->config->where('entryId', $eid);
@@ -2158,50 +2161,18 @@ class Sn_config_model extends CI_Model {
                             array_push($platforms, array('platform' => 'edgecast', 'status' => $platforms_status['platforms_status']['smh']));
 
                             $build_fb_ingestion = $this->build_fb_ingestion($pid, $facebook_status, $platforms_status);
-                            array_push($platforms, $build_fb_ingestion[0]);
+                            if ($build_fb_ingestion['success']) {
+                                array_push($platforms, $build_fb_ingestion['fb_platform']);
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not build Facebook Ingestion');
+                            }
 
                             $build_yt_ingestion = $this->build_yt_ingestion($pid, $eid, $youtube_status, $platforms_status);
-                            array_push($platforms, $build_yt_ingestion[0]);
-
-//                            if ($facebook_status['status']) {
-//                                if ($platforms_status['platforms_status']['facebook']) {
-//                                    $ingestionSettings = $this->get_facebook_ingestion_settings($pid);
-//                                    if ($ingestionSettings['success']) {
-//                                        $update_facebook_ls_status = $this->update_facebook_ls_status($pid, 'live');
-//                                        if ($update_facebook_ls_status['success']) {
-//                                            array_push($platforms, array('platform' => 'facebook', 'status' => $platforms_status['platforms_status']['facebook'], 'ingestionSettings' => $ingestionSettings['ingestionSettings']));
-//                                        } else {
-//                                            $success = array('success' => false, 'message' => 'Could not update facebook live stream status');
-//                                        }
-//                                    } else {
-//                                        array_push($platforms, array('platform' => 'facebook', 'status' => $platforms_status['platforms_status']['facebook']));
-//                                    }
-//                                } else {
-//                                    array_push($platforms, array('platform' => 'facebook', 'status' => $platforms_status['platforms_status']['facebook']));
-//                                }
-//                            } else {
-//                                array_push($platforms, array('platform' => 'facebook', 'status' => false));
-//                            }
-//                            if ($youtube_status['status']) {
-//                                if ($platforms_status['platforms_status']['youtube']) {
-//                                    $ingestionSettings = $this->get_youtube_ingestion_settings($pid, $eid);
-//                                    if ($ingestionSettings['success']) {
-//                                        $insert_youtube_entry = $this->insert_youtube_entry($pid, $eid, 'ready');
-//                                        if ($insert_youtube_entry['success']) {
-//                                            array_push($platforms, array('platform' => 'youtube', 'status' => $platforms_status['platforms_status']['youtube'], 'ingestionSettings' => $ingestionSettings['ingestionSettings']));
-//                                        } else {
-//                                            $success = array('success' => false, 'message' => 'Could not insert youtube entry');
-//                                        }
-//                                    } else {
-//                                        array_push($platforms, array('platform' => 'youtube', 'status' => $platforms_status['platforms_status']['youtube']));
-//                                    }
-//                                } else {
-//                                    array_push($platforms, array('platform' => 'youtube', 'status' => $platforms_status['platforms_status']['youtube']));
-//                                }
-//                            } else {
-//                                array_push($platforms, array('platform' => 'youtube', 'status' => false));
-//                            }
-
+                            if ($build_yt_ingestion['success']) {
+                                array_push($platforms, $build_yt_ingestion['yt_platform']);
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not build YouTube Ingestion');
+                            }
 
                             $success = array('success' => true, 'platforms' => $platforms, 'multiBitrate' => $multiBitrate_status);
                         } else {
@@ -2230,6 +2201,7 @@ class Sn_config_model extends CI_Model {
     }
 
     public function build_fb_ingestion($pid, $facebook_status, $platforms_status) {
+        $success = array('success' => false);
         $fb_platform = array();
         if ($facebook_status['status']) {
             if ($platforms_status['platforms_status']['facebook']) {
@@ -2250,10 +2222,12 @@ class Sn_config_model extends CI_Model {
         } else {
             array_push($fb_platform, array('platform' => 'facebook', 'status' => false));
         }
-        return $fb_platform;
+        $success = array('success' => true, 'fb_platform' => $fb_platform[0]);
+        return $success;
     }
 
     public function build_yt_ingestion($pid, $eid, $youtube_status, $platforms_status) {
+        $success = array('success' => false);
         $yt_platform = array();
         if ($youtube_status['status']) {
             if ($platforms_status['platforms_status']['youtube']) {
@@ -2274,7 +2248,8 @@ class Sn_config_model extends CI_Model {
         } else {
             array_push($yt_platform, array('platform' => 'youtube', 'status' => false));
         }
-        return $yt_platform;
+        $success = array('success' => true, 'yt_platform' => $yt_platform[0]);
+        return $success;
     }
 
     public function get_facebook_ingestion_settings($pid) {
