@@ -2156,45 +2156,52 @@ class Sn_config_model extends CI_Model {
                     if ($platforms_status['success']) {
                         if (count($platforms_status['platforms_status'])) {
                             array_push($platforms, array('platform' => 'edgecast', 'status' => $platforms_status['platforms_status']['smh']));
-                            if ($facebook_status['status']) {
-                                if ($platforms_status['platforms_status']['facebook']) {
-                                    $ingestionSettings = $this->get_facebook_ingestion_settings($pid);
-                                    if ($ingestionSettings['success']) {
-                                        $update_facebook_ls_status = $this->update_facebook_ls_status($pid, 'live');
-                                        if ($update_facebook_ls_status['success']) {
-                                            array_push($platforms, array('platform' => 'facebook', 'status' => $platforms_status['platforms_status']['facebook'], 'ingestionSettings' => $ingestionSettings['ingestionSettings']));
-                                        } else {
-                                            $success = array('success' => false, 'message' => 'Could not update facebook live stream status');
-                                        }
-                                    } else {
-                                        array_push($platforms, array('platform' => 'facebook', 'status' => $platforms_status['platforms_status']['facebook']));
-                                    }
-                                } else {
-                                    array_push($platforms, array('platform' => 'facebook', 'status' => $platforms_status['platforms_status']['facebook']));
-                                }
-                            } else {
-                                array_push($platforms, array('platform' => 'facebook', 'status' => false));
-                            }
 
-                            if ($youtube_status['status']) {
-                                if ($platforms_status['platforms_status']['youtube']) {
-                                    $ingestionSettings = $this->get_youtube_ingestion_settings($pid, $eid);
-                                    if ($ingestionSettings['success']) {
-                                        $insert_youtube_entry = $this->insert_youtube_entry($pid, $eid, 'ready');
-                                        if ($insert_youtube_entry['success']) {
-                                            array_push($platforms, array('platform' => 'youtube', 'status' => $platforms_status['platforms_status']['youtube'], 'ingestionSettings' => $ingestionSettings['ingestionSettings']));
-                                        } else {
-                                            $success = array('success' => false, 'message' => 'Could not insert youtube entry');
-                                        }
-                                    } else {
-                                        array_push($platforms, array('platform' => 'youtube', 'status' => $platforms_status['platforms_status']['youtube']));
-                                    }
-                                } else {
-                                    array_push($platforms, array('platform' => 'youtube', 'status' => $platforms_status['platforms_status']['youtube']));
-                                }
-                            } else {
-                                array_push($platforms, array('platform' => 'youtube', 'status' => false));
-                            }
+                            $build_fb_ingestion = $this->build_fb_ingestion($pid, $facebook_status, $platforms_status);
+                            array_push($platforms, $build_fb_ingestion[0]);
+
+                            $build_yt_ingestion = $this->build_yt_ingestion($pid, $eid, $youtube_status, $platforms_status);
+                            array_push($platforms, $build_yt_ingestion[0]);
+
+//                            if ($facebook_status['status']) {
+//                                if ($platforms_status['platforms_status']['facebook']) {
+//                                    $ingestionSettings = $this->get_facebook_ingestion_settings($pid);
+//                                    if ($ingestionSettings['success']) {
+//                                        $update_facebook_ls_status = $this->update_facebook_ls_status($pid, 'live');
+//                                        if ($update_facebook_ls_status['success']) {
+//                                            array_push($platforms, array('platform' => 'facebook', 'status' => $platforms_status['platforms_status']['facebook'], 'ingestionSettings' => $ingestionSettings['ingestionSettings']));
+//                                        } else {
+//                                            $success = array('success' => false, 'message' => 'Could not update facebook live stream status');
+//                                        }
+//                                    } else {
+//                                        array_push($platforms, array('platform' => 'facebook', 'status' => $platforms_status['platforms_status']['facebook']));
+//                                    }
+//                                } else {
+//                                    array_push($platforms, array('platform' => 'facebook', 'status' => $platforms_status['platforms_status']['facebook']));
+//                                }
+//                            } else {
+//                                array_push($platforms, array('platform' => 'facebook', 'status' => false));
+//                            }
+//                            if ($youtube_status['status']) {
+//                                if ($platforms_status['platforms_status']['youtube']) {
+//                                    $ingestionSettings = $this->get_youtube_ingestion_settings($pid, $eid);
+//                                    if ($ingestionSettings['success']) {
+//                                        $insert_youtube_entry = $this->insert_youtube_entry($pid, $eid, 'ready');
+//                                        if ($insert_youtube_entry['success']) {
+//                                            array_push($platforms, array('platform' => 'youtube', 'status' => $platforms_status['platforms_status']['youtube'], 'ingestionSettings' => $ingestionSettings['ingestionSettings']));
+//                                        } else {
+//                                            $success = array('success' => false, 'message' => 'Could not insert youtube entry');
+//                                        }
+//                                    } else {
+//                                        array_push($platforms, array('platform' => 'youtube', 'status' => $platforms_status['platforms_status']['youtube']));
+//                                    }
+//                                } else {
+//                                    array_push($platforms, array('platform' => 'youtube', 'status' => $platforms_status['platforms_status']['youtube']));
+//                                }
+//                            } else {
+//                                array_push($platforms, array('platform' => 'youtube', 'status' => false));
+//                            }
+
 
                             $success = array('success' => true, 'platforms' => $platforms, 'multiBitrate' => $multiBitrate_status);
                         } else {
@@ -2220,6 +2227,54 @@ class Sn_config_model extends CI_Model {
         }
         header('Content-type: application/json');
         return $success;
+    }
+
+    public function build_fb_ingestion($pid, $facebook_status, $platforms_status) {
+        $fb_platform = array();
+        if ($facebook_status['status']) {
+            if ($platforms_status['platforms_status']['facebook']) {
+                $ingestionSettings = $this->get_facebook_ingestion_settings($pid);
+                if ($ingestionSettings['success']) {
+                    $update_facebook_ls_status = $this->update_facebook_ls_status($pid, 'live');
+                    if ($update_facebook_ls_status['success']) {
+                        array_push($fb_platform, array('platform' => 'facebook', 'status' => $platforms_status['platforms_status']['facebook'], 'ingestionSettings' => $ingestionSettings['ingestionSettings']));
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not update facebook live stream status');
+                    }
+                } else {
+                    array_push($fb_platform, array('platform' => 'facebook', 'status' => $platforms_status['platforms_status']['facebook']));
+                }
+            } else {
+                array_push($fb_platform, array('platform' => 'facebook', 'status' => $platforms_status['platforms_status']['facebook']));
+            }
+        } else {
+            array_push($fb_platform, array('platform' => 'facebook', 'status' => false));
+        }
+        return $fb_platform;
+    }
+
+    public function build_yt_ingestion($pid, $eid, $youtube_status, $platforms_status) {
+        $yt_platform = array();
+        if ($youtube_status['status']) {
+            if ($platforms_status['platforms_status']['youtube']) {
+                $ingestionSettings = $this->get_youtube_ingestion_settings($pid, $eid);
+                if ($ingestionSettings['success']) {
+                    $insert_youtube_entry = $this->insert_youtube_entry($pid, $eid, 'ready');
+                    if ($insert_youtube_entry['success']) {
+                        array_push($yt_platform, array('platform' => 'youtube', 'status' => $platforms_status['platforms_status']['youtube'], 'ingestionSettings' => $ingestionSettings['ingestionSettings']));
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not insert youtube entry');
+                    }
+                } else {
+                    array_push($yt_platform, array('platform' => 'youtube', 'status' => $platforms_status['platforms_status']['youtube']));
+                }
+            } else {
+                array_push($yt_platform, array('platform' => 'youtube', 'status' => $platforms_status['platforms_status']['youtube']));
+            }
+        } else {
+            array_push($yt_platform, array('platform' => 'youtube', 'status' => false));
+        }
+        return $yt_platform;
     }
 
     public function get_facebook_ingestion_settings($pid) {
