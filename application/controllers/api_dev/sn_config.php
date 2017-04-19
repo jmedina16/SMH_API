@@ -499,6 +499,7 @@ class Sn_config extends REST_Controller {
         $privacy = $this->get('privacy');
         $create_vod = $this->get('create_vod');
         $cont_streaming = $this->get('cont_streaming');
+        $projection = $this->get('projection');
 
         if (!isset($pid) || $pid == null) {
 
@@ -535,7 +536,12 @@ class Sn_config extends REST_Controller {
             $this->response(array('error' => 'Missing Cont Streaming'), 200);
         }
 
-        $result = $this->sn_config_model->create_fb_livestream($pid, $ks, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming);
+        if (!isset($projection) || $projection == null) {
+
+            $this->response(array('error' => 'Missing projection'), 200);
+        }
+
+        $result = $this->sn_config_model->create_fb_livestream($pid, $ks, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection);
 
         if (!$result) {
 
