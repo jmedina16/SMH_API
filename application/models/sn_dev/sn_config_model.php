@@ -900,7 +900,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function create_fb_livestream($pid, $ks, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming) {
+    public function create_fb_livestream($pid, $ks, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
@@ -910,11 +910,11 @@ class Sn_config_model extends CI_Model {
                 if ($access_token['success']) {
                     $get_asset = $this->get_asset($pid, $stream_to, $asset_id, $access_token['access_token']);
                     if ($get_asset['success']) {
-                        $livestream = $this->facebook_client_api->createLiveStream($get_asset['asset'], $privacy, $create_vod, $cont_streaming);
+                        $livestream = $this->facebook_client_api->createLiveStream($get_asset['asset'], $privacy, $create_vod, $cont_streaming, $projection);
                         if ($livestream['success']) {
                             $add_fb_livestream = $this->add_fb_livestream($pid, $livestream['address'], $livestream['stream_name'], $livestream['embed_code'], $livestream['live_id']);
                             if ($add_fb_livestream['success']) {
-                                $add_fb_settings = $this->add_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming);
+                                $add_fb_settings = $this->add_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection);
                                 if ($add_fb_settings['success']) {
                                     $success = array('success' => true);
                                 } else {
@@ -942,11 +942,11 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function add_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming) {
+    public function add_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
         if ($this->check_fb_settings($pid)) {
-            $result = $this->update_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming);
+            $result = $this->update_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection);
         } else {
-            $result = $this->insert_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming);
+            $result = $this->insert_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection);
         }
         if ($result['success']) {
             $success = array('success' => true);
@@ -972,7 +972,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function update_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming) {
+    public function update_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
         $success = array('success' => false);
         $data = array(
             'stream_to' => $stream_to,
@@ -980,6 +980,7 @@ class Sn_config_model extends CI_Model {
             'privacy' => $privacy,
             'create_vod' => ($create_vod == 'true') ? true : false,
             'cont_streaming' => ($cont_streaming == 'true') ? true : false,
+            'projection' => $projection,
             'updated_at' => date("Y-m-d H:i:s")
         );
         $this->config->where('partner_id', $pid);
@@ -993,7 +994,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function insert_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming) {
+    public function insert_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
         $success = array('success' => false);
         $data = array(
             'partner_id' => $pid,
@@ -1002,6 +1003,7 @@ class Sn_config_model extends CI_Model {
             'privacy' => $privacy,
             'create_vod' => ($create_vod == 'true') ? true : false,
             'cont_streaming' => ($cont_streaming == 'true') ? true : false,
+            'projection' => $projection,
             'created_at' => date("Y-m-d H:i:s")
         );
 
@@ -2390,7 +2392,7 @@ class Sn_config_model extends CI_Model {
             if ($date <= $dateTwentyThreeHoursAgo) {
                 $get_user_settings = $this->get_facebook_user_settings($livestream['pid']);
                 if ($get_user_settings['success']) {
-                    $create_new_livestream = $this->create_new_fb_livestream($livestream['pid'], $get_user_settings['userSettings'][0]['stream_to'], $get_user_settings['userSettings'][0]['asset_id'], $get_user_settings['userSettings'][0]['privacy'], $get_user_settings['userSettings'][0]['create_vod'], $get_user_settings['userSettings'][0]['cont_streaming']);
+                    $create_new_livestream = $this->create_new_fb_livestream($livestream['pid'], $get_user_settings['userSettings'][0]['stream_to'], $get_user_settings['userSettings'][0]['asset_id'], $get_user_settings['userSettings'][0]['privacy'], $get_user_settings['userSettings'][0]['create_vod'], $get_user_settings['userSettings'][0]['cont_streaming'], $get_user_settings['userSettings'][0]['projection']);
                     if ($create_new_livestream['success']) {
                         $success = array('success' => true);
                     } else {
@@ -2581,7 +2583,7 @@ class Sn_config_model extends CI_Model {
             if ($is_facebook_live) {
                 $get_user_settings = $this->get_facebook_user_settings($pid);
                 if ($get_user_settings['success']) {
-                    $create_new_livestream = $this->create_new_fb_livestream($pid, $get_user_settings['userSettings'][0]['stream_to'], $get_user_settings['userSettings'][0]['asset_id'], $get_user_settings['userSettings'][0]['privacy'], $get_user_settings['userSettings'][0]['create_vod'], $get_user_settings['userSettings'][0]['cont_streaming']);
+                    $create_new_livestream = $this->create_new_fb_livestream($pid, $get_user_settings['userSettings'][0]['stream_to'], $get_user_settings['userSettings'][0]['asset_id'], $get_user_settings['userSettings'][0]['privacy'], $get_user_settings['userSettings'][0]['create_vod'], $get_user_settings['userSettings'][0]['cont_streaming'], $get_user_settings['userSettings'][0]['projection']);
                     if ($create_new_livestream['success']) {
                         $success = array('success' => true);
                     } else {
@@ -2614,8 +2616,9 @@ class Sn_config_model extends CI_Model {
                 $privacy = $res['privacy'];
                 $create_vod = ($res['create_vod']) ? 'true' : 'false';
                 $cont_streaming = ($res['cont_streaming']) ? 'true' : 'false';
+                $projection = $res['projection'];
             }
-            array_push($userSettings, array('asset_id' => $asset_id, 'stream_to' => $stream_to, 'privacy' => $privacy, 'create_vod' => $create_vod, 'cont_streaming' => $cont_streaming));
+            array_push($userSettings, array('asset_id' => $asset_id, 'stream_to' => $stream_to, 'privacy' => $privacy, 'create_vod' => $create_vod, 'cont_streaming' => $cont_streaming, 'projection' => $projection));
             $success = array('success' => true, 'userSettings' => $userSettings);
         } else {
             $success = array('success' => false);
@@ -2623,13 +2626,13 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function create_new_fb_livestream($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming) {
+    public function create_new_fb_livestream($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
         $success = array('success' => false);
         $access_token = $this->validate_facebook_token($pid);
         if ($access_token['success']) {
             $get_asset = $this->get_asset($pid, $stream_to, $asset_id, $access_token['access_token']);
             if ($get_asset['success']) {
-                $livestream = $this->facebook_client_api->createLiveStream($get_asset['asset'], $privacy, $create_vod, $cont_streaming);
+                $livestream = $this->facebook_client_api->createLiveStream($get_asset['asset'], $privacy, $create_vod, $cont_streaming, $projection);
                 if ($livestream['success']) {
                     $add_fb_livestream = $this->add_fb_livestream($pid, $livestream['address'], $livestream['stream_name'], $livestream['embed_code'], $livestream['live_id']);
                     if ($add_fb_livestream['success']) {
