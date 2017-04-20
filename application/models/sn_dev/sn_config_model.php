@@ -148,10 +148,46 @@ class Sn_config_model extends CI_Model {
             if ($token_valid['success']) {
                 $success = array('success' => true, 'access_token' => $token_valid['access_token']);
             } else {
-                $success = array('success' => false);
+                $facebook_invalidation_removal = $this->facebook_invalidation_removal($pid);
+                if ($facebook_invalidation_removal['success']) {
+                    $success = array('success' => false);
+                } else {
+                    $success = array('success' => false);
+                }
             }
         } else {
             $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function facebook_invalidation_removal($pid) {
+        $success = array('success' => false);
+        $remove_settings = $this->remove_fb_settings($pid);
+        if ($remove_settings['success']) {
+            $remove_pages = $this->remove_fb_pages($pid);
+            if ($remove_pages['success']) {
+                $remove_livestream = $this->remove_fb_livestream($pid);
+                if ($remove_livestream['success']) {
+                    $remove_live_entries = $this->remove_fb_live_entries($pid);
+                    if ($remove_live_entries['success']) {
+                        $update_status = $this->update_sn_config($pid, 'facebook', 0);
+                        if ($update_status['success']) {
+                            $success = array('success' => true);
+                        } else {
+                            $success = array('success' => false);
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not remove facebook live entries');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not remove facebook user livestream');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Could not remove facebook user pages');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Could not remove facebook user settings');
         }
         return $success;
     }
@@ -2823,4 +2859,5 @@ class Sn_config_model extends CI_Model {
 
         return $has_service;
     }
+
 }
