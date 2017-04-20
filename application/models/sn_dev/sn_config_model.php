@@ -2557,6 +2557,19 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function removeReadyEntry($eid) {
+        $success = array('success' => false);
+        $this->config->where('entryId', $eid);
+        $this->config->where('status', 'ready');
+        $this->config->delete('youtube_live_entries');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
     public function transitionLiveStream($entries, $status) {
         $success = array('success' => false);
         foreach ($entries as $entry) {
@@ -2749,44 +2762,19 @@ class Sn_config_model extends CI_Model {
 
     public function youtube_entry_complete($pid, $ks, $eid) {
         $success = array('success' => false);
-        $event_ids = $this->get_youtube_event_ids($pid, $eid);
-        if ($event_ids['success']) {
-            $access_token = $this->validate_youtube_token($pid);
-            if ($access_token['success']) {
-                $transitionLiveStream = $this->google_client_api->transitionLiveStream($access_token['access_token'], $event_ids['bid'], 'complete');
-                if ($transitionLiveStream['success']) {
-                    $updateLiveStreamStatus = $this->update_youtube_entry_status($pid, $eid, 'complete');
-                    if ($updateLiveStreamStatus['success']) {
-                        $youtube_embed = true;
-                        $thumbnail = $this->smportal->get_default_thumb($pid, $eid, $ks);
-                        $entry_details = $this->smportal->get_entry_details($pid, $eid);
-                        $createNewBroadCast = $this->google_client_api->createNewBroadcast($access_token['access_token'], $event_ids['bid'], $event_ids['lid'], $entry_details['name'], $entry_details['desc'], $thumbnail, $event_ids['proj'], $youtube_embed);
-                        if ($createNewBroadCast['success']) {
-                            $updateBid = $this->update_youtube_live_event_bid($pid, $eid, $createNewBroadCast['liveBroadcastId']);
-                            if ($updateBid['success']) {
-                                $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
-                                if ($partnerData['success']) {
-                                    $platforms = $this->getPlatforms(json_decode($partnerData['partnerData']));
-                                    $updated_config = $this->insert_into_sn_config($createNewBroadCast['liveBroadcastId'], null, $platforms['platforms']);
-                                    $partnerData = $this->update_sn_partnerData($pid, $eid, $updated_config['sn_config']);
-                                    if ($partnerData['success']) {
-                                        $update_embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
-                                        if ($update_embed_status['success']) {
-                                            $success = array('success' => true);
-                                        } else {
-                                            $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
-                                        }
-                                    } else {
-                                        $success = array('success' => false, 'message' => 'Could not update entry partnerData');
-                                    }
-                                } else {
-                                    $success = array('success' => false, 'message' => 'Could not get partnerData');
-                                }
-                            } else {
-                                $success = array('success' => false, 'message' => 'Could not update liveBroadcastId');
-                            }
-                        } else if (isset($createNewBroadCast['retry'])) {
-                            $youtube_embed = false;
+        $is_youtube_live = $this->is_youtube_live($pid, $eid);
+        if ($is_youtube_live) {
+            $event_ids = $this->get_youtube_event_ids($pid, $eid);
+            if ($event_ids['success']) {
+                $access_token = $this->validate_youtube_token($pid);
+                if ($access_token['success']) {
+                    $transitionLiveStream = $this->google_client_api->transitionLiveStream($access_token['access_token'], $event_ids['bid'], 'complete');
+                    if ($transitionLiveStream['success']) {
+                        $updateLiveStreamStatus = $this->update_youtube_entry_status($pid, $eid, 'complete');
+                        if ($updateLiveStreamStatus['success']) {
+                            $youtube_embed = true;
+                            $thumbnail = $this->smportal->get_default_thumb($pid, $eid, $ks);
+                            $entry_details = $this->smportal->get_entry_details($pid, $eid);
                             $createNewBroadCast = $this->google_client_api->createNewBroadcast($access_token['access_token'], $event_ids['bid'], $event_ids['lid'], $entry_details['name'], $entry_details['desc'], $thumbnail, $event_ids['proj'], $youtube_embed);
                             if ($createNewBroadCast['success']) {
                                 $updateBid = $this->update_youtube_live_event_bid($pid, $eid, $createNewBroadCast['liveBroadcastId']);
@@ -2812,24 +2800,61 @@ class Sn_config_model extends CI_Model {
                                 } else {
                                     $success = array('success' => false, 'message' => 'Could not update liveBroadcastId');
                                 }
+                            } else if (isset($createNewBroadCast['retry'])) {
+                                $youtube_embed = false;
+                                $createNewBroadCast = $this->google_client_api->createNewBroadcast($access_token['access_token'], $event_ids['bid'], $event_ids['lid'], $entry_details['name'], $entry_details['desc'], $thumbnail, $event_ids['proj'], $youtube_embed);
+                                if ($createNewBroadCast['success']) {
+                                    $updateBid = $this->update_youtube_live_event_bid($pid, $eid, $createNewBroadCast['liveBroadcastId']);
+                                    if ($updateBid['success']) {
+                                        $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
+                                        if ($partnerData['success']) {
+                                            $platforms = $this->getPlatforms(json_decode($partnerData['partnerData']));
+                                            $updated_config = $this->insert_into_sn_config($createNewBroadCast['liveBroadcastId'], null, $platforms['platforms']);
+                                            $partnerData = $this->update_sn_partnerData($pid, $eid, $updated_config['sn_config']);
+                                            if ($partnerData['success']) {
+                                                $update_embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
+                                                if ($update_embed_status['success']) {
+                                                    $success = array('success' => true);
+                                                } else {
+                                                    $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
+                                                }
+                                            } else {
+                                                $success = array('success' => false, 'message' => 'Could not update entry partnerData');
+                                            }
+                                        } else {
+                                            $success = array('success' => false, 'message' => 'Could not get partnerData');
+                                        }
+                                    } else {
+                                        $success = array('success' => false, 'message' => 'Could not update liveBroadcastId');
+                                    }
+                                } else {
+                                    $success = array('success' => false, 'message' => 'Could not create and bind new broadcast');
+                                }
                             } else {
                                 $success = array('success' => false, 'message' => 'Could not create and bind new broadcast');
                             }
                         } else {
-                            $success = array('success' => false, 'message' => 'Could not create and bind new broadcast');
+                            $success = array('success' => false, 'message' => 'Could not update entry status to complete');
                         }
                     } else {
-                        $success = array('success' => false, 'message' => 'Could not update entry status to complete');
+                        $success = array('success' => false, 'message' => 'Could not transition status to complete');
                     }
                 } else {
-                    $success = array('success' => false, 'message' => 'Could not transition status to complete');
+                    $success = array('success' => false, 'message' => 'Could not get access token');
                 }
             } else {
-                $success = array('success' => false, 'message' => 'Could not get access token');
+                $success = array('success' => false, 'message' => 'Could not get event ids');
             }
         } else {
-            $success = array('success' => false, 'message' => 'Could not get event ids');
+            $removeReadyEntry = $this->removeReadyEntry($eid);
+            if ($removeReadyEntry['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Could not remove ready Entry');
+            }
         }
+
+
 
         return $success;
     }
