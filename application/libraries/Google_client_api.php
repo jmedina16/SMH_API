@@ -234,6 +234,8 @@ class Google_client_api {
                     $error = json_decode($e->getMessage());
                     if ($error->error->errors[0]->reason === 'invalidEmbedSetting') {
                         $success = array('success' => false, 'retry' => true);
+                    } else if ($error->error->errors[0]->reason === 'insufficientLivePermissions') {
+                        $success = array('success' => false, 'blocked' => true);
                     } else {
                         $success = array('success' => false);
                     }
@@ -639,6 +641,8 @@ class Google_client_api {
                     $error = json_decode($e->getMessage());
                     if ($error->error->errors[0]->reason === 'invalidEmbedSetting') {
                         $success = array('success' => false, 'retry' => true);
+                    } else if ($error->error->errors[0]->reason === 'insufficientLivePermissions') {
+                        $success = array('success' => false, 'blocked' => true);
                     } else {
                         $success = array('success' => false);
                     }
