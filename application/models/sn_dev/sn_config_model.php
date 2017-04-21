@@ -2854,8 +2854,6 @@ class Sn_config_model extends CI_Model {
             }
         }
 
-
-
         return $success;
     }
 
