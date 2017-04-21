@@ -1271,8 +1271,8 @@ class Sn_config_model extends CI_Model {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
                 $snConfig = $this->buildSnConfig($platforms);
-                $youtube_success = array('youtube_success' => false);
-                $facebook_success = array('facebook_success' => false);
+                $youtube_success = array('youtube_success' => false, 'youtube_message' => 'Was not asked to create a live stream');
+                $facebook_success = array('facebook_success' => false, 'facebook_message' => 'Was not asked to create a live stream');
                 $youtube_broadcast_id = null;
                 $youtube_embed = true;
                 $facebook_live_id = null;
@@ -1299,12 +1299,15 @@ class Sn_config_model extends CI_Model {
                     }
                 }
                 if ($snConfig['facebook'] || $snConfig['youtube']) {
+                    $platforms_responses = array();
+                    array_push($platforms_responses, $youtube_success);
+                    array_push($platforms_responses, $facebook_success);
                     $update_sn_config = $this->insert_into_sn_config($youtube_broadcast_id, $facebook_live_id, $snConfig['sn_config']);
                     $partnerData = $this->update_sn_partnerData($pid, $eid, $update_sn_config['sn_config']);
                     if ($partnerData['success']) {
                         $platf = $this->getPlatforms(json_decode($partnerData['partnerData']));
                         $configSettings = $this->buildConfigSettings($platf);
-                        $success = array('success' => true, 'configSettings' => $configSettings, 'youtube_embed_status' => $youtube_embed);
+                        $success = array('success' => true, 'configSettings' => $configSettings, 'youtube_embed_status' => $youtube_embed, 'platforms_responses' => $platforms_responses);
                     } else {
                         $success = array('success' => false, 'message' => 'Could not update entry partnerData');
                     }
@@ -1365,6 +1368,8 @@ class Sn_config_model extends CI_Model {
                 } else {
                     $success = array('success' => false, 'message' => 'YouTube: could not create Live Event');
                 }
+            } else if (isset($livestream['blocked'])) {
+                $success = array('success' => false, 'message' => 'YouTube: you may have reached your daily broadcasting limit');
             } else {
                 $success = array('success' => false, 'message' => 'YouTube: could not create Live Event');
             }
@@ -1802,6 +1807,8 @@ class Sn_config_model extends CI_Model {
                         } else {
                             $success = array('success' => false, 'message' => 'YouTube: could not create Live Event');
                         }
+                    } else if (isset($livestream['blocked'])) {
+                        $success = array('success' => false, 'message' => 'YouTube: you may have reached your daily broadcasting limit');
                     } else {
                         $success = array('success' => false, 'message' => 'YouTube: could not create Live Event');
                     }
@@ -2829,6 +2836,30 @@ class Sn_config_model extends CI_Model {
                                     }
                                 } else {
                                     $success = array('success' => false, 'message' => 'Could not create and bind new broadcast');
+                                }
+                            } else if (isset($createNewBroadCast['blocked'])) {
+                                $removeLiveStream = $this->google_client_api->removeLiveStream($access_token['access_token'], $event_ids['bid'], $event_ids['lid']);
+                                if ($removeLiveStream['success']) {
+                                    $removeLiveEvent = $this->removeLiveEvent($pid, $eid);
+                                    if ($removeLiveEvent['success']) {
+                                        $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
+                                        if ($partnerData['success']) {
+                                            $platforms = $this->getPlatforms(json_decode($partnerData['partnerData']));
+                                            $update_sn_config = $this->set_youtube_config_false($platforms['platforms']);
+                                            $partnerData = $this->update_sn_partnerData($pid, $eid, $update_sn_config['sn_config']);
+                                            if ($partnerData['success']) {
+                                                $success = array('success' => true);
+                                            } else {
+                                                $success = array('success' => false, 'message' => 'Could not update entry partnerData');
+                                            }
+                                        } else {
+                                            $success = array('success' => false, 'message' => 'Could not get entry partnerData');
+                                        }
+                                    } else {
+                                        $success = array('success' => false, 'message' => 'Could not remove live event');
+                                    }
+                                } else {
+                                    $success = array('success' => false, 'message' => 'YouTube: Could not remove livestream');
                                 }
                             } else {
                                 $success = array('success' => false, 'message' => 'Could not create and bind new broadcast');
