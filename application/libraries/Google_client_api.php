@@ -352,6 +352,44 @@ class Google_client_api {
         }
     }
 
+    public function removeLiveStreamObject($access_token, $bid, $lid) {
+        $success = array('success' => false);
+        try {
+            $client = new Google_Client();
+            $client->setClientId($this->OAUTH2_CLIENT_ID);
+            $client->setClientSecret($this->OAUTH2_CLIENT_SECRET);
+            $client->addScope('https://www.googleapis.com/auth/youtube');
+            $redirect = filter_var('https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
+            $client->setRedirectUri($redirect);
+            $client->setAccessToken($access_token);
+
+            $youtube = new Google_Service_YouTube($client);
+            if ($client->getAccessToken()) {
+                try {
+                    $bindBroadcastResponse = $youtube->liveBroadcasts->bind($bid, 'id,snippet,contentDetails', array());
+                    $deleteLiveStreamResponse = $youtube->liveStreams->delete($lid, array());
+
+                    if ($deleteLiveStreamResponse->getStatusCode() == 204) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false);
+                    }
+                    return $success;
+                } catch (Google_Service_Exception $e) {
+                    syslog(LOG_NOTICE, "SMH DEBUG : A service error occurred: code: " . $e->getMessage());
+                } catch (Google_Exception $e) {
+                    syslog(LOG_NOTICE, "SMH DEBUG : An client error occurred: code: " . $e->getMessage());
+                }
+            }
+        } catch (Google_Service_Exception $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage());
+            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+        } catch (Exception $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage());
+            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+        }
+    }
+
     public function updateMetaData($access_token, $bid, $name, $desc) {
         $success = array('success' => false);
         try {
