@@ -2257,7 +2257,7 @@ class Sn_config_model extends CI_Model {
                         array_push($fb_platform, array('platform' => 'facebook', 'status' => false));
                     }
                 } else {
-                    $success = array('success' => false, 'message' => $update_fb_ls_details['message']);
+                    array_push($fb_platform, array('platform' => 'facebook', 'status' => false));
                 }
             } else {
                 array_push($fb_platform, array('platform' => 'facebook', 'status' => false));
@@ -2550,6 +2550,19 @@ class Sn_config_model extends CI_Model {
     public function removeCompletedEntries() {
         $success = array('success' => false);
         $this->config->where('status', 'complete');
+        $this->config->delete('youtube_live_entries');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function removeLiveEntry($pid, $eid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id', $pid);
+        $this->config->where('entryId', $eid);
         $this->config->delete('youtube_live_entries');
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
@@ -2875,7 +2888,12 @@ class Sn_config_model extends CI_Model {
                     $success = array('success' => false, 'message' => 'Could not transition status to complete');
                 }
             } else {
-                $success = array('success' => false, 'message' => 'Could not get access token');
+                $removeLiveEntry = $this->removeLiveEntry($pid, $eid);
+                if ($removeLiveEntry['success']) {
+                    $success = array('success' => true);
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not remove YouTube live entry');
+                }
             }
         } else {
             $success = array('success' => false, 'message' => 'Could not get event ids');
