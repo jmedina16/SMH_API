@@ -1674,43 +1674,38 @@ class Sn_config_model extends CI_Model {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
                 $snConfig = $this->buildSnConfig($platforms);
-                $youtube_success = array();
-                $facebook_success = array();
+                $youtube_success = array('platform' => 'youtube', 'success' => false, 'message' => 'Was not asked to create or update a live stream');
+                $facebook_success = array('platform' => 'facebook', 'success' => false, 'message' => 'Was not asked to create or update a live stream');
                 $youtube_broadcast_id = null;
                 $youtube_embed = true;
                 $facebook_live_id = null;
 
                 $update_youtube_live_stream = $this->update_youtube_live_stream($pid, $ks, $name, $desc, $eid, $snConfig, $projection);
                 if ($update_youtube_live_stream['success']) {
-                    $youtube_success['youtube_success'] = true;
+                    $youtube_success['success'] = true;
                     $youtube_broadcast_id = $update_youtube_live_stream['broadcast_id'];
                     $youtube_embed = $update_youtube_live_stream['youtube_embed'];
                 } else {
-                    $youtube_success['youtube_success'] = false;
-                    $youtube_success['youtube_message'] = $update_youtube_live_stream['message'];
+                    $youtube_success['success'] = false;
+                    $youtube_success['message'] = $update_youtube_live_stream['message'];
                 }
 
                 $update_facebook_live_stream = $this->update_facebook_live_stream($pid, $eid, $snConfig);
                 if ($update_facebook_live_stream['success']) {
-                    $facebook_success['facebook_success'] = true;
+                    $facebook_success['success'] = true;
                     $facebook_live_id = $update_facebook_live_stream['live_id'];
                 } else {
-                    $facebook_success['facebook_success'] = false;
-                    $facebook_success['facebook_message'] = $update_facebook_live_stream['message'];
+                    $facebook_success['success'] = false;
+                    $facebook_success['message'] = $update_facebook_live_stream['message'];
                 }
 
                 $update_sn_config = $this->insert_into_sn_config($youtube_broadcast_id, $facebook_live_id, $snConfig['sn_config']);
                 $partnerData = $this->update_sn_partnerData($pid, $eid, $update_sn_config['sn_config']);
                 if ($partnerData['success']) {
-                    if ($youtube_success['youtube_success'] && $facebook_success['facebook_success']) {
-                        $success = array('success' => true, 'youtube_embed_status' => $youtube_embed);
-                    } else if (!$youtube_success['youtube_success'] && $facebook_success['facebook_success']) {
-                        $success = array('success' => false, 'youtube_embed_status' => false, 'message' => $youtube_success['youtube_message']);
-                    } else if ($youtube_success['youtube_success'] && !$facebook_success['facebook_success']) {
-                        $success = array('success' => false, 'youtube_embed_status' => $youtube_embed, 'message' => $facebook_success['facebook_message']);
-                    } else if (!$youtube_success['youtube_success'] && !$facebook_success['facebook_success']) {
-                        $success = array('success' => false, 'youtube_embed_status' => false, 'message' => $youtube_success['youtube_message'] . ' & ' . $facebook_success['facebook_message']);
-                    }
+                    $platforms_responses = array();
+                    array_push($platforms_responses, $youtube_success);
+                    array_push($platforms_responses, $facebook_success);
+                    $success = array('success' => true, 'youtube_embed_status' => $youtube_embed, 'platforms_responses' => $platforms_responses);
                 } else {
                     $success = array('success' => false, 'message' => 'Could not update entry partnerData');
                 }
