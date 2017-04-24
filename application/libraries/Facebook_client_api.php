@@ -234,7 +234,8 @@ class Facebook_client_api {
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
-            exit;
+            $success = array('success' => false, 'message' => 'SMH app may not have permission to create live streams on this user');
+            return $success;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
             exit;
