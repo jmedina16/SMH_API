@@ -960,7 +960,7 @@ class Sn_config_model extends CI_Model {
                                 $success = array('success' => false, 'message' => 'Could not add Facebook live stream');
                             }
                         } else {
-                            $success = array('success' => false, 'message' => 'Facebook: could not create live stream');
+                            $success = array('success' => false, 'message' => $livestream['message']);
                         }
                     } else {
                         $success = array('success' => false, 'message' => 'Could not get asset Id');
