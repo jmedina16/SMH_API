@@ -34,6 +34,36 @@ class Sn_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code
     }
 
+    public function store_facebook_authorization_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+        $code = $this->get('code');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing pid'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        if (!isset($code) || $code == null) {
+
+            $this->response(array('error' => 'Missing code'), 200);
+        }
+
+        $result = $this->sn_config_model->store_facebook_authorization($pid, $ks, $code);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code
+    }
+
     public function store_youtube_authorization_get() {
         $pid = $this->get('pid');
         $ks = $this->get('ks');
@@ -55,6 +85,48 @@ class Sn_config extends REST_Controller {
         }
 
         $result = $this->sn_config_model->store_youtube_authorization($pid, $ks, $code);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code
+    }
+
+    public function remove_facebook_authorization_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing pid'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        $result = $this->sn_config_model->remove_facebook_authorization($pid, $ks);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code
+    }
+
+    public function facebook_deauthorization_get() {
+        $signed_request = $this->get('signed_request');
+
+        if (!isset($signed_request) || $signed_request == null) {
+
+            $this->response(array('error' => 'Missing signed_request'), 200);
+        }
+
+        $result = $this->sn_config_model->facebook_deauthorization($signed_request);
 
         if (!$result) {
 
@@ -337,6 +409,17 @@ class Sn_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code 
     }
 
+    public function sn_routine_get() {
+        $result = $this->sn_config_model->sn_routine();
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code 
+    }
+
     public function check_youtube_entries_get() {
         $result = $this->sn_config_model->check_youtube_entries();
 
@@ -369,6 +452,96 @@ class Sn_config extends REST_Controller {
         }
 
         $result = $this->sn_config_model->youtube_entry_complete($pid, $ks, $eid);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code 
+    }
+
+    public function sn_livestreams_complete_get() {
+        $pid = $this->get('pid');
+        $eid = $this->get('eid');
+        $ks = $this->get('ks');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing Partner Id'), 200);
+        }
+
+        if (!isset($eid) || $eid == null) {
+
+            $this->response(array('error' => 'Missing Entry Id'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        $result = $this->sn_config_model->sn_livestreams_complete($pid, $ks, $eid);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code 
+    }
+
+    public function create_fb_livestream_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+        $stream_to = $this->get('stream_to');
+        $asset_id = $this->get('asset_id');
+        $privacy = $this->get('privacy');
+        $create_vod = $this->get('create_vod');
+        $cont_streaming = $this->get('cont_streaming');
+        $projection = $this->get('projection');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing Partner Id'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        if (!isset($stream_to) || $stream_to == null) {
+
+            $this->response(array('error' => 'Missing Stream To'), 200);
+        }
+
+        if (!isset($asset_id) || $asset_id == null) {
+
+            $this->response(array('error' => 'Missing Asset Id'), 200);
+        }
+
+        if (!isset($privacy) || $privacy == null) {
+
+            $this->response(array('error' => 'Missing Privacy'), 200);
+        }
+
+        if (!isset($create_vod) || $create_vod == null) {
+
+            $this->response(array('error' => 'Missing Create VOD'), 200);
+        }
+
+        if (!isset($cont_streaming) || $cont_streaming == null) {
+
+            $this->response(array('error' => 'Missing Cont Streaming'), 200);
+        }
+
+        if (!isset($projection) || $projection == null) {
+
+            $this->response(array('error' => 'Missing projection'), 200);
+        }
+
+        $result = $this->sn_config_model->create_fb_livestream($pid, $ks, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection);
 
         if (!$result) {
 
