@@ -1402,9 +1402,17 @@ class Sn_config_model extends CI_Model {
             $user_id = $this->get_fb_user_name($pid);
             $asset = array('asset_type' => 'user', 'asset_id' => $user_id['user_id'], 'access_token' => $access_token);
             $success = array('success' => true, 'asset' => $asset);
-        } else {
+        } else if ($stream_to == 2) {
             $page = $this->get_fb_page($pid, $asset_id);
             $asset = array('asset_type' => 'page', 'asset_id' => $page['page_id'], 'access_token' => $page['access_token']);
+            $success = array('success' => true, 'asset' => $asset);
+        } else if ($stream_to == 3) {
+            $group = $this->get_fb_group($pid, $asset_id);
+            $asset = array('asset_type' => 'group', 'asset_id' => $group['group_id'], 'access_token' => $access_token);
+            $success = array('success' => true, 'asset' => $asset);
+        } else if ($stream_to == 4) {
+            $event = $this->get_fb_event($pid, $asset_id);
+            $asset = array('asset_type' => 'event', 'asset_id' => $event['event_id'], 'access_token' => $access_token);
             $success = array('success' => true, 'asset' => $asset);
         }
         return $success;
@@ -1425,6 +1433,46 @@ class Sn_config_model extends CI_Model {
                 $access_token = $res['page_access_token'];
             }
             $success = array('success' => true, 'page_id' => $page_id, 'access_token' => $access_token);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function get_fb_group($pid, $asset_id) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('facebook_user_groups')
+                ->where('partner_id', $pid)
+                ->where('id', $asset_id);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $group_id = $res['group_id'];
+            }
+            $success = array('success' => true, 'group_id' => $group_id);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function get_fb_event($pid, $asset_id) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('facebook_user_events')
+                ->where('partner_id', $pid)
+                ->where('id', $asset_id);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $event_id = $res['event_id'];
+            }
+            $success = array('success' => true, 'event_id' => $event_id);
         } else {
             $success = array('success' => false);
         }
