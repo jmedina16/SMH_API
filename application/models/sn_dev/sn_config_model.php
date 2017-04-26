@@ -196,11 +196,19 @@ class Sn_config_model extends CI_Model {
         $success = array('success' => false);
         $account_details = $this->get_fb_user_name($pid);
         $pages = $this->get_fb_pages($pid);
+        $groups = $this->get_fb_groups($pid);
+        $events = $this->get_fb_events($pid);
         $settings = $this->get_fb_settings($pid);
         $stream_to_arr = array();
         array_push($stream_to_arr, array('type' => 1, 'id' => $account_details['id'], 'name' => $account_details['user_name']));
         foreach ($pages['pages'] as $page) {
             array_push($stream_to_arr, array('type' => 2, 'id' => $page['id'], 'name' => $page['name']));
+        }
+        foreach ($groups['groups'] as $group) {
+            array_push($stream_to_arr, array('type' => 3, 'id' => $group['id'], 'name' => $group['name']));
+        }
+        foreach ($events['events'] as $event) {
+            array_push($stream_to_arr, array('type' => 4, 'id' => $event['id'], 'name' => $event['name']));
         }
         $success = array('success' => true, 'stream_to' => $stream_to_arr, 'settings' => $settings['settings']);
         return $success;
@@ -256,6 +264,50 @@ class Sn_config_model extends CI_Model {
                 array_push($pages, array('id' => $id, 'name' => $name));
             }
             $success = array('success' => true, 'pages' => $pages);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function get_fb_groups($pid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('facebook_user_groups')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            $groups = array();
+            foreach ($result as $res) {
+                $id = $res['id'];
+                $name = $res['name'];
+                array_push($groups, array('id' => $id, 'name' => $name));
+            }
+            $success = array('success' => true, 'groups' => $groups);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function get_fb_events($pid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('facebook_user_events')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            $events = array();
+            foreach ($result as $res) {
+                $id = $res['id'];
+                $name = $res['name'];
+                array_push($events, array('id' => $id, 'name' => $name));
+            }
+            $success = array('success' => true, 'events' => $events);
         } else {
             $success = array('success' => false);
         }
@@ -586,21 +638,31 @@ class Sn_config_model extends CI_Model {
                             if ($remove_settings['success']) {
                                 $remove_pages = $this->remove_fb_pages($pid);
                                 if ($remove_pages['success']) {
-                                    $remove_livestream = $this->remove_fb_livestream($pid);
-                                    if ($remove_livestream['success']) {
-                                        $remove_live_entries = $this->remove_fb_live_entries($pid);
-                                        if ($remove_live_entries['success']) {
-                                            $update_status = $this->update_sn_config($pid, 'facebook', 0);
-                                            if ($update_status['success']) {
-                                                $success = array('success' => true);
+                                    $remove_groups = $this->remove_fb_groups($pid);
+                                    if ($remove_groups['success']) {
+                                        $remove_events = $this->remove_fb_events($pid);
+                                        if ($remove_events['success']) {
+                                            $remove_livestream = $this->remove_fb_livestream($pid);
+                                            if ($remove_livestream['success']) {
+                                                $remove_live_entries = $this->remove_fb_live_entries($pid);
+                                                if ($remove_live_entries['success']) {
+                                                    $update_status = $this->update_sn_config($pid, 'facebook', 0);
+                                                    if ($update_status['success']) {
+                                                        $success = array('success' => true);
+                                                    } else {
+                                                        $success = array('success' => false);
+                                                    }
+                                                } else {
+                                                    $success = array('success' => false, 'message' => 'Could not remove facebook live entries');
+                                                }
                                             } else {
-                                                $success = array('success' => false);
+                                                $success = array('success' => false, 'message' => 'Could not remove facebook user livestream');
                                             }
                                         } else {
-                                            $success = array('success' => false, 'message' => 'Could not remove facebook live entries');
+                                            $success = array('success' => false, 'message' => 'Could not remove facebook user events');
                                         }
                                     } else {
-                                        $success = array('success' => false, 'message' => 'Could not remove facebook user livestream');
+                                        $success = array('success' => false, 'message' => 'Could not remove facebook user groups');
                                     }
                                 } else {
                                     $success = array('success' => false, 'message' => 'Could not remove facebook user pages');
@@ -660,6 +722,38 @@ class Sn_config_model extends CI_Model {
         if ($this->check_fb_pages($pid)) {
             $this->config->where('partner_id = "' . $pid . '"');
             $this->config->delete('facebook_user_pages');
+            if ($this->config->affected_rows() > 0) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false);
+            }
+        } else {
+            $success = array('success' => true);
+        }
+        return $success;
+    }
+
+    public function remove_fb_groups($pid) {
+        $success = array('success' => false);
+        if ($this->check_fb_groups($pid)) {
+            $this->config->where('partner_id = "' . $pid . '"');
+            $this->config->delete('facebook_user_groups');
+            if ($this->config->affected_rows() > 0) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false);
+            }
+        } else {
+            $success = array('success' => true);
+        }
+        return $success;
+    }
+
+    public function remove_fb_events($pid) {
+        $success = array('success' => false);
+        if ($this->check_fb_events($pid)) {
+            $this->config->where('partner_id = "' . $pid . '"');
+            $this->config->delete('facebook_user_events');
             if ($this->config->affected_rows() > 0) {
                 $success = array('success' => true);
             } else {
@@ -762,6 +856,36 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function check_fb_groups($pid) {
+        $success = false;
+        $this->config->select('*')
+                ->from('facebook_user_groups')
+                ->where('partner_id', $pid);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
+        return $success;
+    }
+
+    public function check_fb_events($pid) {
+        $success = false;
+        $this->config->select('*')
+                ->from('facebook_user_events')
+                ->where('partner_id', $pid);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
+        return $success;
+    }
+
     public function get_yt_live_events($pid) {
         $success = array('success' => false);
         $this->config->select('*')
@@ -818,6 +942,26 @@ class Sn_config_model extends CI_Model {
             } else {
                 $success = array('success' => true);
             }
+            if (count($tokens['groups']) > 0) {
+                $groups_response = $this->update_facebook_groups($pid, $tokens['groups']);
+                if ($groups_response['success']) {
+                    $success = array('success' => true);
+                } else {
+                    $success = array('success' => false);
+                }
+            } else {
+                $success = array('success' => true);
+            }
+            if (count($tokens['events']) > 0) {
+                $events_response = $this->update_facebook_events($pid, $tokens['events']);
+                if ($events_response['success']) {
+                    $success = array('success' => true);
+                } else {
+                    $success = array('success' => false);
+                }
+            } else {
+                $success = array('success' => true);
+            }
         } else {
             $success = array('success' => false);
         }
@@ -831,6 +975,26 @@ class Sn_config_model extends CI_Model {
             if (count($tokens['pages']) > 0) {
                 $pages_response = $this->insert_facebook_pages($pid, $tokens['pages']);
                 if ($pages_response['success']) {
+                    $success = array('success' => true);
+                } else {
+                    $success = array('success' => false);
+                }
+            } else {
+                $success = array('success' => true);
+            }
+            if (count($tokens['groups']) > 0) {
+                $groups_response = $this->insert_facebook_groups($pid, $tokens['groups']);
+                if ($groups_response['success']) {
+                    $success = array('success' => true);
+                } else {
+                    $success = array('success' => false);
+                }
+            } else {
+                $success = array('success' => true);
+            }
+            if (count($tokens['events']) > 0) {
+                $events_response = $this->insert_facebook_events($pid, $tokens['events']);
+                if ($events_response['success']) {
                     $success = array('success' => true);
                 } else {
                     $success = array('success' => false);
@@ -928,6 +1092,112 @@ class Sn_config_model extends CI_Model {
                 'created_at' => date("Y-m-d H:i:s")
             );
             $this->config->insert('facebook_user_pages', $data);
+            $this->config->limit(1);
+            if ($this->config->affected_rows() > 0) {
+                $success = array('success' => true);
+            }
+        }
+        return $success;
+    }
+
+    public function update_facebook_groups($pid, $groups) {
+        $success = array('success' => false);
+        $remove_groups = $this->remove_facebook_groups($pid);
+        if ($remove_groups['success']) {
+            foreach ($groups as $group) {
+                $data = array(
+                    'partner_id' => $pid,
+                    'group_id' => $group['group_id'],
+                    'name' => $group['group_name'],
+                    'created_at' => date("Y-m-d H:i:s")
+                );
+                $this->config->insert('facebook_user_groups', $data);
+                $this->config->limit(1);
+                if ($this->config->affected_rows() > 0) {
+                    $success = array('success' => true);
+                }
+            }
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function remove_facebook_groups($pid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id = "' . $pid . '"');
+        $this->config->delete('facebook_user_groups');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function insert_facebook_groups($pid, $groups) {
+        $success = array('success' => false);
+        foreach ($groups as $group) {
+            $data = array(
+                'partner_id' => $pid,
+                'group_id' => $group['group_id'],
+                'name' => $group['group_name'],
+                'created_at' => date("Y-m-d H:i:s")
+            );
+            $this->config->insert('facebook_user_groups', $data);
+            $this->config->limit(1);
+            if ($this->config->affected_rows() > 0) {
+                $success = array('success' => true);
+            }
+        }
+        return $success;
+    }
+
+    public function update_facebook_events($pid, $events) {
+        $success = array('success' => false);
+        $remove_events = $this->remove_facebook_events($pid);
+        if ($remove_events['success']) {
+            foreach ($events as $event) {
+                $data = array(
+                    'partner_id' => $pid,
+                    'event_id' => $event['event_id'],
+                    'name' => $event['event_name'],
+                    'created_at' => date("Y-m-d H:i:s")
+                );
+                $this->config->insert('facebook_user_events', $data);
+                $this->config->limit(1);
+                if ($this->config->affected_rows() > 0) {
+                    $success = array('success' => true);
+                }
+            }
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function remove_facebook_events($pid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id = "' . $pid . '"');
+        $this->config->delete('facebook_user_events');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function insert_facebook_events($pid, $events) {
+        $success = array('success' => false);
+        foreach ($events as $event) {
+            $data = array(
+                'partner_id' => $pid,
+                'event_id' => $event['event_id'],
+                'name' => $event['event_name'],
+                'created_at' => date("Y-m-d H:i:s")
+            );
+            $this->config->insert('facebook_user_events', $data);
             $this->config->limit(1);
             if ($this->config->affected_rows() > 0) {
                 $success = array('success' => true);
