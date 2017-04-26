@@ -177,7 +177,6 @@ class Facebook_client_api {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         $response = curl_exec($ch);
         $response = json_decode($response, true);
-
         if (isset($response['code'])) {
             $success = array('success' => true, 'code' => $response['code']);
         } else {
