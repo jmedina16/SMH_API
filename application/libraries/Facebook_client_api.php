@@ -34,11 +34,9 @@ class Facebook_client_api {
             $user_details = $this->get_user_details($user_access_token['access_token']);
             $user = array('user_name' => $user_details['user_name'], 'user_id' => $user_details['user_id'], 'access_token' => $user_access_token['access_token']);
             $pages_details = $this->get_pages_details($user_access_token['access_token'], $user_details['user_id']);
-            if ($pages_details['success']) {
-                $success = array('success' => true, 'user' => $user, 'pages' => $pages_details['pages']);
-            } else {
-                $success = array('success' => true, 'user' => $user, 'pages' => array());
-            }
+            $groups_details = $this->get_groups_details($user_access_token['access_token'], $user_details['user_id']);
+            $events_details = $this->get_events_details($user_access_token['access_token'], $user_details['user_id']);
+            $success = array('success' => true, 'user' => $user, 'pages' => $pages_details['pages'], 'groups' => $groups_details['groups'], 'events' => $events_details['events']);
         } else {
             $success = array('success' => false);
         }
@@ -76,14 +74,72 @@ class Facebook_client_api {
             ]);
             $response = $fb->get('/' . $user_id . '/accounts', $access_token);
             $pageList = $response->getGraphEdge()->asArray();
+            $pages = array();
             if (count($pageList) > 0) {
-                $pages = array();
                 foreach ($pageList as $page) {
                     array_push($pages, array('page_name' => $page['name'], 'page_id' => $page['id'], 'access_token' => $page['access_token']));
                 }
                 $success = array('success' => true, 'pages' => $pages);
             } else {
-                $success = array('success' => false);
+                $success = array('success' => false, 'pages' => $pages);
+            }
+            return $success;
+        } catch (\Facebook\Exceptions\FacebookResponseException $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
+            exit;
+        } catch (\Facebook\Exceptions\FacebookSDKException $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
+            exit;
+        }
+    }
+
+    public function get_groups_details($access_token, $user_id) {
+        $success = array('success' => false);
+        try {
+            $fb = new Facebook\Facebook([
+                'app_id' => $this->OAUTH2_CLIENT_ID,
+                'app_secret' => $this->OAUTH2_CLIENT_SECRET,
+                'default_graph_version' => $this->GRAPH_VERSION,
+            ]);
+            $response = $fb->get('/' . $user_id . '/groups', $access_token);
+            $groupList = $response->getGraphEdge()->asArray();
+            $groups = array();
+            if (count($groupList) > 0) {
+                foreach ($groupList as $group) {
+                    array_push($groups, array('group_name' => $group['name'], 'group_id' => $group['id']));
+                }
+                $success = array('success' => true, 'groups' => $groups);
+            } else {
+                $success = array('success' => false, 'groups' => $groups);
+            }
+            return $success;
+        } catch (\Facebook\Exceptions\FacebookResponseException $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
+            exit;
+        } catch (\Facebook\Exceptions\FacebookSDKException $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
+            exit;
+        }
+    }
+
+    public function get_events_details($access_token, $user_id) {
+        $success = array('success' => false);
+        try {
+            $fb = new Facebook\Facebook([
+                'app_id' => $this->OAUTH2_CLIENT_ID,
+                'app_secret' => $this->OAUTH2_CLIENT_SECRET,
+                'default_graph_version' => $this->GRAPH_VERSION,
+            ]);
+            $response = $fb->get('/' . $user_id . '/events', $access_token);
+            $eventsList = $response->getGraphEdge()->asArray();
+            $events = array();
+            if (count($eventsList) > 0) {
+                foreach ($eventsList as $event) {
+                    array_push($events, array('event_name' => $event['name'], 'event_id' => $event['id']));
+                }
+                $success = array('success' => true, 'events' => $events);
+            } else {
+                $success = array('success' => false, 'events' => $events);
             }
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
