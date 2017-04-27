@@ -3327,13 +3327,13 @@ class Sn_config_model extends CI_Model {
                         $page_found = false;
                         $group_found = false;
                         $event_found = false;
-                        if ($stream_to === 2) {
+                        if ($stream_to == 2) {
                             $get_fb_page = $this->get_fb_page($pid, $asset_id);
                             $page_id = $get_fb_page['page_id'];
-                        } else if ($stream_to === 3) {
+                        } else if ($stream_to == 3) {
                             $get_fb_group = $this->get_fb_group($pid, $asset_id);
                             $group_id = $get_fb_group['group_id'];
-                        } else if ($stream_to === 4) {
+                        } else if ($stream_to == 4) {
                             $get_fb_event = $this->get_fb_event($pid, $asset_id);
                             $event_id = $get_fb_event['event_id'];
                         }
@@ -3358,7 +3358,7 @@ class Sn_config_model extends CI_Model {
                         $update_facebook_pages = $this->update_facebook_pages($pid, $pages);
                     }
                     if ($stream_to == 2) {
-                        if (count($pages) > 1) {
+                        if (count($pages) > 0) {
                             foreach ($pages as $page) {
                                 if ($page_id == $page['page_id']) {
                                     $page_found = true;
@@ -3385,7 +3385,7 @@ class Sn_config_model extends CI_Model {
                         $update_facebook_groups = $this->update_facebook_groups($pid, $groups);
                     }
                     if ($stream_to == 3) {
-                        if (count($groups) > 1) {
+                        if (count($groups) > 0) {
                             foreach ($groups as $group) {
                                 if ($group_id == $group['group_id']) {
                                     $group_found = true;
@@ -3401,8 +3401,6 @@ class Sn_config_model extends CI_Model {
 
                     $get_events_details = $this->facebook_client_api->get_events_details($access_token['access_token'], $user_id);
                     $events = $get_events_details['events'];
-                    syslog(LOG_NOTICE, "SMH DEBUG : events: " . print_r($events, true));
-                    syslog(LOG_NOTICE, "SMH DEBUG : events_count: " . count($events));
                     if ($this->check_fb_events($pid)) {
                         $remove_events = $this->remove_facebook_events($pid);
                         if ($remove_events['success']) {
@@ -3414,10 +3412,8 @@ class Sn_config_model extends CI_Model {
                         $update_facebook_events = $this->update_facebook_events($pid, $events);
                     }
                     if ($stream_to == 4) {
-                        if (count($events) > 1) {
-                            syslog(LOG_NOTICE, "SMH DEBUG : old_event_id: " . $event_id);
+                        if (count($events) > 0) {
                             foreach ($events as $event) {
-                                syslog(LOG_NOTICE, "SMH DEBUG : new_event_id: " . $event['event_id']);
                                 if ($event_id == $event['event_id']) {
                                     $event_found = true;
                                 }
@@ -3430,16 +3426,7 @@ class Sn_config_model extends CI_Model {
                         }
                     }
 
-                    if (($stream_to == 2 || $stream_to == 3 || $stream_to == 4)) {
-                        syslog(LOG_NOTICE, "SMH DEBUG : stream_to: " . $stream_to);
-                        syslog(LOG_NOTICE, "SMH DEBUG : page_found: " . $page_found);
-                        syslog(LOG_NOTICE, "SMH DEBUG : group_found: " . $group_found);
-                        syslog(LOG_NOTICE, "SMH DEBUG : event_found: " . $event_found);
-                    }
-
-
                     if (($stream_to == 2 || $stream_to == 3 || $stream_to == 4) && (!$page_found && !$group_found && !$event_found)) {
-                        syslog(LOG_NOTICE, "SMH DEBUG : IS INSIDE");
                         $remove_fb_settings = $this->remove_fb_settings($pid);
                         if ($remove_fb_settings['success']) {
                             $remove_livestream = $this->remove_fb_livestream($pid);
