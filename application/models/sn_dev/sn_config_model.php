@@ -3220,6 +3220,50 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function resync_fb_account($pid, $ks) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $access_token = $this->validate_facebook_token($pid);
+                if ($access_token['success']) {
+                    $get_fb_settings = $this->get_fb_settings($pid);
+                    $stream_to = $get_fb_settings['settings'][0]['stream_to'];
+                    $asset_id = $get_fb_settings['settings'][0]['asset_id'];
+                    
+                    $success = array('success' => true, 'stream_to' => $stream_to, 'asset_id' => $asset_id);
+                    
+//                    $get_user_details = $this->facebook_client_api->get_user_details($access_token['access_token']);
+//                    $user_name = $get_user_details['user_name'];
+//                    $user_id = $get_user_details['user_id'];
+//                    $user = array('user_id' => $user_id, 'user_name' => $user_name, 'access_token' => $access_token['access_token']);
+//                    $update_facebook_profile = $this->update_facebook_profile($pid, $user);
+//                    
+//                    $get_pages_details = $this->facebook_client_api->get_pages_details($access_token['access_token'], $user_id);
+//                    $pages = $get_pages_details['pages'];
+//                    $update_facebook_pages = $this->update_facebook_pages($pid, $pages);
+//                    
+//                    $get_groups_details = $this->facebook_client_api->get_groups_details($access_token['access_token'], $user_id);
+//                    $groups = $get_groups_details['groups'];
+//                    $update_facebook_groups = $this->update_facebook_groups($pid, $groups);
+//                    
+//                    $get_events_details = $this->facebook_client_api->get_events_details($access_token['access_token'], $user_id);
+//                    $events = $get_events_details['events'];
+//                    $update_facebook_events = $this->update_facebook_events($pid, $events);
+                    
+                } else {
+                    $success = array('success' => false, 'message' => 'Facebook: invalid access token');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Social network service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+        return $success;
+    }
+
     public function finalize_address_url($url) {
         $parse_url = parse_url($url);
         $scheme = $parse_url['scheme'];
