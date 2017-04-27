@@ -270,6 +270,26 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function get_fb_page_asset_id($pid, $page_id) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('facebook_user_pages')
+                ->where('page_id', $page_id)
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $id = $res['id'];
+            }
+            $success = array('success' => true, 'id' => $id);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
     public function get_fb_groups($pid) {
         $success = array('success' => false);
         $this->config->select('*')
@@ -292,6 +312,26 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function get_fb_group_asset_id($pid, $group_id) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('facebook_user_groups')
+                ->where('group_id', $group_id)
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $id = $res['id'];
+            }
+            $success = array('success' => true, 'id' => $id);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
     public function get_fb_events($pid) {
         $success = array('success' => false);
         $this->config->select('*')
@@ -308,6 +348,26 @@ class Sn_config_model extends CI_Model {
                 array_push($events, array('id' => $id, 'name' => $name));
             }
             $success = array('success' => true, 'events' => $events);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function get_fb_event_asset_id($pid, $event_id) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('facebook_user_events')
+                ->where('event_id', $event_id)
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $id = $res['id'];
+            }
+            $success = array('success' => true, 'id' => $id);
         } else {
             $success = array('success' => false);
         }
@@ -1058,7 +1118,6 @@ class Sn_config_model extends CI_Model {
                     'created_at' => date("Y-m-d H:i:s")
                 );
                 $this->config->insert('facebook_user_pages', $data);
-                $this->config->limit(1);
                 if ($this->config->affected_rows() > 0) {
                     $success = array('success' => true);
                 }
@@ -1292,6 +1351,22 @@ class Sn_config_model extends CI_Model {
         $this->config->where('partner_id', $pid);
         $this->config->update('facebook_user_settings', $data);
         $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'notice' => 'no changes were made');
+        }
+        return $success;
+    }
+
+    public function update_fb_settings_asset_id($pid, $asset_id) {
+        $success = array('success' => false);
+        $data = array(
+            'asset_id' => $asset_id,
+            'updated_at' => date("Y-m-d H:i:s")
+        );
+        $this->config->where('partner_id', $pid);
+        $this->config->update('facebook_user_settings', $data);
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
         } else {
@@ -3227,31 +3302,101 @@ class Sn_config_model extends CI_Model {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
                 $access_token = $this->validate_facebook_token($pid);
+                $found_settings = false;
+                $stream_to = 0;
                 if ($access_token['success']) {
                     $get_fb_settings = $this->get_fb_settings($pid);
-                    $stream_to = $get_fb_settings['settings'][0]['stream_to'];
-                    $asset_id = $get_fb_settings['settings'][0]['asset_id'];
-                    
-                    $success = array('success' => true, 'stream_to' => $stream_to, 'asset_id' => $asset_id);
-                    
-//                    $get_user_details = $this->facebook_client_api->get_user_details($access_token['access_token']);
-//                    $user_name = $get_user_details['user_name'];
-//                    $user_id = $get_user_details['user_id'];
-//                    $user = array('user_id' => $user_id, 'user_name' => $user_name, 'access_token' => $access_token['access_token']);
-//                    $update_facebook_profile = $this->update_facebook_profile($pid, $user);
-//                    
-//                    $get_pages_details = $this->facebook_client_api->get_pages_details($access_token['access_token'], $user_id);
-//                    $pages = $get_pages_details['pages'];
-//                    $update_facebook_pages = $this->update_facebook_pages($pid, $pages);
-//                    
-//                    $get_groups_details = $this->facebook_client_api->get_groups_details($access_token['access_token'], $user_id);
-//                    $groups = $get_groups_details['groups'];
-//                    $update_facebook_groups = $this->update_facebook_groups($pid, $groups);
-//                    
-//                    $get_events_details = $this->facebook_client_api->get_events_details($access_token['access_token'], $user_id);
-//                    $events = $get_events_details['events'];
-//                    $update_facebook_events = $this->update_facebook_events($pid, $events);
-                    
+                    if ($get_fb_settings['success']) {
+                        $found_settings = true;
+                    }
+                    if ($found_settings) {
+                        $stream_to = $get_fb_settings['settings'][0]['stream_to'];
+                        $asset_id = $get_fb_settings['settings'][0]['asset_id'];
+                        $page_found = false;
+                        $group_found = false;
+                        $event_found = false;
+                        if ($stream_to === 2) {
+                            $get_fb_page = $this->get_fb_page($pid, $asset_id);
+                            $page_id = $get_fb_page['page_id'];
+                        } else if ($stream_to === 3) {
+                            $get_fb_group = $this->get_fb_group($pid, $asset_id);
+                            $group_id = $get_fb_group['group_id'];
+                        } else if ($stream_to === 4) {
+                            $get_fb_event = $this->get_fb_event($pid, $asset_id);
+                            $event_id = $get_fb_event['event_id'];
+                        }
+                    }
+
+                    $get_user_details = $this->facebook_client_api->get_user_details($access_token['access_token']);
+                    $user_name = $get_user_details['user_name'];
+                    $user_id = $get_user_details['user_id'];
+                    $user = array('user_id' => $user_id, 'user_name' => $user_name, 'access_token' => $access_token['access_token']);
+                    $update_facebook_profile = $this->update_facebook_profile($pid, $user);
+
+                    $get_pages_details = $this->facebook_client_api->get_pages_details($access_token['access_token'], $user_id);
+                    $pages = $get_pages_details['pages'];
+                    $update_facebook_pages = $this->update_facebook_pages($pid, $pages);
+                    if ($stream_to === 2) {
+                        if (count($pages) > 1) {
+                            foreach ($pages as $page) {
+                                if ($page_id === $page['page_id']) {
+                                    $page_found = true;
+                                }
+                            }
+                            if ($page_found) {
+                                $get_fb_page_asset_id = $this->get_fb_page_asset_id($pid, $page_id);
+                                $new_page_asset_id = $get_fb_page_asset_id['id'];
+                                $this->update_fb_settings_asset_id($pid, $new_page_asset_id);
+                            }
+                        }
+                    }
+
+                    $get_groups_details = $this->facebook_client_api->get_groups_details($access_token['access_token'], $user_id);
+                    $groups = $get_groups_details['groups'];
+                    $update_facebook_groups = $this->update_facebook_groups($pid, $groups);
+                    if ($stream_to === 3) {
+                        if (count($groups) > 1) {
+                            foreach ($groups as $group) {
+                                if ($group_id === $group['group_id']) {
+                                    $group_found = true;
+                                }
+                            }
+                            if ($group_found) {
+                                $get_fb_group_asset_id = $this->get_fb_group_asset_id($pid, $group_id);
+                                $new_group_asset_id = $get_fb_group_asset_id['id'];
+                                $this->update_fb_settings_asset_id($pid, $new_group_asset_id);
+                            }
+                        }
+                    }
+
+                    $get_events_details = $this->facebook_client_api->get_events_details($access_token['access_token'], $user_id);
+                    $events = $get_events_details['events'];
+                    syslog(LOG_NOTICE, "SMH DEBUG : Events: " . print_r($events, true));
+                    $update_facebook_events = $this->update_facebook_events($pid, $events);
+                    if ($stream_to === 4) {
+                        if (count($events) > 1) {
+                            foreach ($events as $event) {
+                                if ($event_id === $event['event_id']) {
+                                    $event_found = true;
+                                }
+                            }
+                            if ($event_found) {
+                                $get_fb_event_asset_id = $this->get_fb_event_asset_id($pid, $event_id);
+                                $new_event_asset_id = $get_fb_event_asset_id['id'];
+                                $this->update_fb_settings_asset_id($pid, $new_event_asset_id);
+                            }
+                        }
+                    }
+                    $success = array('success' => true);
+
+                    if (($stream_to === 2 || $stream_to === 3 || $stream_to === 4) && (!$page_found && !$group_found && !$event_found)) {
+                        $remove_fb_settings = $this->remove_fb_settings($pid);
+                        if ($remove_fb_settings['success']) {
+                            $success = array('success' => true);
+                        } else {
+                            $success = array('success' => false);
+                        }
+                    }
                 } else {
                     $success = array('success' => false, 'message' => 'Facebook: invalid access token');
                 }
