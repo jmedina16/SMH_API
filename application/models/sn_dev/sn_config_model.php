@@ -993,7 +993,16 @@ class Sn_config_model extends CI_Model {
         $user_response = $this->update_facebook_profile($pid, $tokens['user']);
         if ($user_response['success']) {
             if (count($tokens['pages']) > 0) {
-                $pages_response = $this->update_facebook_pages($pid, $tokens['pages']);
+                if ($this->check_fb_pages($pid)) {
+                    $remove_pages = $this->remove_facebook_pages($pid);
+                    if ($remove_pages['success']) {
+                        $pages_response = $this->update_facebook_pages($pid, $tokens['pages']);
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not remove facebook pages');
+                    }
+                } else {
+                    $pages_response = $this->update_facebook_pages($pid, $tokens['pages']);
+                }
                 if ($pages_response['success']) {
                     $success = array('success' => true);
                 } else {
@@ -1003,7 +1012,16 @@ class Sn_config_model extends CI_Model {
                 $success = array('success' => true);
             }
             if (count($tokens['groups']) > 0) {
-                $groups_response = $this->update_facebook_groups($pid, $tokens['groups']);
+                if ($this->check_fb_groups($pid)) {
+                    $remove_groups = $this->remove_facebook_groups($pid);
+                    if ($remove_groups['success']) {
+                        $groups_response = $this->update_facebook_groups($pid, $tokens['groups']);
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not remove facebook groups');
+                    }
+                } else {
+                    $groups_response = $this->update_facebook_groups($pid, $tokens['groups']);
+                }
                 if ($groups_response['success']) {
                     $success = array('success' => true);
                 } else {
@@ -1013,7 +1031,16 @@ class Sn_config_model extends CI_Model {
                 $success = array('success' => true);
             }
             if (count($tokens['events']) > 0) {
-                $events_response = $this->update_facebook_events($pid, $tokens['events']);
+                if ($this->check_fb_events($pid)) {
+                    $remove_events = $this->remove_facebook_events($pid);
+                    if ($remove_events['success']) {
+                        $events_response = $this->update_facebook_events($pid, $tokens['events']);
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not remove facebook events');
+                    }
+                } else {
+                    $events_response = $this->update_facebook_events($pid, $tokens['events']);
+                }
                 if ($events_response['success']) {
                     $success = array('success' => true);
                 } else {
@@ -1107,23 +1134,18 @@ class Sn_config_model extends CI_Model {
 
     public function update_facebook_pages($pid, $pages) {
         $success = array('success' => false);
-        $remove_pages = $this->remove_facebook_pages($pid);
-        if ($remove_pages['success']) {
-            foreach ($pages as $page) {
-                $data = array(
-                    'partner_id' => $pid,
-                    'page_id' => $page['page_id'],
-                    'name' => $page['page_name'],
-                    'page_access_token' => $page['access_token'],
-                    'created_at' => date("Y-m-d H:i:s")
-                );
-                $this->config->insert('facebook_user_pages', $data);
-                if ($this->config->affected_rows() > 0) {
-                    $success = array('success' => true);
-                }
+        foreach ($pages as $page) {
+            $data = array(
+                'partner_id' => $pid,
+                'page_id' => $page['page_id'],
+                'name' => $page['page_name'],
+                'page_access_token' => $page['access_token'],
+                'created_at' => date("Y-m-d H:i:s")
+            );
+            $this->config->insert('facebook_user_pages', $data);
+            if ($this->config->affected_rows() > 0) {
+                $success = array('success' => true);
             }
-        } else {
-            $success = array('success' => false);
         }
         return $success;
     }
@@ -1161,23 +1183,18 @@ class Sn_config_model extends CI_Model {
 
     public function update_facebook_groups($pid, $groups) {
         $success = array('success' => false);
-        $remove_groups = $this->remove_facebook_groups($pid);
-        if ($remove_groups['success']) {
-            foreach ($groups as $group) {
-                $data = array(
-                    'partner_id' => $pid,
-                    'group_id' => $group['group_id'],
-                    'name' => $group['group_name'],
-                    'created_at' => date("Y-m-d H:i:s")
-                );
-                $this->config->insert('facebook_user_groups', $data);
-                $this->config->limit(1);
-                if ($this->config->affected_rows() > 0) {
-                    $success = array('success' => true);
-                }
+        foreach ($groups as $group) {
+            $data = array(
+                'partner_id' => $pid,
+                'group_id' => $group['group_id'],
+                'name' => $group['group_name'],
+                'created_at' => date("Y-m-d H:i:s")
+            );
+            $this->config->insert('facebook_user_groups', $data);
+            $this->config->limit(1);
+            if ($this->config->affected_rows() > 0) {
+                $success = array('success' => true);
             }
-        } else {
-            $success = array('success' => false);
         }
         return $success;
     }
@@ -1214,23 +1231,18 @@ class Sn_config_model extends CI_Model {
 
     public function update_facebook_events($pid, $events) {
         $success = array('success' => false);
-        $remove_events = $this->remove_facebook_events($pid);
-        if ($remove_events['success']) {
-            foreach ($events as $event) {
-                $data = array(
-                    'partner_id' => $pid,
-                    'event_id' => $event['event_id'],
-                    'name' => $event['event_name'],
-                    'created_at' => date("Y-m-d H:i:s")
-                );
-                $this->config->insert('facebook_user_events', $data);
-                $this->config->limit(1);
-                if ($this->config->affected_rows() > 0) {
-                    $success = array('success' => true);
-                }
+        foreach ($events as $event) {
+            $data = array(
+                'partner_id' => $pid,
+                'event_id' => $event['event_id'],
+                'name' => $event['event_name'],
+                'created_at' => date("Y-m-d H:i:s")
+            );
+            $this->config->insert('facebook_user_events', $data);
+            $this->config->limit(1);
+            if ($this->config->affected_rows() > 0) {
+                $success = array('success' => true);
             }
-        } else {
-            $success = array('success' => false);
         }
         return $success;
     }
@@ -3335,7 +3347,16 @@ class Sn_config_model extends CI_Model {
 
                     $get_pages_details = $this->facebook_client_api->get_pages_details($access_token['access_token'], $user_id);
                     $pages = $get_pages_details['pages'];
-                    $update_facebook_pages = $this->update_facebook_pages($pid, $pages);
+                    if ($this->check_fb_pages($pid)) {
+                        $remove_pages = $this->remove_facebook_pages($pid);
+                        if ($remove_pages['success']) {
+                            $update_facebook_pages = $this->update_facebook_pages($pid, $pages);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not remove facebook pages');
+                        }
+                    } else {
+                        $update_facebook_pages = $this->update_facebook_pages($pid, $pages);
+                    }
                     if ($stream_to === 2) {
                         if (count($pages) > 1) {
                             foreach ($pages as $page) {
@@ -3353,7 +3374,16 @@ class Sn_config_model extends CI_Model {
 
                     $get_groups_details = $this->facebook_client_api->get_groups_details($access_token['access_token'], $user_id);
                     $groups = $get_groups_details['groups'];
-                    $update_facebook_groups = $this->update_facebook_groups($pid, $groups);
+                    if ($this->check_fb_groups($pid)) {
+                        $remove_groups = $this->remove_facebook_groups($pid);
+                        if ($remove_groups['success']) {
+                            $update_facebook_groups = $this->update_facebook_groups($pid, $groups);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not remove facebook groups');
+                        }
+                    } else {
+                        $update_facebook_groups = $this->update_facebook_groups($pid, $groups);
+                    }
                     if ($stream_to === 3) {
                         if (count($groups) > 1) {
                             foreach ($groups as $group) {
@@ -3371,8 +3401,16 @@ class Sn_config_model extends CI_Model {
 
                     $get_events_details = $this->facebook_client_api->get_events_details($access_token['access_token'], $user_id);
                     $events = $get_events_details['events'];
-                    syslog(LOG_NOTICE, "SMH DEBUG : Events: " . print_r($events, true));
-                    $update_facebook_events = $this->update_facebook_events($pid, $events);
+                    if ($this->check_fb_events($pid)) {
+                        $remove_events = $this->remove_facebook_events($pid);
+                        if ($remove_events['success']) {
+                            $update_facebook_events = $this->update_facebook_events($pid, $events);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not remove facebook events');
+                        }
+                    } else {
+                        $update_facebook_events = $this->update_facebook_events($pid, $events);
+                    }
                     if ($stream_to === 4) {
                         if (count($events) > 1) {
                             foreach ($events as $event) {
@@ -3387,15 +3425,23 @@ class Sn_config_model extends CI_Model {
                             }
                         }
                     }
-                    $success = array('success' => true);
 
                     if (($stream_to === 2 || $stream_to === 3 || $stream_to === 4) && (!$page_found && !$group_found && !$event_found)) {
                         $remove_fb_settings = $this->remove_fb_settings($pid);
                         if ($remove_fb_settings['success']) {
-                            $success = array('success' => true);
+                            $remove_livestream = $this->remove_fb_livestream($pid);
+                            if ($remove_livestream['success']) {
+                                $livestream_settings = $this->get_fb_ls_settings($pid);
+                                $success = array('success' => true, 'stream_to' => $livestream_settings['stream_to'], 'settings' => $livestream_settings['settings']);
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not remove facebook user livestream');
+                            }
                         } else {
                             $success = array('success' => false);
                         }
+                    } else {
+                        $livestream_settings = $this->get_fb_ls_settings($pid);
+                        $success = array('success' => true, 'stream_to' => $livestream_settings['stream_to'], 'settings' => $livestream_settings['settings']);
                     }
                 } else {
                     $success = array('success' => false, 'message' => 'Facebook: invalid access token');
