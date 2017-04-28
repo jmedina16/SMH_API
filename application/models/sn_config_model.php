@@ -2248,6 +2248,26 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function get_youtube_broadcast_id($pid, $eid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('youtube_live_events')
+                ->where('partner_id', $pid)
+                ->where('entryId', $eid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $bid = $this->smcipher->decrypt($res['liveBroadcastId']);
+            }
+            $success = array('success' => true, 'bid' => $bid);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
     public function get_youtube_embed_status($pid) {
         $success = array('success' => false);
         $this->config->select('*')
