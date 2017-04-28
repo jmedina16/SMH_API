@@ -369,7 +369,7 @@ class Sn_config extends REST_Controller {
             $this->response(array('error' => 'Missing eid'), 200);
         }
 
-        $result = $this->sn_config_model->get_youtube_event_ids($pid, $eid);
+        $result = $this->sn_config_model->get_youtube_broadcast_id($pid, $eid);
 
         if (!$result) {
 
