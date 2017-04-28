@@ -142,7 +142,7 @@ class Sn_config_model extends CI_Model {
         $result = $query->result_array();
         if ($query->num_rows() > 0) {
             foreach ($result as $res) {
-                $access_token = $res['user_access_token'];
+                $access_token = $this->smcipher->decrypt($res['user_access_token']);
             }
             $token_valid = $this->facebook_client_api->checkAuthToken($access_token);
             if ($token_valid['success']) {
@@ -238,7 +238,7 @@ class Sn_config_model extends CI_Model {
         if ($query->num_rows() > 0) {
             foreach ($result as $res) {
                 $name = $res['name'];
-                $user_id = $res['user_id'];
+                $user_id = $this->smcipher->decrypt($res['user_id']);
                 $id = $res['id'];
             }
             $success = array('success' => true, 'user_name' => $name, 'user_id' => $user_id, 'id' => $id);
@@ -685,7 +685,7 @@ class Sn_config_model extends CI_Model {
                 $result = $query->result_array();
                 if ($query->num_rows() > 0) {
                     foreach ($result as $res) {
-                        $access_token = $res['user_access_token'];
+                        $access_token = $this->smcipher->decrypt($res['user_access_token']);
                     }
                 }
                 $user = $this->get_fb_user_name($pid);
@@ -996,12 +996,12 @@ class Sn_config_model extends CI_Model {
                 if ($this->check_fb_pages($pid)) {
                     $remove_pages = $this->remove_facebook_pages($pid);
                     if ($remove_pages['success']) {
-                        $pages_response = $this->update_facebook_pages($pid, $tokens['pages']);
+                        $pages_response = $this->insert_facebook_pages($pid, $tokens['pages']);
                     } else {
                         $success = array('success' => false, 'message' => 'Could not remove facebook pages');
                     }
                 } else {
-                    $pages_response = $this->update_facebook_pages($pid, $tokens['pages']);
+                    $pages_response = $this->insert_facebook_pages($pid, $tokens['pages']);
                 }
                 if ($pages_response['success']) {
                     $success = array('success' => true);
@@ -1015,12 +1015,12 @@ class Sn_config_model extends CI_Model {
                 if ($this->check_fb_groups($pid)) {
                     $remove_groups = $this->remove_facebook_groups($pid);
                     if ($remove_groups['success']) {
-                        $groups_response = $this->update_facebook_groups($pid, $tokens['groups']);
+                        $groups_response = $this->insert_facebook_groups($pid, $tokens['groups']);
                     } else {
                         $success = array('success' => false, 'message' => 'Could not remove facebook groups');
                     }
                 } else {
-                    $groups_response = $this->update_facebook_groups($pid, $tokens['groups']);
+                    $groups_response = $this->insert_facebook_groups($pid, $tokens['groups']);
                 }
                 if ($groups_response['success']) {
                     $success = array('success' => true);
@@ -1034,12 +1034,12 @@ class Sn_config_model extends CI_Model {
                 if ($this->check_fb_events($pid)) {
                     $remove_events = $this->remove_facebook_events($pid);
                     if ($remove_events['success']) {
-                        $events_response = $this->update_facebook_events($pid, $tokens['events']);
+                        $events_response = $this->insert_facebook_events($pid, $tokens['events']);
                     } else {
                         $success = array('success' => false, 'message' => 'Could not remove facebook events');
                     }
                 } else {
-                    $events_response = $this->update_facebook_events($pid, $tokens['events']);
+                    $events_response = $this->insert_facebook_events($pid, $tokens['events']);
                 }
                 if ($events_response['success']) {
                     $success = array('success' => true);
@@ -1098,9 +1098,9 @@ class Sn_config_model extends CI_Model {
     public function update_facebook_profile($pid, $user) {
         $success = array('success' => false);
         $data = array(
-            'user_id' => $user['user_id'],
+            'user_id' => $this->smcipher->encrypt($user['user_id']),
             'name' => $user['user_name'],
-            'user_access_token' => $user['access_token'],
+            'user_access_token' => $this->smcipher->encrypt($user['access_token']),
             'updated_at' => date("Y-m-d H:i:s")
         );
         $this->config->where('partner_id', $pid);
@@ -1117,9 +1117,9 @@ class Sn_config_model extends CI_Model {
         $success = array('success' => false);
         $data = array(
             'partner_id' => $pid,
-            'user_id' => $user['user_id'],
+            'user_id' => $this->smcipher->encrypt($user['user_id']),
             'name' => $user['user_name'],
-            'user_access_token' => $user['access_token'],
+            'user_access_token' => $this->smcipher->encrypt($user['access_token']),
             'created_at' => date("Y-m-d H:i:s")
         );
         $this->config->insert('facebook_user_profile', $data);
@@ -1128,24 +1128,6 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => true);
         } else {
             $success = array('success' => false);
-        }
-        return $success;
-    }
-
-    public function update_facebook_pages($pid, $pages) {
-        $success = array('success' => false);
-        foreach ($pages as $page) {
-            $data = array(
-                'partner_id' => $pid,
-                'page_id' => $page['page_id'],
-                'name' => $page['page_name'],
-                'page_access_token' => $page['access_token'],
-                'created_at' => date("Y-m-d H:i:s")
-            );
-            $this->config->insert('facebook_user_pages', $data);
-            if ($this->config->affected_rows() > 0) {
-                $success = array('success' => true);
-            }
         }
         return $success;
     }
@@ -1167,30 +1149,12 @@ class Sn_config_model extends CI_Model {
         foreach ($pages as $page) {
             $data = array(
                 'partner_id' => $pid,
-                'page_id' => $page['page_id'],
+                'page_id' => $this->smcipher->encrypt($page['page_id']),
                 'name' => $page['page_name'],
-                'page_access_token' => $page['access_token'],
+                'page_access_token' => $this->smcipher->encrypt($page['access_token']),
                 'created_at' => date("Y-m-d H:i:s")
             );
             $this->config->insert('facebook_user_pages', $data);
-            $this->config->limit(1);
-            if ($this->config->affected_rows() > 0) {
-                $success = array('success' => true);
-            }
-        }
-        return $success;
-    }
-
-    public function update_facebook_groups($pid, $groups) {
-        $success = array('success' => false);
-        foreach ($groups as $group) {
-            $data = array(
-                'partner_id' => $pid,
-                'group_id' => $group['group_id'],
-                'name' => $group['group_name'],
-                'created_at' => date("Y-m-d H:i:s")
-            );
-            $this->config->insert('facebook_user_groups', $data);
             $this->config->limit(1);
             if ($this->config->affected_rows() > 0) {
                 $success = array('success' => true);
@@ -1216,29 +1180,11 @@ class Sn_config_model extends CI_Model {
         foreach ($groups as $group) {
             $data = array(
                 'partner_id' => $pid,
-                'group_id' => $group['group_id'],
+                'group_id' => $this->smcipher->encrypt($group['group_id']),
                 'name' => $group['group_name'],
                 'created_at' => date("Y-m-d H:i:s")
             );
             $this->config->insert('facebook_user_groups', $data);
-            $this->config->limit(1);
-            if ($this->config->affected_rows() > 0) {
-                $success = array('success' => true);
-            }
-        }
-        return $success;
-    }
-
-    public function update_facebook_events($pid, $events) {
-        $success = array('success' => false);
-        foreach ($events as $event) {
-            $data = array(
-                'partner_id' => $pid,
-                'event_id' => $event['event_id'],
-                'name' => $event['event_name'],
-                'created_at' => date("Y-m-d H:i:s")
-            );
-            $this->config->insert('facebook_user_events', $data);
             $this->config->limit(1);
             if ($this->config->affected_rows() > 0) {
                 $success = array('success' => true);
@@ -1264,7 +1210,7 @@ class Sn_config_model extends CI_Model {
         foreach ($events as $event) {
             $data = array(
                 'partner_id' => $pid,
-                'event_id' => $event['event_id'],
+                'event_id' => $this->smcipher->encrypt($event['event_id']),
                 'name' => $event['event_name'],
                 'created_at' => date("Y-m-d H:i:s")
             );
@@ -1428,9 +1374,9 @@ class Sn_config_model extends CI_Model {
     public function update_fb_livestream($pid, $address, $stream_name, $embed_code, $live_id) {
         $success = array('success' => false);
         $data = array(
-            'live_id' => $live_id,
-            'streamName' => $stream_name,
-            'ingestionAddress' => $this->finalize_address_url($address),
+            'live_id' => $this->smcipher->encrypt($live_id),
+            'streamName' => $this->smcipher->encrypt($stream_name),
+            'ingestionAddress' => $this->smcipher->encrypt($this->finalize_address_url($address)),
             'status' => 'ready',
             'embed_code' => $embed_code,
             'updated_at' => date("Y-m-d H:i:s")
@@ -1450,9 +1396,9 @@ class Sn_config_model extends CI_Model {
         $success = array('success' => false);
         $data = array(
             'partner_id' => $pid,
-            'live_id' => $live_id,
-            'streamName' => $stream_name,
-            'ingestionAddress' => $this->finalize_address_url($address),
+            'live_id' => $this->smcipher->encrypt($live_id),
+            'streamName' => $this->smcipher->encrypt($stream_name),
+            'ingestionAddress' => $this->smcipher->encrypt($this->finalize_address_url($address)),
             'status' => 'ready',
             'embed_code' => $embed_code,
             'created_at' => date("Y-m-d H:i:s")
@@ -1516,8 +1462,8 @@ class Sn_config_model extends CI_Model {
         $result = $query->result_array();
         if ($query->num_rows() > 0) {
             foreach ($result as $res) {
-                $page_id = $res['page_id'];
-                $access_token = $res['page_access_token'];
+                $page_id = $this->smcipher->decrypt($res['page_id']);
+                $access_token = $this->smcipher->decrypt($res['page_access_token']);
             }
             $success = array('success' => true, 'page_id' => $page_id, 'access_token' => $access_token);
         } else {
@@ -1537,7 +1483,7 @@ class Sn_config_model extends CI_Model {
         $result = $query->result_array();
         if ($query->num_rows() > 0) {
             foreach ($result as $res) {
-                $group_id = $res['group_id'];
+                $group_id = $this->smcipher->decrypt($res['group_id']);
             }
             $success = array('success' => true, 'group_id' => $group_id);
         } else {
@@ -1557,7 +1503,7 @@ class Sn_config_model extends CI_Model {
         $result = $query->result_array();
         if ($query->num_rows() > 0) {
             foreach ($result as $res) {
-                $event_id = $res['event_id'];
+                $event_id = $this->smcipher->decrypt($res['event_id']);
             }
             $success = array('success' => true, 'event_id' => $event_id);
         } else {
@@ -1896,7 +1842,7 @@ class Sn_config_model extends CI_Model {
         if ($query->num_rows() > 0) {
             foreach ($result as $res) {
                 $id = $res['id'];
-                $live_id = $res['live_id'];
+                $live_id = $this->smcipher->decrypt($res['live_id']);
             }
             $success = array('success' => true, 'id' => $id, 'live_id' => $live_id);
         } else {
@@ -2734,8 +2680,8 @@ class Sn_config_model extends CI_Model {
         if ($query->num_rows() > 0) {
             $ingestionSettings = array();
             foreach ($result as $res) {
-                $streamName = $res['streamName'];
-                $ingestionAddress = $res['ingestionAddress'];
+                $streamName = $this->smcipher->decrypt($res['streamName']);
+                $ingestionAddress = $this->smcipher->decrypt($res['ingestionAddress']);
             }
             array_push($ingestionSettings, array('streamName' => $streamName, 'ingestionAddress' => $ingestionAddress));
             $success = array('success' => true, 'ingestionSettings' => $ingestionSettings);
@@ -2919,7 +2865,7 @@ class Sn_config_model extends CI_Model {
             foreach ($result as $res) {
                 $id = $res['id'];
                 $pid = $res['partner_id'];
-                $lid = $res['live_id'];
+                $lid = $this->smcipher->decrypt($res['live_id']);
                 $status = $res['status'];
                 if ($res['updated_at']) {
                     $date = $res['updated_at'];
@@ -3350,12 +3296,12 @@ class Sn_config_model extends CI_Model {
                     if ($this->check_fb_pages($pid)) {
                         $remove_pages = $this->remove_facebook_pages($pid);
                         if ($remove_pages['success']) {
-                            $update_facebook_pages = $this->update_facebook_pages($pid, $pages);
+                            $insert_facebook_pages = $this->insert_facebook_pages($pid, $pages);
                         } else {
                             $success = array('success' => false, 'message' => 'Could not remove facebook pages');
                         }
                     } else {
-                        $update_facebook_pages = $this->update_facebook_pages($pid, $pages);
+                        $insert_facebook_pages = $this->insert_facebook_pages($pid, $pages);
                     }
                     if ($stream_to == 2) {
                         if (count($pages) > 0) {
@@ -3377,12 +3323,12 @@ class Sn_config_model extends CI_Model {
                     if ($this->check_fb_groups($pid)) {
                         $remove_groups = $this->remove_facebook_groups($pid);
                         if ($remove_groups['success']) {
-                            $update_facebook_groups = $this->update_facebook_groups($pid, $groups);
+                            $insert_facebook_groups = $this->insert_facebook_groups($pid, $groups);
                         } else {
                             $success = array('success' => false, 'message' => 'Could not remove facebook groups');
                         }
                     } else {
-                        $update_facebook_groups = $this->update_facebook_groups($pid, $groups);
+                        $insert_facebook_groups = $this->insert_facebook_groups($pid, $groups);
                     }
                     if ($stream_to == 3) {
                         if (count($groups) > 0) {
@@ -3404,12 +3350,12 @@ class Sn_config_model extends CI_Model {
                     if ($this->check_fb_events($pid)) {
                         $remove_events = $this->remove_facebook_events($pid);
                         if ($remove_events['success']) {
-                            $update_facebook_events = $this->update_facebook_events($pid, $events);
+                            $insert_facebook_events = $this->insert_facebook_events($pid, $events);
                         } else {
                             $success = array('success' => false, 'message' => 'Could not remove facebook events');
                         }
                     } else {
-                        $update_facebook_events = $this->update_facebook_events($pid, $events);
+                        $insert_facebook_events = $this->insert_facebook_events($pid, $events);
                     }
                     if ($stream_to == 4) {
                         if (count($events) > 0) {
