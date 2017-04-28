@@ -551,4 +551,28 @@ class Sn_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code 
     }
 
+    public function resync_fb_account_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing Partner Id'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        $result = $this->sn_config_model->resync_fb_account($pid, $ks);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code 
+    }
+
 }
