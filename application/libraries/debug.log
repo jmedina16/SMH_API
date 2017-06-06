@@ -3566,3 +3566,13 @@ Stack trace:
 #2 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('\xE3vt\x8Dxr\x86+\vR\xCFA\x15\xE2\x8C...', NULL, NULL, NULL, NULL, 'Active', 'Pending')
 #3 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('1470466361:0 D:...', 'I-DGK6N0SDJ1GJ', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Jorge', 'Medina', 'jmedina616@gmai...', '853NLG6TBL9TC', 'US', 'Pending', '8B756741K350935...', 'instant', '04:15:55 Jun 06...')
 #4 [internal func in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 1191
+[06-Jun-2017 12:57:00 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Entry id "0_hod6f0bw" not found' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(457): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(156): KalturaBaseEntryService->get('0_hod6f0bw', NULL)
+#2 /var/www/vhosts/api/application/models/sn_config_model.php(2562): SMPortal->get_highest_bitrate('10740', 'YmZjNWIwZjdlOWJ...', '0_hod6f0bw')
+#3 /var/www/vhosts/api/application/controllers/api/sn_config.php(402): Sn_config_model->get_sn_livestreams('10740', 'YmZjNWIwZjdlOWJ...', '0_hod6f0bw')
+#4 [internal function]: Sn_config->get_sn_livestreams_get()
+#5 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#6 /var/www/vhosts/api/application/libraries/REST_Controller.php(316): REST_Controller->_fire_method(Array, Array)
+#7 /var/www/vhosts/api/system/co in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
