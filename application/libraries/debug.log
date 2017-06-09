@@ -3600,3 +3600,9 @@ Stack trace:
 #3 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('10012', NULL, NULL, NULL, NULL, 'Active', 'Pending')
 #4 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('vpinBl9VANmX1f2...', 'I-2S75BNCUA6VF', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Test', 'User', 'user2@smh.com', 'Z2NPJYZKK2RSY', 'US', 'Pending', '2EV87072VA80180...', 'instant', '17:14:21 Jun 07...')
 #5 [internal  in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
+[08-Jun-2017 19:01:04 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaClientException' with message 'Invalid partner id' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:1191
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/SMPortal.php(205): KalturaConfiguration->__construct('\xE3vt\x85k\xBC\x9A\xFB\vR\xCFA\x15\xE2\x8C...')
+#1 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2693): SMPortal->get_entry_details('\xE3vt\x85k\xBC\x9A\xFB\vR\xCFA\x15\xE2\x8C...', '')
+#2 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('\xE3vt\x85k\xBC\x9A\xFB\vR\xCFA\x15\xE2\x8C...', NULL, NULL, NULL, NULL, 'Active', 'Pending')
+#3 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('1470671594:0 D:...', 'I-L1EPMNH8HD4R', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Jorge', 'Medina', 'jmedina616@gmai...', '853NLG6TBL9TC', 'US', 'Pending', '9WA27062BU13974...', 'instant', '19:00:48 Jun 08...') in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 1191
