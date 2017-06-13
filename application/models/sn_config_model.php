@@ -967,6 +967,39 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function get_facebook_embed($pid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('facebook_live_streams')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $embed_code = $res['embed_code'];
+            }
+            $doc = new DOMDocument();
+            $doc->loadHTML($embed_code);
+            $iframe = $doc->getElementsByTagName('iframe');
+            foreach ($iframe as $node) {
+                if ($node->hasAttributes()) {
+                    foreach ($node->attributes as $a) {
+                        if ($a->name == 'src') {
+                            $src = $a->value;
+                        }
+                    }
+                }
+            }
+            $src = explode('&', $src);
+            $src = $src[0];
+            $success = array('success' => true, 'src' => $src);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
     public function get_fb_live_entries($pid) {
         $success = array('success' => false);
         $this->config->select('*')
