@@ -575,4 +575,22 @@ class Sn_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code 
     }
 
+    public function get_facebook_embed_get() {
+        $pid = $this->get('pid');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing Partner Id'), 200);
+        }
+
+        $result = $this->sn_config_model->get_facebook_embed($pid);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code 
+    }
+
 }
