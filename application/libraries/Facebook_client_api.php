@@ -187,6 +187,7 @@ class Facebook_client_api {
     }
 
     public function checkAuthToken($access_token) {
+        syslog(LOG_NOTICE, "SMH DEBUG : checkAuthToken: " . $access_token);
         $success = array('success' => false);
         try {
             $fb = new Facebook\Facebook([
