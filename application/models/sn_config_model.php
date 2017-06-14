@@ -2725,7 +2725,6 @@ class Sn_config_model extends CI_Model {
         $success = array('success' => false);
         $this->config->select('*')
                 ->from('facebook_live_streams')
-                ->where('status', 'ready')
                 ->where('partner_id', $pid);
 
         $query = $this->config->get();
