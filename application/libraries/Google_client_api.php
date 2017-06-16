@@ -832,7 +832,12 @@ class Google_client_api {
                     }
                     fclose($handle);
                     $client->setDefer(false);
-                    syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo: Status: " . print_r($status, true));
+                    if ($status['status']['uploadStatus'] == 'uploaded') {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false);
+                    }
+                    return $success;
                 } catch (Google_Service_Exception $e) {
                     syslog(LOG_NOTICE, "SMH DEBUG : A service error occurred: code: " . $e->getMessage());
                     $success = array('success' => false);

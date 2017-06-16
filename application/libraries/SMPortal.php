@@ -221,6 +221,31 @@ class SMPortal {
         return $entry_info;
     }
 
+    public function get_entry_path($pid, $entryId) {
+        $id = '';
+        $version = '';
+        $ext = '';
+        $sess = $this->impersonate($pid);
+        $partnerId = $pid;
+        $config = new KalturaConfiguration($partnerId);
+        $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
+        $client = new KalturaClient($config);
+        $client->setKs($sess);
+        $results = $client->flavorAsset->getflavorassetswithparams($entryId);
+
+        foreach ($results as $flavor) {
+            if ($flavor->flavorAsset->isOriginal) {
+                $id = $flavor->flavorAsset->id;
+                $version = $flavor->flavorAsset->version;
+                $ext = $flavor->flavorAsset->fileExt;
+            }
+        }
+
+        $path = '/opt/kaltura/web/content/entry/data/' . $pid . '/' . $entryId . '_' . $id . '_' . $version . '.' . $ext;
+
+        return $path;
+    }
+
     public function get_entry_partnerData($pid, $entryId) {
         try {
             $sess = $this->impersonate($pid);
