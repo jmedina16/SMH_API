@@ -985,13 +985,13 @@ class Sn_config_model extends CI_Model {
             foreach ($iframe as $node) {
                 if ($node->hasAttributes()) {
                     foreach ($node->attributes as $a) {
-                        if($a->name == 'src'){
+                        if ($a->name == 'src') {
                             $src = $a->value;
                         }
                     }
                 }
             }
-            $src = explode('&',$src);
+            $src = explode('&', $src);
             $src = $src[0];
             $success = array('success' => true, 'src' => $src);
         } else {
@@ -2423,6 +2423,36 @@ class Sn_config_model extends CI_Model {
         } else {
             $success = array('success' => false);
         }
+        return $success;
+    }
+
+    public function upload_queued_video_to_youtube($pid, $eid) {
+        $success = array('success' => false);
+        $has_service = $this->verify_service($pid);
+        if ($has_service) {
+            $platforms_status = $this->get_entry_platforms_status($pid, $eid);
+            if ($platforms_status['success']) {
+                if (count($platforms_status['platforms_status'])) {
+                    if ($platforms_status['platforms_status']['youtube']) {
+                        $success = $this->do_upload_video_to_youtube($pid, $eid);
+                    } else {
+                        $success = array('success' => true, 'message' => 'Social network: nothing to update');
+                    }
+                } else {
+                    $success = array('success' => true, 'message' => 'Social network config not present');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Could not get platforms status');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Social network service not active');
+        }
+        return $success;
+    }
+
+    public function upload_youtube_video($pid, $eid) {
+        $success = array('success' => false);
+        $entry_details = $this->smportal->get_entry_details($pid, $eid);
         return $success;
     }
 
