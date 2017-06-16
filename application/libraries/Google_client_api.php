@@ -789,4 +789,67 @@ class Google_client_api {
         }
     }
 
+    public function uploadVideo($access_token, $name, $desc, $videoPath) {
+        $success = array('success' => false);
+        try {
+            $client = new Google_Client();
+            $client->setClientId($this->OAUTH2_CLIENT_ID);
+            $client->setClientSecret($this->OAUTH2_CLIENT_SECRET);
+            $client->addScope('https://www.googleapis.com/auth/youtube');
+            $redirect = filter_var('https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
+            $client->setRedirectUri($redirect);
+            $client->setAccessToken($access_token);
+
+            $youtube = new Google_Service_YouTube($client);
+            if ($client->getAccessToken()) {
+                try {
+                    $snippet = new Google_Service_YouTube_VideoSnippet();
+                    $snippet->setTitle($name);
+                    $snippet->setDescription($desc);
+
+                    $status = new Google_Service_YouTube_VideoStatus();
+                    $status->privacyStatus = "public";
+
+                    $video = new Google_Service_YouTube_Video();
+                    $video->setSnippet($snippet);
+                    $video->setStatus($status);
+
+                    $chunkSizeBytes = 1 * 1024 * 1024;
+
+                    $client->setDefer(true);
+                    $insertRequest = $youtube->videos->insert("status,snippet", $video);
+
+                    $media = new Google_Http_MediaFileUpload(
+                            $client, $insertRequest, 'video/*', null, true, $chunkSizeBytes
+                    );
+                    $media->setFileSize(filesize($videoPath));
+
+                    $status = false;
+                    $handle = fopen($videoPath, "rb");
+                    while (!$status && !feof($handle)) {
+                        $chunk = fread($handle, $chunkSizeBytes);
+                        $status = $media->nextChunk($chunk);
+                    }
+                    fclose($handle);
+                    $client->setDefer(false);
+                    syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo: Status: " . print_r($status, true));
+                } catch (Google_Service_Exception $e) {
+                    syslog(LOG_NOTICE, "SMH DEBUG : A service error occurred: code: " . $e->getMessage());
+                    $success = array('success' => false);
+                    return $success;
+                } catch (Google_Exception $e) {
+                    syslog(LOG_NOTICE, "SMH DEBUG : An client error occurred: code: " . $e->getMessage());
+                    $success = array('success' => false);
+                    return $success;
+                }
+            }
+        } catch (Google_Service_Exception $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage());
+            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+        } catch (Exception $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage());
+            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+        }
+    }
+
 }
