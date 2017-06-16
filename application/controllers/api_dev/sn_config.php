@@ -593,4 +593,28 @@ class Sn_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code 
     }
 
+    public function upload_queued_video_to_youtube_get() {
+        $pid = $this->get('pid');
+        $eid = $this->get('eid');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing Partner Id'), 200);
+        }
+
+        if (!isset($eid) || $eid == null) {
+
+            $this->response(array('error' => 'Missing Entry Id'), 200);
+        }
+
+        $result = $this->sn_config_model->upload_queued_video_to_youtube($pid, $eid);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code 
+    }
+
 }
