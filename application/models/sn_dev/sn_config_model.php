@@ -2430,20 +2430,20 @@ class Sn_config_model extends CI_Model {
         $success = array('success' => false);
         $has_service = $this->verify_service($pid);
         if ($has_service) {
-            $platforms_status = $this->get_entry_platforms_status($pid, $eid);
-            if ($platforms_status['success']) {
-                if (count($platforms_status['platforms_status'])) {
-                    if ($platforms_status['platforms_status']['youtube']) {
-                        $success = $this->do_upload_video_to_youtube($pid, $eid);
-                    } else {
-                        $success = array('success' => true, 'message' => 'Social network: nothing to update');
-                    }
-                } else {
-                    $success = array('success' => true, 'message' => 'Social network config not present');
-                }
-            } else {
-                $success = array('success' => false, 'message' => 'Could not get platforms status');
-            }
+//            $platforms_status = $this->get_entry_platforms_status($pid, $eid);
+//            if ($platforms_status['success']) {
+//                if (count($platforms_status['platforms_status'])) {
+//                    if ($platforms_status['platforms_status']['youtube']) {
+            $success = $this->upload_youtube_video($pid, $eid);
+//                    } else {
+//                        $success = array('success' => true, 'message' => 'Social network: nothing to update');
+//                    }
+//                } else {
+//                    $success = array('success' => true, 'message' => 'Social network config not present');
+//                }
+//            } else {
+//                $success = array('success' => false, 'message' => 'Could not get platforms status');
+//            }
         } else {
             $success = array('success' => false, 'message' => 'Social network service not active');
         }
@@ -2453,6 +2453,18 @@ class Sn_config_model extends CI_Model {
     public function upload_youtube_video($pid, $eid) {
         $success = array('success' => false);
         $entry_details = $this->smportal->get_entry_details($pid, $eid);
+        $entry_path = $this->smportal->get_entry_path($pid, $eid);
+        $access_token = $this->validate_youtube_token($pid);
+        if ($access_token['success']) {
+            $upload_video = $this->google_client_api->uploadVideo($access_token['access_token'], $entry_details['name'], $entry_details['desc'], $entry_path);
+            if ($upload_video['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'YouTube: could not upload video');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'YouTube: invalid access token');
+        }
         return $success;
     }
 
