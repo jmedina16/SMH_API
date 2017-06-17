@@ -3637,3 +3637,13 @@ Stack trace:
 #3 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('10012', NULL, NULL, NULL, NULL, 'Active', 'Pending')
 #4 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('vpinBl9VANmX1f2...', 'I-GVGLAVFLP465', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Test', 'User', 'user2@smh.com', 'Z2NPJYZKK2RSY', 'US', 'Pending', '13S22148NW39060...', 'instant', '11:56:42 Jun 14...')
 #5 [internal  in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
+[17-Jun-2017 02:13:35 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'Exception' with message 'String could not be parsed as XML' in /var/www/vhosts/api/application/libraries/SMPortal.php:59
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/SMPortal.php(59): SimpleXMLElement->__construct('')
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(202): SMPortal->impersonate('10012')
+#2 /var/www/vhosts/api/application/models/sn_dev/sn_config_model.php(2455): SMPortal->get_entry_details('10012', '0_9j682hgq')
+#3 /var/www/vhosts/api/application/models/sn_dev/sn_config_model.php(2437): Sn_config_model->upload_youtube_video('10012', '0_9j682hgq')
+#4 /var/www/vhosts/api/application/controllers/api_dev/sn_config.php(610): Sn_config_model->upload_queued_video_to_youtube('10012', '0_9j682hgq')
+#5 [internal function]: Sn_config->upload_queued_video_to_youtube_get()
+#6 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#7 /var/www/vhosts/api/application/libraries/REST_Controller.php(316): REST_Controller->_f in /var/www/vhosts/api/application/libraries/SMPortal.php on line 59
