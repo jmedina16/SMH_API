@@ -25,7 +25,7 @@ class Google_client_api {
             $client->addScope('https://www.googleapis.com/auth/youtube');
             $client->setAccessType("offline");
             $client->setApprovalPrompt('force');
-            $redirect = filter_var('https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
+            $redirect = filter_var('http://devplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
             $client->setRedirectUri($redirect);
             $client->setState($pid . "|" . $ks);
             $authUrl = $client->createAuthUrl();
@@ -45,7 +45,7 @@ class Google_client_api {
             $client->setClientId($this->OAUTH2_CLIENT_ID);
             $client->setClientSecret($this->OAUTH2_CLIENT_SECRET);
             $client->addScope('https://www.googleapis.com/auth/youtube');
-            $redirect = filter_var('https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
+            $redirect = filter_var('http://devplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
             $client->setRedirectUri($redirect);
             $client->authenticate($code);
             $tokens = $client->getAccessToken();
@@ -68,7 +68,7 @@ class Google_client_api {
             $client->addScope('https://www.googleapis.com/auth/youtube');
             $client->setAccessType("offline");
             $client->setApprovalPrompt('auto');
-            $redirect = filter_var('https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
+            $redirect = filter_var('http://devplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
             $client->setRedirectUri($redirect);
             $client->setAccessToken($token);
 
@@ -119,7 +119,7 @@ class Google_client_api {
             $client->setClientId($this->OAUTH2_CLIENT_ID);
             $client->setClientSecret($this->OAUTH2_CLIENT_SECRET);
             $client->addScope('https://www.googleapis.com/auth/youtube');
-            $redirect = filter_var('https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
+            $redirect = filter_var('http://devplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
             $client->setRedirectUri($redirect);
             if ($client->revokeToken($access_token)) {
                 $success = array('success' => true);
@@ -143,7 +143,7 @@ class Google_client_api {
             $client->setClientId($this->OAUTH2_CLIENT_ID);
             $client->setClientSecret($this->OAUTH2_CLIENT_SECRET);
             $client->addScope('https://www.googleapis.com/auth/youtube');
-            $redirect = filter_var('https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
+            $redirect = filter_var('http://devplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
             $client->setRedirectUri($redirect);
             $client->setAccessToken($access_token);
 
@@ -262,7 +262,7 @@ class Google_client_api {
             $client->setClientId($this->OAUTH2_CLIENT_ID);
             $client->setClientSecret($this->OAUTH2_CLIENT_SECRET);
             $client->addScope('https://www.googleapis.com/auth/youtube');
-            $redirect = filter_var('https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
+            $redirect = filter_var('http://devplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
             $client->setRedirectUri($redirect);
             $client->setAccessToken($access_token);
 
@@ -320,7 +320,7 @@ class Google_client_api {
             $client->setClientId($this->OAUTH2_CLIENT_ID);
             $client->setClientSecret($this->OAUTH2_CLIENT_SECRET);
             $client->addScope('https://www.googleapis.com/auth/youtube');
-            $redirect = filter_var('https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
+            $redirect = filter_var('http://devplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
             $client->setRedirectUri($redirect);
             $client->setAccessToken($access_token);
 
@@ -359,7 +359,7 @@ class Google_client_api {
             $client->setClientId($this->OAUTH2_CLIENT_ID);
             $client->setClientSecret($this->OAUTH2_CLIENT_SECRET);
             $client->addScope('https://www.googleapis.com/auth/youtube');
-            $redirect = filter_var('https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
+            $redirect = filter_var('http://devplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
             $client->setRedirectUri($redirect);
             $client->setAccessToken($access_token);
 
@@ -397,7 +397,7 @@ class Google_client_api {
             $client->setClientId($this->OAUTH2_CLIENT_ID);
             $client->setClientSecret($this->OAUTH2_CLIENT_SECRET);
             $client->addScope('https://www.googleapis.com/auth/youtube');
-            $redirect = filter_var('https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
+            $redirect = filter_var('http://devplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
             $client->setRedirectUri($redirect);
             $client->setAccessToken($access_token);
 
@@ -449,7 +449,7 @@ class Google_client_api {
             $client->setClientId($this->OAUTH2_CLIENT_ID);
             $client->setClientSecret($this->OAUTH2_CLIENT_SECRET);
             $client->addScope('https://www.googleapis.com/auth/youtube');
-            $redirect = filter_var('https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
+            $redirect = filter_var('http://devplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
             $client->setRedirectUri($redirect);
             $client->setAccessToken($access_token);
 
@@ -513,7 +513,7 @@ class Google_client_api {
             $client->setClientId($this->OAUTH2_CLIENT_ID);
             $client->setClientSecret($this->OAUTH2_CLIENT_SECRET);
             $client->addScope('https://www.googleapis.com/auth/youtube');
-            $redirect = filter_var('https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
+            $redirect = filter_var('http://devplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
             $client->setRedirectUri($redirect);
             $client->setAccessToken($access_token);
 
@@ -559,7 +559,7 @@ class Google_client_api {
             $client->setClientId($this->OAUTH2_CLIENT_ID);
             $client->setClientSecret($this->OAUTH2_CLIENT_SECRET);
             $client->addScope('https://www.googleapis.com/auth/youtube');
-            $redirect = filter_var('https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
+            $redirect = filter_var('http://devplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
             $client->setRedirectUri($redirect);
             $client->setAccessToken($access_token);
 
@@ -599,7 +599,7 @@ class Google_client_api {
             $client->setClientId($this->OAUTH2_CLIENT_ID);
             $client->setClientSecret($this->OAUTH2_CLIENT_SECRET);
             $client->addScope('https://www.googleapis.com/auth/youtube');
-            $redirect = filter_var('https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
+            $redirect = filter_var('http://devplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
             $client->setRedirectUri($redirect);
             $client->setAccessToken($access_token);
 
@@ -707,7 +707,7 @@ class Google_client_api {
             $client->setClientId($this->OAUTH2_CLIENT_ID);
             $client->setClientSecret($this->OAUTH2_CLIENT_SECRET);
             $client->addScope('https://www.googleapis.com/auth/youtube');
-            $redirect = filter_var('https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
+            $redirect = filter_var('http://devplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
             $client->setRedirectUri($redirect);
             $client->setAccessToken($access_token);
 
@@ -751,7 +751,7 @@ class Google_client_api {
             $client->setClientId($this->OAUTH2_CLIENT_ID);
             $client->setClientSecret($this->OAUTH2_CLIENT_SECRET);
             $client->addScope('https://www.googleapis.com/auth/youtube');
-            $redirect = filter_var('https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
+            $redirect = filter_var('http://devplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
             $client->setRedirectUri($redirect);
             $client->setAccessToken($access_token);
 
@@ -796,7 +796,7 @@ class Google_client_api {
             $client->setClientId($this->OAUTH2_CLIENT_ID);
             $client->setClientSecret($this->OAUTH2_CLIENT_SECRET);
             $client->addScope('https://www.googleapis.com/auth/youtube');
-            $redirect = filter_var('https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
+            $redirect = filter_var('http://devplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
             $client->setRedirectUri($redirect);
             $client->setAccessToken($access_token);
 

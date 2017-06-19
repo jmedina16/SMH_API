@@ -3647,3 +3647,6 @@ Stack trace:
 #5 [internal function]: Sn_config->upload_queued_video_to_youtube_get()
 #6 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
 #7 /var/www/vhosts/api/application/libraries/REST_Controller.php(316): REST_Controller->_f in /var/www/vhosts/api/application/libraries/SMPortal.php on line 59
+[19-Jun-2017 15:21:48 America/Los_Angeles] PHP Fatal error:  Call to a member function result_array() on boolean in /var/www/vhosts/api/application/models/sn_dev/sn_config_model.php on line 526
+[19-Jun-2017 15:23:00 America/Los_Angeles] PHP Fatal error:  Call to a member function result_array() on boolean in /var/www/vhosts/api/application/models/sn_dev/sn_config_model.php on line 464
+[19-Jun-2017 15:24:05 America/Los_Angeles] PHP Fatal error:  Call to a member function result_array() on boolean in /var/www/vhosts/api/application/models/sn_dev/sn_config_model.php on line 464
