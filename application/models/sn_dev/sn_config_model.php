@@ -457,7 +457,7 @@ class Sn_config_model extends CI_Model {
     public function validate_youtube_token($pid) {
         $success = array('success' => false);
         $this->config->select('*')
-                ->from('youtube_live')
+                ->from('youtube_channel')
                 ->where('partner_id', $pid);
 
         $query = $this->config->get();
@@ -519,7 +519,7 @@ class Sn_config_model extends CI_Model {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
                 $this->config->select('*')
-                        ->from('youtube_live')
+                        ->from('youtube_channel')
                         ->where('partner_id', $valid['pid']);
 
                 $query = $this->config->get();
@@ -532,16 +532,21 @@ class Sn_config_model extends CI_Model {
                     if ($remove_yt_live_events['success']) {
                         $removeAuth = $this->google_client_api->removeAuth($access_token);
                         if ($removeAuth['success']) {
-                            $remove_yt_live = $this->remove_youtube_live($pid);
-                            if ($remove_yt_live['success']) {
-                                $update_status = $this->update_sn_config($pid, 'youtube', 0);
-                                if ($update_status['success']) {
-                                    $success = array('success' => true);
+                            $remove_yt_channel = $this->remove_youtube_channel($pid);
+                            if ($remove_yt_channel['success']) {
+                                $remove_yt_channel_settings = $this->remove_youtube_channel_settings($pid);
+                                if ($remove_yt_channel_settings['success']) {
+                                    $update_status = $this->update_sn_config($pid, 'youtube', 0);
+                                    if ($update_status['success']) {
+                                        $success = array('success' => true);
+                                    } else {
+                                        $success = array('success' => false, 'message' => 'Could not update platform status');
+                                    }
                                 } else {
-                                    $success = array('success' => false, 'message' => 'Could not update platform status');
+                                    $success = array('success' => false, 'message' => $remove_yt_channel_settings['message']);
                                 }
                             } else {
-                                $success = array('success' => false, 'message' => $remove_yt_live['message']);
+                                $success = array('success' => false, 'message' => $remove_yt_channel['message']);
                             }
                         } else {
                             $success = array('success' => false, 'message' => $removeAuth['message']);
@@ -562,14 +567,26 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function remove_youtube_live($pid) {
+    public function remove_youtube_channel($pid) {
         $success = array('success' => false);
         $this->config->where('partner_id = "' . $pid . '"');
-        $this->config->delete('youtube_live');
+        $this->config->delete('youtube_channel');
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
         } else {
             $success = array('success' => false, 'message' => 'Could not remove YouTube access token');
+        }
+        return $success;
+    }
+
+    public function remove_youtube_channel_settings($pid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id = "' . $pid . '"');
+        $this->config->delete('youtube_channel_settings');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'message' => 'Nothing removed');
         }
         return $success;
     }
@@ -1587,7 +1604,7 @@ class Sn_config_model extends CI_Model {
             'expires_in' => $tokens['expires_in'],
             'created' => $tokens['created']
         );
-        $this->config->insert('youtube_live', $data);
+        $this->config->insert('youtube_channel', $data);
         $this->config->limit(1);
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
@@ -1608,7 +1625,7 @@ class Sn_config_model extends CI_Model {
         );
 
         $this->config->where('partner_id', $pid);
-        $this->config->update('youtube_live', $data);
+        $this->config->update('youtube_channel', $data);
         $this->config->limit(1);
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
@@ -1621,7 +1638,7 @@ class Sn_config_model extends CI_Model {
     public function check_youtube($pid) {
         $success = false;
         $this->config->select('*')
-                ->from('youtube_live')
+                ->from('youtube_channel')
                 ->where('partner_id', $pid);
         $query = $this->config->get();
         if ($query->num_rows() > 0) {
@@ -1725,8 +1742,8 @@ class Sn_config_model extends CI_Model {
             if ($livestream['success']) {
                 $insert_live_event = $this->insert_youtube_live_event($pid, $eid, $livestream['liveBroadcastId'], $livestream['liveStreamId'], $livestream['streamName'], $livestream['ingestionAddress'], $projection);
                 if ($insert_live_event['success']) {
-                    $update_embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
-                    if ($update_embed_status['success']) {
+                    $add_youtube_emebed_status = $this->add_youtube_emebed_status($pid, $youtube_embed);
+                    if ($add_youtube_emebed_status['success']) {
                         $success = array('success' => true, 'broadcast_id' => $livestream['liveBroadcastId'], 'youtube_embed' => $youtube_embed);
                     } else {
                         $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
@@ -1740,8 +1757,8 @@ class Sn_config_model extends CI_Model {
                 if ($livestream['success']) {
                     $insert_live_event = $this->insert_youtube_live_event($pid, $eid, $livestream['liveBroadcastId'], $livestream['liveStreamId'], $livestream['streamName'], $livestream['ingestionAddress'], $projection);
                     if ($insert_live_event['success']) {
-                        $update_embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
-                        if ($update_embed_status['success']) {
+                        $add_youtube_emebed_status = $this->add_youtube_emebed_status($pid, $youtube_embed);
+                        if ($add_youtube_emebed_status['success']) {
                             $success = array('success' => true, 'broadcast_id' => $livestream['liveBroadcastId'], 'youtube_embed' => $youtube_embed);
                         } else {
                             $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
@@ -2141,8 +2158,8 @@ class Sn_config_model extends CI_Model {
                     if ($livestream['success']) {
                         $update_live_event = $this->update_youtube_live_event($pid, $eid, $livestream['liveStreamId'], $livestream['streamName'], $livestream['ingestionAddress'], $projection);
                         if ($update_live_event['success']) {
-                            $update_embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
-                            if ($update_embed_status['success']) {
+                            $add_youtube_emebed_status = $this->add_youtube_emebed_status($pid, $youtube_embed);
+                            if ($add_youtube_emebed_status['success']) {
                                 $success = array('success' => true, 'broadcast_id' => $youtube_ids['bid'], 'youtube_embed' => $youtube_embed);
                             } else {
                                 $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
@@ -2159,8 +2176,8 @@ class Sn_config_model extends CI_Model {
                     if ($livestream['success']) {
                         $insert_live_event = $this->insert_youtube_live_event($pid, $eid, $livestream['liveBroadcastId'], $livestream['liveStreamId'], $livestream['streamName'], $livestream['ingestionAddress'], $projection);
                         if ($insert_live_event['success']) {
-                            $update_embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
-                            if ($update_embed_status['success']) {
+                            $add_youtube_emebed_status = $this->add_youtube_emebed_status($pid, $youtube_embed);
+                            if ($add_youtube_emebed_status['success']) {
                                 $success = array('success' => true, 'broadcast_id' => $livestream['liveBroadcastId'], 'youtube_embed' => $youtube_embed);
                             } else {
                                 $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
@@ -2174,8 +2191,8 @@ class Sn_config_model extends CI_Model {
                         if ($livestream['success']) {
                             $insert_live_event = $this->insert_youtube_live_event($pid, $eid, $livestream['liveBroadcastId'], $livestream['liveStreamId'], $livestream['streamName'], $livestream['ingestionAddress'], $projection);
                             if ($insert_live_event['success']) {
-                                $update_embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
-                                if ($update_embed_status['success']) {
+                                $add_youtube_emebed_status = $this->add_youtube_emebed_status($pid, $youtube_embed);
+                                if ($add_youtube_emebed_status['success']) {
                                     $success = array('success' => true, 'broadcast_id' => $livestream['liveBroadcastId'], 'youtube_embed' => $youtube_embed);
                                 } else {
                                     $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
@@ -2304,7 +2321,7 @@ class Sn_config_model extends CI_Model {
     public function get_youtube_embed_status($pid) {
         $success = array('success' => false);
         $this->config->select('*')
-                ->from('youtube_live')
+                ->from('youtube_channel_settings')
                 ->where('partner_id', $pid);
 
         $query = $this->config->get();
@@ -2327,12 +2344,59 @@ class Sn_config_model extends CI_Model {
         );
 
         $this->config->where('partner_id', $pid);
-        $this->config->update('youtube_live', $data);
+        $this->config->update('youtube_channel_settings', $data);
         $this->config->limit(1);
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true, 'embed_status' => $embed_status);
         } else {
             $success = array('success' => true, 'embed_status' => $embed_status);
+        }
+        return $success;
+    }
+
+    public function insert_youtube_embed_status($pid, $embed_status) {
+        $success = array('success' => false);
+        $data = array(
+            'partner_id' => $pid,
+            'embed' => $embed_status,
+            'created_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->insert('youtube_channel_settings', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true, 'embed_status' => $embed_status);
+        } else {
+            $success = array('success' => true, 'embed_status' => $embed_status);
+        }
+        return $success;
+    }
+
+    public function check_youtube_channel_settings($pid) {
+        $success = false;
+        $this->config->select('*')
+                ->from('youtube_channel_settings')
+                ->where('partner_id', $pid);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
+        return $success;
+    }
+
+    public function add_youtube_emebed_status($pid, $youtube_embed) {
+        $success = array('success' => false);
+        $check_youtube_channel_settings = $this->check_youtube_channel_settings($pid);
+        if ($check_youtube_channel_settings) {
+            $embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
+        } else {
+            $embed_status = $this->insert_youtube_embed_status($pid, $youtube_embed);
+        }
+        if ($embed_status['success']) {
+            $success = array('success' => true);
         }
         return $success;
     }
@@ -3254,8 +3318,8 @@ class Sn_config_model extends CI_Model {
                                     $updated_config = $this->insert_into_sn_config($createNewBroadCast['liveBroadcastId'], null, $platforms['platforms']);
                                     $partnerData = $this->update_sn_partnerData($pid, $eid, $updated_config['sn_config']);
                                     if ($partnerData['success']) {
-                                        $update_embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
-                                        if ($update_embed_status['success']) {
+                                        $add_youtube_emebed_status = $this->add_youtube_emebed_status($pid, $youtube_embed);
+                                        if ($add_youtube_emebed_status['success']) {
                                             $success = array('success' => true);
                                         } else {
                                             $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
@@ -3281,8 +3345,8 @@ class Sn_config_model extends CI_Model {
                                         $updated_config = $this->insert_into_sn_config($createNewBroadCast['liveBroadcastId'], null, $platforms['platforms']);
                                         $partnerData = $this->update_sn_partnerData($pid, $eid, $updated_config['sn_config']);
                                         if ($partnerData['success']) {
-                                            $update_embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
-                                            if ($update_embed_status['success']) {
+                                            $add_youtube_emebed_status = $this->add_youtube_emebed_status($pid, $youtube_embed);
+                                            if ($add_youtube_emebed_status['success']) {
                                                 $success = array('success' => true);
                                             } else {
                                                 $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
