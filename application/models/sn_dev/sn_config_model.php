@@ -122,7 +122,7 @@ class Sn_config_model extends CI_Model {
         $facebook_auth = $this->validate_facebook_token($pid);
         $auth = ($facebook_auth['success']) ? true : false;
         if ($auth) {
-            $user_details = $this->get_fb_account_details($pid, $facebook_auth['access_token']);
+            $user_details = $this->get_fb_account_details($pid);
             $livestream_settings = $this->get_fb_ls_settings($pid);
             $details = ($user_details['success']) ? $user_details['user_details'] : null;
             $facebook = array('platform' => 'facebook_live', 'authorized' => $auth, 'user_details' => $details, 'stream_to' => $livestream_settings['stream_to'], 'settings' => $livestream_settings['settings']);
@@ -214,12 +214,20 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function get_fb_account_details($pid, $access_token) {
+    public function get_fb_account_details($pid) {
         $success = array('success' => false);
-        $account_details = $this->get_fb_user_name($pid);
-        $account_pic = $this->facebook_client_api->get_account_pic($access_token, $account_details['user_id']);
-        if ($account_details['success'] && $account_pic['success']) {
-            $user_details = array('user_name' => $account_details['user_name'], 'user_thumb' => $account_pic['user_pic']);
+        $this->config->select('*')
+                ->from('facebook_user_profile')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $name = $res['name'];
+                $thumbnail = $res['thumbnail'];
+            }
+            $user_details = array('user_name' => $name, 'user_thumb' => $thumbnail);
             $success = array('success' => true, 'user_details' => $user_details);
         } else {
             $success = array('success' => false);
@@ -1172,6 +1180,7 @@ class Sn_config_model extends CI_Model {
         $data = array(
             'user_id' => $this->smcipher->encrypt($user['user_id']),
             'name' => $user['user_name'],
+            'thumbnail' => $user['user_thumbnail'],
             'user_access_token' => $this->smcipher->encrypt($user['access_token']),
             'updated_at' => date("Y-m-d H:i:s")
         );
@@ -1191,6 +1200,7 @@ class Sn_config_model extends CI_Model {
             'partner_id' => $pid,
             'user_id' => $this->smcipher->encrypt($user['user_id']),
             'name' => $user['user_name'],
+            'thumbnail' => $user['user_thumbnail'],
             'user_access_token' => $this->smcipher->encrypt($user['access_token']),
             'created_at' => date("Y-m-d H:i:s")
         );
@@ -3496,7 +3506,8 @@ class Sn_config_model extends CI_Model {
                     $get_user_details = $this->facebook_client_api->get_user_details($access_token['access_token']);
                     $user_name = $get_user_details['user_name'];
                     $user_id = $get_user_details['user_id'];
-                    $user = array('user_id' => $user_id, 'user_name' => $user_name, 'access_token' => $access_token['access_token']);
+                    $account_pic =  $this->facebook_client_api->get_account_pic($access_token['access_token'], $user_id);
+                    $user = array('user_id' => $user_id, 'user_name' => $user_name, 'user_thumbnail' => $account_pic['user_pic'], 'access_token' => $access_token['access_token']);
                     $update_facebook_profile = $this->update_facebook_profile($pid, $user);
 
                     $get_pages_details = $this->facebook_client_api->get_pages_details($access_token['access_token'], $user_id);
