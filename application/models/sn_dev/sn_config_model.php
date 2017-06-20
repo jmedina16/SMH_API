@@ -2407,7 +2407,8 @@ class Sn_config_model extends CI_Model {
     public function update_youtube_embed_status($pid, $embed_status) {
         $success = array('success' => false);
         $data = array(
-            'embed' => $embed_status
+            'embed' => $embed_status,
+            'updated_at' => date("Y-m-d H:i:s")
         );
 
         $this->config->where('partner_id', $pid);
@@ -2455,6 +2456,35 @@ class Sn_config_model extends CI_Model {
         } else {
             $success = array('success' => false);
         }
+        return $success;
+    }
+
+    public function update_youtube_channel_settings($pid, $ks, $auto_upload) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $data = array(
+                    'auto_upload' => ($auto_upload == 'true') ? true : false,
+                    'updated_at' => date("Y-m-d H:i:s")
+                );
+
+                $this->config->where('partner_id', $pid);
+                $this->config->update('youtube_channel_settings', $data);
+                $this->config->limit(1);
+                if ($this->config->affected_rows() > 0) {
+                    $success = array('success' => true);
+                } else {
+                    $success = array('success' => false);
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Social network service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+
         return $success;
     }
 
