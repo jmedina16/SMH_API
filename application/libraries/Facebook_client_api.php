@@ -21,7 +21,7 @@ class Facebook_client_api {
 
     public function getRedirectURL($pid, $ks) {
         $state = $pid . "|" . $ks;
-        $redirect_uri = 'https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/fb-callback.php';
+        $redirect_uri = 'http://devplatform.streamingmediahosting.com/apps/sn/v1.0/fb-callback.php';
         $scope = 'publish_actions,manage_pages,publish_pages,user_managed_groups,user_events';
         $authUrl = 'https://www.facebook.com/v2.8/dialog/oauth?client_id=' . $this->OAUTH2_CLIENT_ID . '&state=' . $state . '&response_type=code&sdk=php-sdk-5.4.4&redirect_uri=' . $redirect_uri . '&scope=' . $scope;
         return $authUrl;
@@ -32,7 +32,8 @@ class Facebook_client_api {
         $user_access_token = $this->get_user_access_token($code);
         if ($user_access_token['success']) {
             $user_details = $this->get_user_details($user_access_token['access_token']);
-            $user = array('user_name' => $user_details['user_name'], 'user_id' => $user_details['user_id'], 'access_token' => $user_access_token['access_token']);
+            $get_account_pic = $this->get_account_pic($user_access_token['access_token'], $user_details['user_id']);
+            $user = array('user_name' => $user_details['user_name'], 'user_thumbnail' => $get_account_pic['user_pic'], 'user_id' => $user_details['user_id'], 'access_token' => $user_access_token['access_token']);
             $pages_details = $this->get_pages_details($user_access_token['access_token'], $user_details['user_id']);
             $groups_details = $this->get_groups_details($user_access_token['access_token'], $user_details['user_id']);
             $events_details = $this->get_events_details($user_access_token['access_token'], $user_details['user_id']);
@@ -153,7 +154,7 @@ class Facebook_client_api {
 
     public function get_user_access_token($code) {
         $success = array('success' => false);
-        $redirect_uri = 'https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/fb-callback.php';
+        $redirect_uri = 'http://devplatform.streamingmediahosting.com/apps/sn/v1.0/fb-callback.php';
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, "https://graph.facebook.com/oauth/access_token?client_id=" . $this->OAUTH2_CLIENT_ID . "&client_secret=" . $this->OAUTH2_CLIENT_SECRET . "&redirect_uri=" . $redirect_uri . "&code=" . $code);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -171,7 +172,7 @@ class Facebook_client_api {
 
     public function get_code($access_token) {
         $success = array('success' => false);
-        $redirect_uri = 'https://mediaplatform.streamingmediahosting.com/apps/sn/v1.0/fb-callback.php';
+        $redirect_uri = 'http://devplatform.streamingmediahosting.com/apps/sn/v1.0/fb-callback.php';
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, "https://graph.facebook.com/oauth/client_code?client_id=" . $this->OAUTH2_CLIENT_ID . "&client_secret=" . $this->OAUTH2_CLIENT_SECRET . "&redirect_uri=" . $redirect_uri . "&access_token=" . $access_token);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
