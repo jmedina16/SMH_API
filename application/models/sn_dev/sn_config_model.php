@@ -1632,11 +1632,16 @@ class Sn_config_model extends CI_Model {
                     if ($channel['success']) {
                         $update_youtube_channel_details = $this->update_youtube_channel_details($pid, $channel['channel_details']['channel_title'], $channel['channel_details']['channel_thumb']);
                         if ($update_youtube_channel_details['success']) {
-                            $update_status = $this->update_sn_config($pid, 'youtube', 1);
-                            if ($update_status['success']) {
-                                $success = array('success' => true);
+                            $init_youtube_channel_settings = $this->init_youtube_channel_settings($pid);
+                            if ($init_youtube_channel_settings['success']) {
+                                $update_status = $this->update_sn_config($pid, 'youtube', 1);
+                                if ($update_status['success']) {
+                                    $success = array('success' => true);
+                                } else {
+                                    $success = array('success' => false);
+                                }
                             } else {
-                                $success = array('success' => false);
+                                $success = array('success' => false, 'message' => 'Could not init channel settings');
                             }
                         } else {
                             $success = array('success' => false, 'message' => 'Could not insert channel details');
@@ -2430,6 +2435,25 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => true, 'embed_status' => $embed_status);
         } else {
             $success = array('success' => true, 'embed_status' => $embed_status);
+        }
+        return $success;
+    }
+
+    public function init_youtube_channel_settings($pid) {
+        $success = array('success' => false);
+        $data = array(
+            'partner_id' => $pid,
+            'embed' => false,
+            'auto_upload' => false,
+            'created_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->insert('youtube_channel_settings', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
         }
         return $success;
     }
