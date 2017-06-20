@@ -3471,6 +3471,39 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function resync_yt_account($pid, $ks) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $access_token = $this->validate_youtube_token($pid);
+                if ($access_token['success']) {
+                    $channel = $this->retrieve_youtube_channel_details($pid, $access_token['access_token']);
+                    if ($channel['success']) {
+                        $update_youtube_channel_details = $this->update_youtube_channel_details($pid, $channel['channel_details']['channel_title'], $channel['channel_details']['channel_thumb']);
+                        if ($update_youtube_channel_details['success']) {
+                            $channel_details = array('channel_name' => $channel['channel_details']['channel_title'], 'channel_thumbnail' => $channel['channel_details']['channel_thumb']);
+                            $success = array('success' => true, 'channel_details' => $channel_details);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not insert channel details');
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not get channel details');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'YouTube: invalid access token');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Social network service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+
+        return $success;
+    }
+
     public function resync_fb_account($pid, $ks) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
@@ -3506,7 +3539,7 @@ class Sn_config_model extends CI_Model {
                     $get_user_details = $this->facebook_client_api->get_user_details($access_token['access_token']);
                     $user_name = $get_user_details['user_name'];
                     $user_id = $get_user_details['user_id'];
-                    $account_pic =  $this->facebook_client_api->get_account_pic($access_token['access_token'], $user_id);
+                    $account_pic = $this->facebook_client_api->get_account_pic($access_token['access_token'], $user_id);
                     $user = array('user_id' => $user_id, 'user_name' => $user_name, 'user_thumbnail' => $account_pic['user_pic'], 'access_token' => $access_token['access_token']);
                     $update_facebook_profile = $this->update_facebook_profile($pid, $user);
 
@@ -3592,12 +3625,13 @@ class Sn_config_model extends CI_Model {
                     }
 
                     if (($stream_to == 2 || $stream_to == 3 || $stream_to == 4) && (!$page_found && !$group_found && !$event_found)) {
+                        $profile_details = array('user_name' => $user_name, 'user_thumbnail' => $account_pic['user_pic']);
                         $remove_fb_settings = $this->remove_fb_settings($pid);
                         if ($remove_fb_settings['success']) {
                             $remove_livestream = $this->remove_fb_livestream($pid);
                             if ($remove_livestream['success']) {
                                 $livestream_settings = $this->get_fb_ls_settings($pid);
-                                $success = array('success' => true, 'stream_to' => $livestream_settings['stream_to'], 'settings' => $livestream_settings['settings']);
+                                $success = array('success' => true, 'stream_to' => $livestream_settings['stream_to'], 'settings' => $livestream_settings['settings'], 'profile_details' => $profile_details);
                             } else {
                                 $success = array('success' => false, 'message' => 'Could not remove facebook user livestream');
                             }
@@ -3605,8 +3639,9 @@ class Sn_config_model extends CI_Model {
                             $success = array('success' => false);
                         }
                     } else {
+                        $profile_details = array('user_name' => $user_name, 'user_thumbnail' => $account_pic['user_pic']);
                         $livestream_settings = $this->get_fb_ls_settings($pid);
-                        $success = array('success' => true, 'stream_to' => $livestream_settings['stream_to'], 'settings' => $livestream_settings['settings']);
+                        $success = array('success' => true, 'stream_to' => $livestream_settings['stream_to'], 'settings' => $livestream_settings['settings'], 'profile_details' => $profile_details);
                     }
                 } else {
                     $success = array('success' => false, 'message' => 'Facebook: invalid access token');
