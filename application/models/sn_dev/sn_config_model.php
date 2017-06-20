@@ -423,7 +423,7 @@ class Sn_config_model extends CI_Model {
         $auth = ($youtube_auth['success']) ? true : false;
         if ($auth) {
             $is_ls_enabled = $this->is_youtube_ls_enabled($pid, $youtube_auth['access_token']);
-            $channel_details = $this->get_yt_account_details($pid, $youtube_auth['access_token']);
+            $channel_details = $this->get_youtube_channel_details($pid);
             $embed = $this->get_youtube_embed_status($pid);
             $ls_enabled = ($is_ls_enabled['success']) ? true : false;
             $details = ($channel_details['success']) ? $channel_details['channel_details'] : null;
@@ -500,11 +500,33 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function get_yt_account_details($pid, $access_token) {
+    public function retrieve_youtube_channel_details($pid, $access_token) {
         $success = array('success' => false);
         $account_details = $this->google_client_api->get_account_details($access_token);
         if ($account_details['success']) {
             $channel_details = array('channel_title' => $account_details['channel_title'], 'channel_thumb' => $account_details['channel_thumb']);
+            $success = array('success' => true, 'channel_details' => $channel_details);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function get_youtube_channel_details($pid) {
+        $success = array('success' => false);
+        $name = '';
+        $thumbnail = '';
+        $this->config->select('*')
+                ->from('youtube_channel')
+                ->where('partner_id', $pid);
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $name = $res['name'];
+                $thumbnail = $res['thumbnail'];
+            }
+            $channel_details = array('channel_title' => $name, 'channel_thumb' => $thumbnail);
             $success = array('success' => true, 'channel_details' => $channel_details);
         } else {
             $success = array('success' => false);
@@ -1575,11 +1597,21 @@ class Sn_config_model extends CI_Model {
                     $result = $this->insert_youtube_tokens($valid['pid'], $tokens);
                 }
                 if ($result['success']) {
-                    $update_status = $this->update_sn_config($pid, 'youtube', 1);
-                    if ($update_status['success']) {
-                        $success = array('success' => true);
+                    $channel = $this->retrieve_youtube_channel_details($pid, $tokens['access_token']);
+                    if ($channel['success']) {
+                        $update_youtube_channel_details = $this->update_youtube_channel_details($pid, $channel['channel_details']['channel_title'], $channel['channel_details']['channel_thumb']);
+                        if ($update_youtube_channel_details['success']) {
+                            $update_status = $this->update_sn_config($pid, 'youtube', 1);
+                            if ($update_status['success']) {
+                                $success = array('success' => true);
+                            } else {
+                                $success = array('success' => false);
+                            }
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not insert channel details');
+                        }
                     } else {
-                        $success = array('success' => false);
+                        $success = array('success' => false, 'message' => 'Could not get channel details');
                     }
                 } else {
                     $success = array('success' => false);
@@ -1622,6 +1654,24 @@ class Sn_config_model extends CI_Model {
             'token_type' => $tokens['token_type'],
             'expires_in' => $tokens['expires_in'],
             'created' => $tokens['created']
+        );
+
+        $this->config->where('partner_id', $pid);
+        $this->config->update('youtube_channel', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'notice' => 'no changes were made');
+        }
+        return $success;
+    }
+
+    public function update_youtube_channel_details($pid, $name, $thumbnail) {
+        $success = array('success' => false);
+        $data = array(
+            'name' => $this->config->escape_str($name),
+            'thumbnail' => $this->config->escape_str($thumbnail)
         );
 
         $this->config->where('partner_id', $pid);
