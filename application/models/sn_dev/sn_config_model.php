@@ -432,15 +432,36 @@ class Sn_config_model extends CI_Model {
         if ($auth) {
             $is_ls_enabled = $this->is_youtube_ls_enabled($pid, $youtube_auth['access_token']);
             $channel_details = $this->get_youtube_channel_details($pid);
-            $embed = $this->get_youtube_embed_status($pid);
             $ls_enabled = ($is_ls_enabled['success']) ? true : false;
+            $settings = $this->get_yt_settings($pid);
             $details = ($channel_details['success']) ? $channel_details['channel_details'] : null;
-            $embed_status = ($embed['success']) ? $embed['embed_status'] : false;
-            $youtube = array('platform' => 'youtube_live', 'authorized' => $auth, 'ls_enabled' => $ls_enabled, 'embed_status' => $embed_status, 'channel_details' => $details);
+            $embed_status = ($settings['success']) ? $settings['embed_status'] : false;
+            $auto_upload = ($settings['success']) ? $settings['auto_upload'] : false;
+            $youtube = array('platform' => 'youtube_live', 'authorized' => $auth, 'ls_enabled' => $ls_enabled, 'embed_status' => $embed_status, 'auto_upload' => $auto_upload, 'channel_details' => $details);
         } else {
-            $youtube = array('platform' => 'youtube_live', 'authorized' => $auth, 'ls_enabled' => false, 'embed_status' => false, 'channel_details' => null, 'redirect_url' => $this->google_client_api->getRedirectURL($pid, $ks));
+            $youtube = array('platform' => 'youtube_live', 'authorized' => $auth, 'ls_enabled' => false, 'embed_status' => false, 'auto_upload' => null, 'channel_details' => null, 'redirect_url' => $this->google_client_api->getRedirectURL($pid, $ks));
         }
         return $youtube;
+    }
+
+    public function get_yt_settings($pid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('youtube_channel_settings')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $embed_status = ($res['embed']) ? true : false;
+                $auto_upload = ($res['auto_upload']) ? true : false;
+            }
+            $success = array('success' => true, 'embed_status' => $embed_status, 'auto_upload' => $auto_upload);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
     }
 
     public function get_youtube_status($pid) {
@@ -2372,25 +2393,6 @@ class Sn_config_model extends CI_Model {
                 $bid = $this->smcipher->decrypt($res['liveBroadcastId']);
             }
             $success = array('success' => true, 'bid' => $bid);
-        } else {
-            $success = array('success' => false);
-        }
-        return $success;
-    }
-
-    public function get_youtube_embed_status($pid) {
-        $success = array('success' => false);
-        $this->config->select('*')
-                ->from('youtube_channel_settings')
-                ->where('partner_id', $pid);
-
-        $query = $this->config->get();
-        $result = $query->result_array();
-        if ($query->num_rows() > 0) {
-            foreach ($result as $res) {
-                $embed_status = ($res['embed']) ? true : false;
-            }
-            $success = array('success' => true, 'embed_status' => $embed_status);
         } else {
             $success = array('success' => false);
         }
