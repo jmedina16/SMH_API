@@ -17,7 +17,7 @@ class Google_client_api {
         $this->OAUTH2_CLIENT_SECRET = 'o9fEzEUdCq_mXLMGDMHboE6m';
     }
 
-    public function getRedirectURL($pid, $ks) {
+    public function getRedirectURL($pid, $ks, $projection) {
         try {
             $client = new Google_Client();
             $client->setClientId($this->OAUTH2_CLIENT_ID);
@@ -27,7 +27,7 @@ class Google_client_api {
             $client->setApprovalPrompt('force');
             $redirect = filter_var('http://devplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
             $client->setRedirectUri($redirect);
-            $client->setState($pid . "|" . $ks);
+            $client->setState($pid . "|" . $ks . "|" . $projection);
             $authUrl = $client->createAuthUrl();
             return $authUrl;
         } catch (Google_Service_Exception $e) {
