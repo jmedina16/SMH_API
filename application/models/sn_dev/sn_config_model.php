@@ -3130,8 +3130,24 @@ class Sn_config_model extends CI_Model {
 
     public function sn_routine() {
         $success = array('success' => false);
-        $check_youtube_entries = $this->check_youtube_entries();
-        if ($check_youtube_entries['success']) {
+        $run_live_routine = $this->run_live_routine();
+        if ($run_live_routine['success']) {
+            $run_vod_routine = $this->run_vod_routine();
+            if ($run_vod_routine['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false);
+            }
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function run_live_routine() {
+        $success = array('success' => false);
+        $check_youtube_live_entries = $this->check_youtube_live_entries();
+        if ($check_youtube_live_entries['success']) {
             $check_facebook_livestreams = $this->check_facebook_livestreams();
             if ($check_facebook_livestreams['success']) {
                 $success = array('success' => true);
@@ -3140,6 +3156,10 @@ class Sn_config_model extends CI_Model {
             }
         }
         return $success;
+    }
+
+    public function run_vod_routine() {
+        
     }
 
     public function check_facebook_livestreams() {
@@ -3211,7 +3231,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function check_youtube_entries() {
+    public function check_youtube_live_entries() {
         $success = array('success' => false);
         $entries = $this->get_youtube_entries();
         if ($entries['success']) {
