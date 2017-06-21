@@ -2498,22 +2498,21 @@ class Sn_config_model extends CI_Model {
 
     public function update_youtube_channel_settings($pid, $ks, $auto_upload) {
         $success = array('success' => false);
+        $auto_upload = ($auto_upload == 'true') ? true : false;
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $data = array(
-                    'auto_upload' => ($auto_upload == 'true') ? true : false,
-                    'updated_at' => date("Y-m-d H:i:s")
-                );
-
-                $this->config->where('partner_id', $pid);
-                $this->config->update('youtube_channel_settings', $data);
-                $this->config->limit(1);
-                if ($this->config->affected_rows() > 0) {
-                    $success = array('success' => true);
+                $update_partner_notification = $this->smportal->update_partner_notification($pid, $ks, $auto_upload);
+                if ($update_partner_notification['success']) {
+                    $update_youtube_auto_upload = $this->update_youtube_auto_upload($pid, $auto_upload);
+                    if ($update_youtube_auto_upload['success']) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not update auto upload status');
+                    }
                 } else {
-                    $success = array('success' => false);
+                    $success = array('success' => false, 'message' => 'Could not update partner notification');
                 }
             } else {
                 $success = array('success' => false, 'message' => 'Social network service not active');
@@ -2522,6 +2521,24 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
         }
 
+        return $success;
+    }
+
+    public function update_youtube_auto_upload($pid, $auto_upload) {
+        $success = array('success' => false);
+        $data = array(
+            'auto_upload' => $auto_upload,
+            'updated_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->where('partner_id', $pid);
+        $this->config->update('youtube_channel_settings', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
         return $success;
     }
 
