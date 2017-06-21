@@ -3711,6 +3711,32 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function add_to_upload_queue($pid, $eid) {
+        $has_service = $this->verify_service($pid);
+        if ($has_service) {
+            $get_auto_upload_statuses = $this->get_auto_upload_statuses($pid);
+            syslog(LOG_NOTICE, "SMH DEBUG : add_to_upload_queue: " . print_r($get_auto_upload_statuses, true));
+        } else {
+            $success = array('success' => false, 'message' => 'Social network service not active');
+        }
+        return $success;
+    }
+
+    public function get_auto_upload_statuses($pid) {
+        $success = array('success' => false);
+        $statuses = array();
+        $youtube_status = $this->get_youtube_status($pid);
+        if ($youtube_status['status']) {
+            $youtube = $this->get_yt_settings($pid);
+            if ($youtube['success']) {
+                $statuses['youtube'] = $youtube['auto_upload'];
+            }
+        }
+        $success = array('success' => true, 'auto_upload' => $statuses);
+
+        return $success;
+    }
+
     public function finalize_address_url($url) {
         $parse_url = parse_url($url);
         $scheme = $parse_url['scheme'];
