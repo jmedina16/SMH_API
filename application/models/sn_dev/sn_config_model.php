@@ -456,7 +456,7 @@ class Sn_config_model extends CI_Model {
             foreach ($result as $res) {
                 $embed_status = ($res['embed']) ? true : false;
                 $auto_upload = ($res['auto_upload']) ? true : false;
-                $projection = ($res['projection']) ? true : false;
+                $projection = $res['projection'];
             }
             $success = array('success' => true, 'embed_status' => $embed_status, 'auto_upload' => $auto_upload, 'projection' => $projection);
         } else {
@@ -588,11 +588,21 @@ class Sn_config_model extends CI_Model {
                             if ($remove_yt_channel['success']) {
                                 $remove_yt_channel_settings = $this->remove_youtube_channel_settings($pid);
                                 if ($remove_yt_channel_settings['success']) {
-                                    $update_status = $this->update_sn_config($pid, 'youtube', 0);
-                                    if ($update_status['success']) {
-                                        $success = array('success' => true);
+                                    $remove_youtube_upload_queues = $this->remove_youtube_upload_queues($pid);
+                                    if ($remove_youtube_upload_queues['success']) {
+                                        $remove_youtube_vod_entries = $this->remove_youtube_vod_entries($pid);
+                                        if ($remove_youtube_vod_entries['success']) {
+                                            $update_status = $this->update_sn_config($pid, 'youtube', 0);
+                                            if ($update_status['success']) {
+                                                $success = array('success' => true);
+                                            } else {
+                                                $success = array('success' => false, 'message' => 'Could not update platform status');
+                                            }
+                                        } else {
+                                            $success = array('success' => false, 'message' => 'Could not remove vod entries');
+                                        }
                                     } else {
-                                        $success = array('success' => false, 'message' => 'Could not update platform status');
+                                        $success = array('success' => false, 'message' => 'Could not remove upload queues');
                                     }
                                 } else {
                                     $success = array('success' => false, 'message' => $remove_yt_channel_settings['message']);
@@ -635,6 +645,31 @@ class Sn_config_model extends CI_Model {
         $success = array('success' => false);
         $this->config->where('partner_id = "' . $pid . '"');
         $this->config->delete('youtube_channel_settings');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'message' => 'Nothing removed');
+        }
+        return $success;
+    }
+
+    public function remove_youtube_upload_queues($pid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id = "' . $pid . '"');
+        $this->config->where('platform = "youtube"');
+        $this->config->delete('upload_queue');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'message' => 'Nothing removed');
+        }
+        return $success;
+    }
+
+    public function remove_youtube_vod_entries($pid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id = "' . $pid . '"');
+        $this->config->delete('youtube_vod_entries');
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
         } else {
@@ -3717,6 +3752,7 @@ class Sn_config_model extends CI_Model {
         $has_service = $this->verify_service($pid);
         if ($has_service) {
             $get_auto_upload_statuses = $this->get_auto_upload_statuses($pid);
+            syslog(LOG_NOTICE, "SMH DEBUG : add_to_upload_queue " . print_r($get_auto_upload_statuses, true));
             if ($get_auto_upload_statuses['auto_upload']['youtube']) {
                 if (!$this->check_if_upload_queue_exists($pid, $eid, 'youtube') && !$this->check_if_youtube_vod_exists($pid, $eid)) {
                     $insert_video_to_upload_queue = $this->insert_video_to_upload_queue($pid, $eid, $get_auto_upload_statuses['auto_upload']['youtube_projection'], 'youtube', 'ready');
