@@ -146,6 +146,25 @@ class SMPortal {
         return $player_info;
     }
 
+    public function update_partner_notification($pid, $ks, $auto_upload) {
+        $notify = ($auto_upload)? 1 : 0;
+        $success = array('success' => false);
+        $config = new KalturaConfiguration($pid);
+        $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
+        $client = new KalturaClient($config);
+        $client->setKs($ks);
+        $partner = new KalturaPartner();
+        $partner->notificationUrl = 'http://devplatform.streamingmediahosting.com/apps/sn/v1.0/add_to_upload_queue.php';
+        $partner->notify = $notify;
+        $partner->notificationsConfig = '*=0;1=0;2=0;3=0;4=0;21=0;6=0;7=0;26=0;5=1;';
+        $allowEmpty = null;
+        $result = $client->partner->update($partner, $allowEmpty);
+        if ($result) {
+            $success = array('success' => true);
+        }
+        return $success;
+    }
+
     public function get_highest_bitrate($pid, $ks, $eid) {
         $success = array('success' => false);
         $config = new KalturaConfiguration($pid);
