@@ -14,6 +14,8 @@ class Sn_config extends REST_Controller {
     public function get_sn_config_get() {
         $pid = $this->get('pid');
         $ks = $this->get('ks');
+        $projection = $this->get('projection');
+
         if (!isset($pid) || $pid == null) {
 
             $this->response(array('error' => 'Missing pid'), 200);
@@ -24,7 +26,12 @@ class Sn_config extends REST_Controller {
             $this->response(array('error' => 'Missing ks'), 200);
         }
 
-        $result = $this->sn_config_model->get_sn_config($pid, $ks);
+        if (!isset($projection) || $projection == null) {
+
+            $this->response(array('error' => 'Missing projection'), 200);
+        }
+
+        $result = $this->sn_config_model->get_sn_config($pid, $ks, $projection);
 
         if (!$result) {
 
@@ -68,6 +75,7 @@ class Sn_config extends REST_Controller {
         $pid = $this->get('pid');
         $ks = $this->get('ks');
         $code = $this->get('code');
+        $projection = $this->get('projection');
 
         if (!isset($pid) || $pid == null) {
 
@@ -84,7 +92,12 @@ class Sn_config extends REST_Controller {
             $this->response(array('error' => 'Missing code'), 200);
         }
 
-        $result = $this->sn_config_model->store_youtube_authorization($pid, $ks, $code);
+        if (!isset($projection) || $projection == null) {
+
+            $this->response(array('error' => 'Missing projection'), 200);
+        }
+
+        $result = $this->sn_config_model->store_youtube_authorization($pid, $ks, $code, $projection);
 
         if (!$result) {
 
