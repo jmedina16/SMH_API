@@ -97,7 +97,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function get_sn_config($pid, $ks) {
+    public function get_sn_config($pid, $ks, $projection) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
@@ -105,7 +105,7 @@ class Sn_config_model extends CI_Model {
             if ($has_service) {
                 $platforms = array();
                 $facebook = $this->facebook_platform($valid['pid'], $ks);
-                $youtube = $this->youtube_platform($valid['pid'], $ks);
+                $youtube = $this->youtube_platform($valid['pid'], $ks, $projection);
                 array_push($platforms, $facebook, $youtube);
                 $success = array('success' => true, 'platforms' => $platforms);
             } else {
@@ -426,7 +426,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function youtube_platform($pid, $ks) {
+    public function youtube_platform($pid, $ks, $projection) {
         $youtube_auth = $this->validate_youtube_token($pid);
         $auth = ($youtube_auth['success']) ? true : false;
         if ($auth) {
@@ -439,7 +439,7 @@ class Sn_config_model extends CI_Model {
             $auto_upload = ($settings['success']) ? $settings['auto_upload'] : false;
             $youtube = array('platform' => 'youtube_live', 'authorized' => $auth, 'ls_enabled' => $ls_enabled, 'embed_status' => $embed_status, 'auto_upload' => $auto_upload, 'channel_details' => $details);
         } else {
-            $youtube = array('platform' => 'youtube_live', 'authorized' => $auth, 'ls_enabled' => false, 'embed_status' => false, 'auto_upload' => null, 'channel_details' => null, 'redirect_url' => $this->google_client_api->getRedirectURL($pid, $ks));
+            $youtube = array('platform' => 'youtube_live', 'authorized' => $auth, 'ls_enabled' => false, 'embed_status' => false, 'auto_upload' => null, 'channel_details' => null, 'redirect_url' => $this->google_client_api->getRedirectURL($pid, $ks, $projection));
         }
         return $youtube;
     }
@@ -456,8 +456,9 @@ class Sn_config_model extends CI_Model {
             foreach ($result as $res) {
                 $embed_status = ($res['embed']) ? true : false;
                 $auto_upload = ($res['auto_upload']) ? true : false;
+                $projection = ($res['projection']) ? true : false;
             }
-            $success = array('success' => true, 'embed_status' => $embed_status, 'auto_upload' => $auto_upload);
+            $success = array('success' => true, 'embed_status' => $embed_status, 'auto_upload' => $auto_upload, 'projection' => $projection);
         } else {
             $success = array('success' => false);
         }
@@ -1615,7 +1616,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function store_youtube_authorization($pid, $ks, $code) {
+    public function store_youtube_authorization($pid, $ks, $code, $projection) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
@@ -1632,7 +1633,7 @@ class Sn_config_model extends CI_Model {
                     if ($channel['success']) {
                         $update_youtube_channel_details = $this->update_youtube_channel_details($pid, $channel['channel_details']['channel_title'], $channel['channel_details']['channel_thumb']);
                         if ($update_youtube_channel_details['success']) {
-                            $init_youtube_channel_settings = $this->init_youtube_channel_settings($pid);
+                            $init_youtube_channel_settings = $this->init_youtube_channel_settings($pid, $projection);
                             if ($init_youtube_channel_settings['success']) {
                                 $update_status = $this->update_sn_config($pid, 'youtube', 1);
                                 if ($update_status['success']) {
@@ -2440,12 +2441,13 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function init_youtube_channel_settings($pid) {
+    public function init_youtube_channel_settings($pid, $projection) {
         $success = array('success' => false);
         $data = array(
             'partner_id' => $pid,
             'embed' => false,
             'auto_upload' => false,
+            'projection' => $projection,
             'created_at' => date("Y-m-d H:i:s")
         );
 
@@ -3715,7 +3717,18 @@ class Sn_config_model extends CI_Model {
         $has_service = $this->verify_service($pid);
         if ($has_service) {
             $get_auto_upload_statuses = $this->get_auto_upload_statuses($pid);
-            syslog(LOG_NOTICE, "SMH DEBUG : add_to_upload_queue: " . print_r($get_auto_upload_statuses, true));
+            if ($get_auto_upload_statuses['auto_upload']['youtube']) {
+                if (!$this->check_if_upload_queue_exists($pid, $eid, 'youtube') && !$this->check_if_youtube_vod_exists($pid, $eid)) {
+                    $insert_video_to_upload_queue = $this->insert_video_to_upload_queue($pid, $eid, $get_auto_upload_statuses['auto_upload']['youtube_projection'], 'youtube', 'ready');
+                    if ($insert_video_to_upload_queue['success']) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not insert into upload queue');
+                    }
+                } else {
+                    $success = array('success' => true, 'message' => 'VOD already exists in queue or platform');
+                }
+            }
         } else {
             $success = array('success' => false, 'message' => 'Social network service not active');
         }
@@ -3730,9 +3743,64 @@ class Sn_config_model extends CI_Model {
             $youtube = $this->get_yt_settings($pid);
             if ($youtube['success']) {
                 $statuses['youtube'] = $youtube['auto_upload'];
+                $statuses['youtube_projection'] = $youtube['projection'];
             }
         }
         $success = array('success' => true, 'auto_upload' => $statuses);
+
+        return $success;
+    }
+
+    public function insert_video_to_upload_queue($pid, $eid, $projection, $platform, $status) {
+        $success = array('success' => false);
+        $data = array(
+            'partner_id' => $pid,
+            'entryId' => $eid,
+            'projection' => $projection,
+            'platform' => $platform,
+            'status' => $status,
+            'created_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->insert('upload_queue', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function check_if_upload_queue_exists($pid, $eid, $platform) {
+        $success = false;
+        $this->config->select('*')
+                ->from('upload_queue')
+                ->where('partner_id', $pid)
+                ->where('entryId', $eid)
+                ->where('platform', $platform);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
+        return $success;
+    }
+
+    public function check_if_youtube_vod_exists($pid, $eid) {
+        $success = false;
+        $this->config->select('*')
+                ->from('youtube_vod_entries')
+                ->where('partner_id', $pid)
+                ->where('entryId', $eid);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
 
         return $success;
     }
