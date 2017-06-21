@@ -3650,3 +3650,13 @@ Stack trace:
 [19-Jun-2017 15:21:48 America/Los_Angeles] PHP Fatal error:  Call to a member function result_array() on boolean in /var/www/vhosts/api/application/models/sn_dev/sn_config_model.php on line 526
 [19-Jun-2017 15:23:00 America/Los_Angeles] PHP Fatal error:  Call to a member function result_array() on boolean in /var/www/vhosts/api/application/models/sn_dev/sn_config_model.php on line 464
 [19-Jun-2017 15:24:05 America/Los_Angeles] PHP Fatal error:  Call to a member function result_array() on boolean in /var/www/vhosts/api/application/models/sn_dev/sn_config_model.php on line 464
+[20-Jun-2017 16:27:35 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Entry id "0_tui3yvw7" not found' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(457): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(209): KalturaBaseEntryService->get('0_tui3yvw7', NULL)
+#2 /var/www/vhosts/api/application/models/sn_dev/sn_config_model.php(2635): SMPortal->get_entry_details('10012', '0_tui3yvw7')
+#3 /var/www/vhosts/api/application/models/sn_dev/sn_config_model.php(2617): Sn_config_model->upload_youtube_video('10012', '0_tui3yvw7')
+#4 /var/www/vhosts/api/application/controllers/api_dev/sn_config.php(634): Sn_config_model->upload_queued_video_to_youtube('10012', '0_tui3yvw7')
+#5 [internal function]: Sn_config->upload_queued_video_to_youtube_get()
+#6 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#7 /var/www/vhosts/ap in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734

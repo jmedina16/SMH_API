@@ -817,7 +817,7 @@ class Google_client_api {
                     $chunkSizeBytes = 1 * 1024 * 1024;
 
                     $client->setDefer(true);
-                    $insertRequest = $youtube->videos->insert("status,snippet", $video);
+                    $insertRequest = $youtube->videos->insert("id,status,snippet", $video);
 
                     $media = new Google_Http_MediaFileUpload(
                             $client, $insertRequest, 'video/*', null, true, $chunkSizeBytes
@@ -832,6 +832,8 @@ class Google_client_api {
                     }
                     fclose($handle);
                     $client->setDefer(false);
+                    syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo1: " . print_r($status, true));
+                    syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo2: " . print_r($status->id, true));
                     if ($status['status']['uploadStatus'] == 'uploaded') {
                         $success = array('success' => true);
                     } else {
