@@ -3136,7 +3136,7 @@ class Sn_config_model extends CI_Model {
             if ($run_vod_routine['success']) {
                 $success = array('success' => true);
             } else {
-                $success = array('success' => false);
+                $success = array('success' => false, 'message' => $run_vod_routine['message']);
             }
         } else {
             $success = array('success' => false);
@@ -3161,8 +3161,8 @@ class Sn_config_model extends CI_Model {
     public function run_vod_routine() {
         $get_ready_upload = $this->get_ready_upload();
         if (count($get_ready_upload['ready_upload']) > 0) {
-            if ($get_ready_upload['ready_upload']['platform'] === 'youtube') {
-                if (get_ready_upload['ready_upload']['projection'] === 'rectangular') {
+            if ($get_ready_upload['ready_upload']['platform'] == 'youtube') {
+                if ($get_ready_upload['ready_upload']['projection'] == 'rectangular') {
                     $update_upload_queue_status = $this->update_upload_queue_status($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid'], $get_ready_upload['ready_upload']['platform'], 'uploading');
                     if ($update_upload_queue_status['success']) {
                         $upload_youtube_video = $this->upload_rect_youtube_video($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid']);
@@ -3185,6 +3185,8 @@ class Sn_config_model extends CI_Model {
             } else if ($get_ready_upload['ready_upload']['platform'] === 'facebook') {
                 
             }
+        } else {
+            $success = array('success' => true);
         }
         return $success;
     }
