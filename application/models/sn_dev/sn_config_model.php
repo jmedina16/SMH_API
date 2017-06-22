@@ -3159,6 +3159,19 @@ class Sn_config_model extends CI_Model {
     }
 
     public function run_vod_routine() {
+        $success = array('success' => false);
+        $process_upload_queue = $this->process_upload_queue();
+        if ($process_upload_queue['success']) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false, 'message' => 'Could not process upload queue');
+        }
+
+        return $success;
+    }
+
+    public function process_upload_queue() {
+        $success = array('success' => false);
         $currently_uploading = $this->check_if_uploading();
         if (!$currently_uploading) {
             $get_ready_upload = $this->get_ready_upload();
@@ -3279,6 +3292,28 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => false);
         }
 
+        return $success;
+    }
+
+    public function get_pending_uploads() {
+        $success = array('success' => false);
+        $pending = array();
+        $this->config->select('*')
+                ->from('upload_queue')
+                ->where('status', 'pending');
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $pid = $res['partner_id'];
+                $eid = $res['entryId'];
+                array_push($pending, array('pid' => $pid, 'eid' => $eid));
+            }
+            $success = array('success' => true, 'pending_entries' => $pending);
+        } else {
+            $success = array('success' => false);
+        }
         return $success;
     }
 
@@ -3455,7 +3490,6 @@ class Sn_config_model extends CI_Model {
     public function get_youtube_entries() {
         $success = array('success' => false);
         $ready = array();
-        $testing = array();
         $complete = array();
         $this->config->select('*')
                 ->from('youtube_live_entries');
@@ -3467,11 +3501,11 @@ class Sn_config_model extends CI_Model {
                 $pid = $res['partner_id'];
                 $eid = $res['entryId'];
                 $status = $res['status'];
-            }
-            if ($status == 'ready') {
-                array_push($ready, array('pid' => $pid, 'eid' => $eid, 'status' => $status));
-            } else if ($status == 'complete') {
-                array_push($complete, array('pid' => $pid, 'eid' => $eid, 'status' => $status));
+                if ($status == 'ready') {
+                    array_push($ready, array('pid' => $pid, 'eid' => $eid, 'status' => $status));
+                } else if ($status == 'complete') {
+                    array_push($complete, array('pid' => $pid, 'eid' => $eid, 'status' => $status));
+                }
             }
             $success = array('success' => true, 'ready_entries' => $ready, 'complete_entries' => $complete);
         } else {
