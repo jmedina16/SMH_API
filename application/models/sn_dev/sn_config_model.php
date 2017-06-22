@@ -2668,7 +2668,7 @@ class Sn_config_model extends CI_Model {
 //            if ($platforms_status['success']) {
 //                if (count($platforms_status['platforms_status'])) {
 //                    if ($platforms_status['platforms_status']['youtube']) {
-            $success = $this->upload_youtube_video($pid, $eid);
+            $success = $this->upload_rect_youtube_video($pid, $eid);
 //                    } else {
 //                        $success = array('success' => true, 'message' => 'Social network: nothing to update');
 //                    }
@@ -2684,7 +2684,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function upload_youtube_video($pid, $eid) {
+    public function upload_rect_youtube_video($pid, $eid) {
         $success = array('success' => false);
         $entry_details = $this->smportal->get_entry_details($pid, $eid);
         $entry_path = $this->smportal->get_entry_path($pid, $eid);
@@ -3159,7 +3159,54 @@ class Sn_config_model extends CI_Model {
     }
 
     public function run_vod_routine() {
-        
+        $get_ready_upload = $this->get_ready_upload();
+        if (count($get_ready_upload['ready_upload']) > 0) {
+            if ($get_ready_upload['ready_upload']['platform'] === 'youtube') {
+                if (get_ready_upload['ready_upload']['projection'] === 'rectangular') {
+                    $update_upload_queue_status = $this->update_upload_queue_status($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid'], $get_ready_upload['ready_upload']['platform'], 'uploading');
+                    if ($update_upload_queue_status['success']) {
+                        $upload_youtube_video = $this->upload_rect_youtube_video($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid']);
+                        if ($upload_youtube_video['success']) {
+                            $update_upload_queue_status = $this->update_upload_queue_status($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid'], $get_ready_upload['ready_upload']['platform'], 'completed');
+                            if ($update_upload_queue_status['success']) {
+                                $success = array('success' => true);
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not update upload status');
+                            }
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not upload video to YouTube');
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not update upload status');
+                    }
+                } else {
+                    
+                }
+            } else if ($get_ready_upload['ready_upload']['platform'] === 'facebook') {
+                
+            }
+        }
+        return $success;
+    }
+
+    public function update_upload_queue_status($pid, $eid, $platform, $status) {
+        $success = array('success' => false);
+        $data = array(
+            'status' => $status,
+            'updated_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->where('partner_id', $pid);
+        $this->config->where('entryId', $eid);
+        $this->config->where('platform', $platform);
+        $this->config->update('upload_queue', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'notice' => 'no changes were made');
+        }
+        return $success;
     }
 
     public function get_ready_upload() {
@@ -3183,7 +3230,7 @@ class Sn_config_model extends CI_Model {
             $ready['eid'] = $eid;
             $ready['platform'] = $platform;
             $ready['projection'] = $projection;
-            $success = array('success' => true, 'ready_uploads' => $ready);
+            $success = array('success' => true, 'ready_upload' => $ready);
         } else {
             $success = array('success' => false);
         }
@@ -3818,7 +3865,6 @@ class Sn_config_model extends CI_Model {
         $has_service = $this->verify_service($pid);
         if ($has_service) {
             $get_auto_upload_statuses = $this->get_auto_upload_statuses($pid);
-            syslog(LOG_NOTICE, "SMH DEBUG : add_to_upload_queue " . print_r($get_auto_upload_statuses, true));
             if ($get_auto_upload_statuses['auto_upload']['youtube']) {
                 if (!$this->check_if_upload_queue_exists($pid, $eid, 'youtube') && !$this->check_if_youtube_vod_exists($pid, $eid)) {
                     $insert_video_to_upload_queue = $this->insert_video_to_upload_queue($pid, $eid, $get_auto_upload_statuses['auto_upload']['youtube_projection'], 'youtube', 'ready');
