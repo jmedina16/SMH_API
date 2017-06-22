@@ -832,10 +832,8 @@ class Google_client_api {
                     }
                     fclose($handle);
                     $client->setDefer(false);
-                    syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo1: " . print_r($status, true));
-                    syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo2: " . print_r($status->id, true));
                     if ($status['status']['uploadStatus'] == 'uploaded') {
-                        $success = array('success' => true);
+                        $success = array('success' => true , 'videoId' => $status->id);
                     } else {
                         $success = array('success' => false);
                     }
