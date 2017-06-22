@@ -156,7 +156,7 @@ class SMPortal {
         $partner = new KalturaPartner();
         $partner->notificationUrl = 'http://devplatform.streamingmediahosting.com/apps/sn/v1.0/add_to_upload_queue.php';
         $partner->notify = $notify;
-        $partner->notificationsConfig = '*=0;1=0;2=0;3=0;4=0;21=0;6=0;7=0;26=0;5=1;';
+        $partner->notificationsConfig = '*=0;1=1;2=0;3=0;4=0;21=0;6=0;7=0;26=0;5=0;';
         $allowEmpty = null;
         $result = $client->partner->update($partner, $allowEmpty);
         if ($result) {
