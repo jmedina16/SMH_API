@@ -3162,6 +3162,35 @@ class Sn_config_model extends CI_Model {
         
     }
 
+    public function get_ready_upload() {
+        $success = array('success' => false);
+        $ready = array();
+        $this->config->select('*')
+                ->from('upload_queue')
+                ->where('status', 'ready')
+                ->order_by("id", "asc")
+                ->limit(1);
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $pid = $res['partner_id'];
+                $eid = $res['entryId'];
+                $projection = $res['projection'];
+                $platform = $res['platform'];
+            }
+            $ready['pid'] = $pid;
+            $ready['eid'] = $eid;
+            $ready['platform'] = $platform;
+            $ready['projection'] = $projection;
+            $success = array('success' => true, 'ready_uploads' => $ready);
+        } else {
+            $success = array('success' => false);
+        }
+
+        return $success;
+    }
+
     public function check_facebook_livestreams() {
         $success = array('success' => false);
         $livestreams = $this->get_fb_livestreams();
