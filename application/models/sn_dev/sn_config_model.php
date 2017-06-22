@@ -3911,7 +3911,7 @@ class Sn_config_model extends CI_Model {
             $get_auto_upload_statuses = $this->get_auto_upload_statuses($pid);
             if ($get_auto_upload_statuses['auto_upload']['youtube']) {
                 if (!$this->check_if_upload_queue_exists($pid, $eid, 'youtube') && !$this->check_if_youtube_vod_exists($pid, $eid)) {
-                    $insert_video_to_upload_queue = $this->insert_video_to_upload_queue($pid, $eid, $get_auto_upload_statuses['auto_upload']['youtube_projection'], 'youtube', 'ready');
+                    $insert_video_to_upload_queue = $this->insert_video_to_upload_queue($pid, $eid, $get_auto_upload_statuses['auto_upload']['youtube_projection'], 'youtube', 'pending');
                     if ($insert_video_to_upload_queue['success']) {
                         $success = array('success' => true);
                     } else {
