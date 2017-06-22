@@ -2692,7 +2692,7 @@ class Sn_config_model extends CI_Model {
         if ($access_token['success']) {
             $upload_video = $this->google_client_api->uploadVideo($access_token['access_token'], $entry_details['name'], $entry_details['desc'], $entry_path);
             if ($upload_video['success']) {
-                $success = array('success' => true);
+                $success = array('success' => true, 'videoId' => $upload_video['videoId']);
             } else {
                 $success = array('success' => false, 'message' => 'YouTube: could not upload video');
             }
@@ -3159,34 +3159,76 @@ class Sn_config_model extends CI_Model {
     }
 
     public function run_vod_routine() {
-        $get_ready_upload = $this->get_ready_upload();
-        if (count($get_ready_upload['ready_upload']) > 0) {
-            if ($get_ready_upload['ready_upload']['platform'] == 'youtube') {
-                if ($get_ready_upload['ready_upload']['projection'] == 'rectangular') {
-                    $update_upload_queue_status = $this->update_upload_queue_status($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid'], $get_ready_upload['ready_upload']['platform'], 'uploading');
+        $currently_uploading = $this->check_if_uploading();
+        if (!$currently_uploading) {
+            $get_ready_upload = $this->get_ready_upload();
+            if (count($get_ready_upload['ready_upload']) > 0) {
+                if ($get_ready_upload['ready_upload']['platform'] == 'youtube') {
+                    $process_youtube_upload_queue = $this->process_youtube_upload_queue($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid'], $get_ready_upload['ready_upload']['platform'], $get_ready_upload['ready_upload']['projection']);
+                    if ($process_youtube_upload_queue['success']) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not process YouTube upload queue');
+                    }
+                } else if ($get_ready_upload['ready_upload']['platform'] === 'facebook') {
+                    
+                }
+            } else {
+                $success = array('success' => true);
+            }
+        } else {
+            $success = array('success' => true);
+        }
+
+        return $success;
+    }
+
+    public function process_youtube_upload_queue($pid, $eid, $platform, $projection) {
+        $success = array('success' => false);
+        if ($projection == 'rectangular') {
+            $update_upload_queue_status = $this->update_upload_queue_status($pid, $eid, $platform, 'uploading');
+            if ($update_upload_queue_status['success']) {
+                $upload_youtube_video = $this->upload_rect_youtube_video($pid, $eid);
+                if ($upload_youtube_video['success']) {
+                    $update_upload_queue_status = $this->update_upload_queue_status($pid, $eid, $platform, 'completed');
                     if ($update_upload_queue_status['success']) {
-                        $upload_youtube_video = $this->upload_rect_youtube_video($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid']);
-                        if ($upload_youtube_video['success']) {
-                            $update_upload_queue_status = $this->update_upload_queue_status($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid'], $get_ready_upload['ready_upload']['platform'], 'completed');
-                            if ($update_upload_queue_status['success']) {
-                                $success = array('success' => true);
-                            } else {
-                                $success = array('success' => false, 'message' => 'Could not update upload status');
-                            }
+                        $insert_entry_to_youtube_vod = $this->insert_entry_to_youtube_vod($pid, $eid, $upload_youtube_video['videoId'], $projection);
+                        if ($insert_entry_to_youtube_vod['success']) {
+                            $success = array('success' => true);
                         } else {
-                            $success = array('success' => false, 'message' => 'Could not upload video to YouTube');
+                            $success = array('success' => false, 'message' => 'Could not insert entry into YouTube vod');
                         }
                     } else {
                         $success = array('success' => false, 'message' => 'Could not update upload status');
                     }
                 } else {
-                    
+                    $success = array('success' => false, 'message' => 'Could not upload video to YouTube');
                 }
-            } else if ($get_ready_upload['ready_upload']['platform'] === 'facebook') {
-                
+            } else {
+                $success = array('success' => false, 'message' => 'Could not update upload status');
             }
         } else {
+            
+        }
+        return $success;
+    }
+
+    public function insert_entry_to_youtube_vod($pid, $eid, $vid, $projection) {
+        $success = array('success' => false);
+        $data = array(
+            'partner_id' => $pid,
+            'entryId' => $eid,
+            'videoId' => $vid,
+            'projection' => $projection,
+            'created_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->insert('youtube_vod_entries', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
         }
         return $success;
     }
@@ -3929,6 +3971,21 @@ class Sn_config_model extends CI_Model {
                 ->where('partner_id', $pid)
                 ->where('entryId', $eid)
                 ->where('platform', $platform);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
+        return $success;
+    }
+
+    public function check_if_uploading() {
+        $success = false;
+        $this->config->select('*')
+                ->from('upload_queue')
+                ->where('status', 'uploading');
         $query = $this->config->get();
         if ($query->num_rows() > 0) {
             $success = true;
