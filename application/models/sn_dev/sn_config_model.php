@@ -3160,13 +3160,32 @@ class Sn_config_model extends CI_Model {
 
     public function run_vod_routine() {
         $success = array('success' => false);
-        $process_upload_queue = $this->process_upload_queue();
-        if ($process_upload_queue['success']) {
+        $process_pending_uploads = $this->process_pending_uploads();
+        if ($process_pending_uploads['success']) {
+            $process_upload_queue = $this->process_upload_queue();
+            if ($process_upload_queue['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Could not process upload queue');
+            }
+        }
+        return $success;
+    }
+
+    public function process_pending_uploads() {
+        $success = array('success' => false);
+        $pending_uploads = $this->get_pending_uploads();
+        if ($pending_uploads['success']) {
+            foreach ($pending_uploads['pending_entries'] as $pending) {
+                $entry = $this->smportal->get_entry_details($pending['pid'], $pending['eid']);
+                if ($entry['status'] == 2) {
+                    $this->update_upload_queue_status($pending['pid'], $pending['eid'], $pending['platform'], 'ready');
+                }
+            }
             $success = array('success' => true);
         } else {
-            $success = array('success' => false, 'message' => 'Could not process upload queue');
+            $success = array('success' => true);
         }
-
         return $success;
     }
 
@@ -3308,7 +3327,9 @@ class Sn_config_model extends CI_Model {
             foreach ($result as $res) {
                 $pid = $res['partner_id'];
                 $eid = $res['entryId'];
-                array_push($pending, array('pid' => $pid, 'eid' => $eid));
+                $projection = $res['projection'];
+                $platform = $res['platform'];
+                array_push($pending, array('pid' => $pid, 'eid' => $eid, 'projection' => $projection, 'platform' => $platform));
             }
             $success = array('success' => true, 'pending_entries' => $pending);
         } else {
