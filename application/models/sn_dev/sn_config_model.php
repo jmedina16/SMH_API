@@ -954,7 +954,7 @@ class Sn_config_model extends CI_Model {
                 if ($delete_youtube_livestream['success']) {
                     $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
                     if ($partnerData['success']) {
-                        $platforms = $this->getPlatforms(json_decode($partnerData['partnerData']));
+                        $platforms = $this->get_live_platforms(json_decode($partnerData['partnerData']));
                         $update_sn_config = $this->set_youtube_config_false($platforms['platforms']);
                         $partnerData = $this->update_sn_partnerData($pid, $eid, $update_sn_config['sn_config']);
                         if ($partnerData['success']) {
@@ -982,7 +982,7 @@ class Sn_config_model extends CI_Model {
             foreach ($entries['entries'] as $entry) {
                 $partnerData = $this->smportal->get_entry_partnerData($pid, $entry);
                 if ($partnerData['success']) {
-                    $platforms = $this->getPlatforms(json_decode($partnerData['partnerData']));
+                    $platforms = $this->get_live_platforms(json_decode($partnerData['partnerData']));
                     $update_sn_config = $this->set_facebook_config_false($platforms['platforms']);
                     $partnerData = $this->update_sn_partnerData($pid, $entry, $update_sn_config['sn_config']);
                     if ($partnerData['success']) {
@@ -1825,10 +1825,10 @@ class Sn_config_model extends CI_Model {
                     $platforms_responses = array();
                     array_push($platforms_responses, $youtube_success);
                     array_push($platforms_responses, $facebook_success);
-                    $update_sn_config = $this->insert_into_sn_config($youtube_broadcast_id, $facebook_live_id, $snConfig['sn_config']);
+                    $update_sn_config = $this->insert_into_live_sn_config($youtube_broadcast_id, $facebook_live_id, $snConfig['sn_config']);
                     $partnerData = $this->update_sn_partnerData($pid, $eid, $update_sn_config['sn_config']);
                     if ($partnerData['success']) {
-                        $platf = $this->getPlatforms(json_decode($partnerData['partnerData']));
+                        $platf = $this->get_live_platforms(json_decode($partnerData['partnerData']));
                         $configSettings = $this->buildConfigSettings($platf);
                         $success = array('success' => true, 'configSettings' => $configSettings, 'youtube_embed_status' => $youtube_embed, 'platforms_responses' => $platforms_responses);
                     } else {
@@ -1837,7 +1837,7 @@ class Sn_config_model extends CI_Model {
                 } else {
                     $partnerData = $this->update_sn_partnerData($pid, $eid, $snConfig['sn_config']);
                     if ($partnerData['success']) {
-                        $platf = $this->getPlatforms(json_decode($partnerData['partnerData']));
+                        $platf = $this->get_live_platforms(json_decode($partnerData['partnerData']));
                         $configSettings = $this->buildConfigSettings($platf);
                         $success = array('success' => true, 'configSettings' => $configSettings);
                     } else {
@@ -2054,7 +2054,7 @@ class Sn_config_model extends CI_Model {
         return $platforms_preview_embed;
     }
 
-    public function insert_into_sn_config($youtube_broadcast_id, $facebook_live_id, $platforms_config) {
+    public function insert_into_live_sn_config($youtube_broadcast_id, $facebook_live_id, $platforms_config) {
         $new_platforms_config = array();
         foreach ($platforms_config as $platform) {
             if ($platform['platform'] == 'facebook_live') {
@@ -2073,6 +2073,37 @@ class Sn_config_model extends CI_Model {
                 } else if ($platform['status'] && $platform['broadcastId'] && !$youtube_broadcast_id) {
                     array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status'], 'broadcastId' => $platform['broadcastId']));
                 } else if ($platform['status'] && !$platform['broadcastId'] && !$youtube_broadcast_id) {
+                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => false));
+                } else {
+                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status']));
+                }
+            } else {
+                array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status']));
+            }
+        }
+        $success = array('success' => true, 'sn_config' => $new_platforms_config);
+        return $success;
+    }
+
+    public function insert_into_vod_sn_config($youtube_video_id, $facebook_video_id, $platforms_config) {
+        $new_platforms_config = array();
+        foreach ($platforms_config as $platform) {
+            if ($platform['platform'] == 'facebook') {
+                if ($platform['status'] && $facebook_video_id) {
+                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status'], 'videoId' => $facebook_video_id));
+                } else if ($platform['status'] && $platform['videoId'] && !$facebook_video_id) {
+                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status'], 'videoId' => $platform['videoId']));
+                } else if ($platform['status'] && !$platform['videoId'] && !$facebook_video_id) {
+                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => false));
+                } else {
+                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status']));
+                }
+            } else if ($platform['platform'] == 'youtube') {
+                if ($platform['status'] && $youtube_video_id) {
+                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status'], 'videoId' => $youtube_video_id));
+                } else if ($platform['status'] && $platform['videoId'] && !$youtube_video_id) {
+                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status'], 'videoId' => $platform['videoId']));
+                } else if ($platform['status'] && !$platform['videoId'] && !$youtube_video_id) {
                     array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => false));
                 } else {
                     array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status']));
@@ -2222,7 +2253,7 @@ class Sn_config_model extends CI_Model {
                     $facebook_success['message'] = $update_facebook_live_stream['message'];
                 }
 
-                $update_sn_config = $this->insert_into_sn_config($youtube_broadcast_id, $facebook_live_id, $snConfig['sn_config']);
+                $update_sn_config = $this->insert_into_live_sn_config($youtube_broadcast_id, $facebook_live_id, $snConfig['sn_config']);
                 $partnerData = $this->update_sn_partnerData($pid, $eid, $update_sn_config['sn_config']);
                 if ($partnerData['success']) {
                     $platforms_responses = array();
@@ -2825,7 +2856,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function getPlatforms($json) {
+    public function get_live_platforms($json) {
         $result = array();
         $result['platforms'] = array();
         foreach ($json as $key => $value) {
@@ -2851,6 +2882,37 @@ class Sn_config_model extends CI_Model {
                             array_push($result['platforms'], $platform);
                         } else {
                             $platform = array('platform' => 'youtube_live', 'status' => $platforms->status);
+                            array_push($result['platforms'], $platform);
+                        }
+                    }
+                }
+            }
+        }
+        return $result;
+    }
+
+    public function get_vod_platforms($json) {
+        $result = array();
+        $result['platforms'] = array();
+        foreach ($json as $key => $value) {
+            if ($key == 'snConfig') {
+                $result['snConfig'] = true;
+                foreach ($value as $platforms) {
+                    if ($platforms->platform == "facebook") {
+                        if ($platforms->status) {
+                            $platform = array('platform' => 'facebook', 'status' => $platforms->status, 'videoId' => $platforms->videoId);
+                            array_push($result['platforms'], $platform);
+                        } else {
+                            $platform = array('platform' => 'facebook', 'status' => $platforms->status);
+                            array_push($result['platforms'], $platform);
+                        }
+                    }
+                    if ($platforms->platform == "youtube") {
+                        if ($platforms->status) {
+                            $platform = array('platform' => 'youtube', 'status' => $platforms->status, 'videoId' => $platforms->videoId);
+                            array_push($result['platforms'], $platform);
+                        } else {
+                            $platform = array('platform' => 'youtube', 'status' => $platforms->status);
                             array_push($result['platforms'], $platform);
                         }
                     }
@@ -3710,8 +3772,8 @@ class Sn_config_model extends CI_Model {
                             if ($updateBid['success']) {
                                 $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
                                 if ($partnerData['success']) {
-                                    $platforms = $this->getPlatforms(json_decode($partnerData['partnerData']));
-                                    $updated_config = $this->insert_into_sn_config($createNewBroadCast['liveBroadcastId'], null, $platforms['platforms']);
+                                    $platforms = $this->get_live_platforms(json_decode($partnerData['partnerData']));
+                                    $updated_config = $this->insert_into_live_sn_config($createNewBroadCast['liveBroadcastId'], null, $platforms['platforms']);
                                     $partnerData = $this->update_sn_partnerData($pid, $eid, $updated_config['sn_config']);
                                     if ($partnerData['success']) {
                                         $add_youtube_emebed_status = $this->add_youtube_emebed_status($pid, $youtube_embed);
@@ -3737,8 +3799,8 @@ class Sn_config_model extends CI_Model {
                                 if ($updateBid['success']) {
                                     $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
                                     if ($partnerData['success']) {
-                                        $platforms = $this->getPlatforms(json_decode($partnerData['partnerData']));
-                                        $updated_config = $this->insert_into_sn_config($createNewBroadCast['liveBroadcastId'], null, $platforms['platforms']);
+                                        $platforms = $this->get_live_platforms(json_decode($partnerData['partnerData']));
+                                        $updated_config = $this->insert_into_live_sn_config($createNewBroadCast['liveBroadcastId'], null, $platforms['platforms']);
                                         $partnerData = $this->update_sn_partnerData($pid, $eid, $updated_config['sn_config']);
                                         if ($partnerData['success']) {
                                             $add_youtube_emebed_status = $this->add_youtube_emebed_status($pid, $youtube_embed);
@@ -3766,7 +3828,7 @@ class Sn_config_model extends CI_Model {
                                 if ($removeLiveEvent['success']) {
                                     $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
                                     if ($partnerData['success']) {
-                                        $platforms = $this->getPlatforms(json_decode($partnerData['partnerData']));
+                                        $platforms = $this->get_live_platforms(json_decode($partnerData['partnerData']));
                                         $update_sn_config = $this->set_youtube_config_false($platforms['platforms']);
                                         $partnerData = $this->update_sn_partnerData($pid, $eid, $update_sn_config['sn_config']);
                                         if ($partnerData['success']) {
