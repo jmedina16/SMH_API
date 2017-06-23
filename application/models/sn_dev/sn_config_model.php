@@ -3160,7 +3160,7 @@ class Sn_config_model extends CI_Model {
 
     public function run_vod_routine() {
         $success = array('success' => false);
-        $process_pending_uploads = $this->process_pending_uploads();
+        $process_pending_uploads = $this->process_pending_completed_uploads();
         if ($process_pending_uploads['success']) {
             $process_upload_queue = $this->process_upload_queue();
             if ($process_upload_queue['success']) {
@@ -3172,19 +3172,44 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function process_pending_uploads() {
+    public function process_pending_completed_uploads() {
+        date_default_timezone_set('America/Los_Angeles');
         $success = array('success' => false);
-        $pending_uploads = $this->get_pending_uploads();
-        if ($pending_uploads['success']) {
-            foreach ($pending_uploads['pending_entries'] as $pending) {
-                $entry = $this->smportal->get_entry_details($pending['pid'], $pending['eid']);
-                if ($entry['status'] == 2) {
-                    $this->update_upload_queue_status($pending['pid'], $pending['eid'], $pending['platform'], 'ready');
+        $uploads = $this->get_uploads();
+        if ($uploads['success']) {
+            if (count($uploads['pending_entries']) > 0) {
+                foreach ($uploads['pending_entries'] as $pending) {
+                    $entry = $this->smportal->get_entry_details($pending['pid'], $pending['eid']);
+                    if ($entry['status'] == 2) {
+                        $this->update_upload_queue_status($pending['pid'], $pending['eid'], $pending['platform'], 'ready');
+                    }
+                }
+            }
+            if (count($uploads['completed_entries']) > 0) {
+                foreach ($uploads['completed_entries'] as $completed) {
+                    $date = strtotime($completed['created_at']);
+                    $dateOneWeekAgo = strtotime("-1 week");
+                    if ($date <= $dateOneWeekAgo) {
+                        $this->removeCompletedUploadEntry($completed['pid'], $completed['eid']);
+                    }
                 }
             }
             $success = array('success' => true);
         } else {
             $success = array('success' => true);
+        }
+        return $success;
+    }
+
+    public function removeCompletedUploadEntry($pid, $eid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id', $pid);
+        $this->config->where('entryId', $eid);
+        $this->config->delete('upload_queue');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
         }
         return $success;
     }
@@ -3314,12 +3339,12 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function get_pending_uploads() {
+    public function get_uploads() {
         $success = array('success' => false);
         $pending = array();
+        $completed = array();
         $this->config->select('*')
-                ->from('upload_queue')
-                ->where('status', 'pending');
+                ->from('upload_queue');
 
         $query = $this->config->get();
         $result = $query->result_array();
@@ -3329,9 +3354,15 @@ class Sn_config_model extends CI_Model {
                 $eid = $res['entryId'];
                 $projection = $res['projection'];
                 $platform = $res['platform'];
-                array_push($pending, array('pid' => $pid, 'eid' => $eid, 'projection' => $projection, 'platform' => $platform));
+                $status = $res['status'];
+                $created_at = $res['created_at'];
+                if ($status == 'pending') {
+                    array_push($pending, array('pid' => $pid, 'eid' => $eid, 'projection' => $projection, 'platform' => $platform));
+                } else if ($status == 'completed') {
+                    array_push($completed, array('pid' => $pid, 'eid' => $eid, 'projection' => $projection, 'platform' => $platform, 'created_at' => $created_at));
+                }
             }
-            $success = array('success' => true, 'pending_entries' => $pending);
+            $success = array('success' => true, 'pending_entries' => $pending, 'completed_entries' => $completed);
         } else {
             $success = array('success' => false);
         }
