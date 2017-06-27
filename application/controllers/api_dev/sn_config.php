@@ -708,4 +708,46 @@ class Sn_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code 
     }
 
+    public function update_sn_vod_config_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+        $eid = $this->get('eid');
+        $snConfig = $this->get('snConfig');
+        $projection = $this->get('projection');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing pid'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        if (!isset($eid) || $eid == null) {
+
+            $this->response(array('error' => 'Missing eid'), 200);
+        }
+
+        if (!isset($snConfig) || $snConfig == null) {
+
+            $this->response(array('error' => 'Missing snConfig'), 200);
+        }
+
+        if (!isset($projection) || $projection == null) {
+
+            $this->response(array('error' => 'Missing projection'), 200);
+        }
+
+        $result = $this->sn_config_model->update_sn_vod_config($pid, $ks, $eid, $snConfig, $projection);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code 
+    }
+
 }
