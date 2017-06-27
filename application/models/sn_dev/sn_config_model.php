@@ -2221,15 +2221,15 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function build_vod_sn_config($youtube_video_id, $facebook_video_id) {
+    public function build_vod_sn_config($youtube_video_id, $youtube_upload_status, $facebook_video_id, $facebook_upload_status) {
         $platforms_config = array();
         if ($youtube_video_id) {
-            array_push($platforms_config, array('platform' => 'youtube', 'status' => true, 'videoId' => $youtube_video_id));
+            array_push($platforms_config, array('platform' => 'youtube', 'status' => true, 'videoId' => $youtube_video_id, 'upload_status' => $youtube_upload_status));
         } else if (!$youtube_video_id) {
             array_push($platforms_config, array('platform' => 'youtube', 'status' => false));
         }
         if ($facebook_video_id) {
-            array_push($platforms_config, array('platform' => 'facebook', 'status' => true, 'videoId' => $facebook_video_id));
+            array_push($platforms_config, array('platform' => 'facebook', 'status' => true, 'videoId' => $facebook_video_id, 'upload_status' => $facebook_upload_status));
         } else if (!$facebook_video_id) {
             array_push($platforms_config, array('platform' => 'facebook', 'status' => false));
         }
@@ -3329,7 +3329,7 @@ class Sn_config_model extends CI_Model {
                     if ($update_upload_queue_status['success']) {
                         $insert_entry_to_youtube_vod = $this->insert_entry_to_youtube_vod($pid, $eid, $upload_youtube_video['videoId'], $projection);
                         if ($insert_entry_to_youtube_vod['success']) {
-                            $add_vod_sn_config = $this->add_vod_sn_config($pid, $eid, $platform, $upload_youtube_video['videoId']);
+                            $add_vod_sn_config = $this->add_vod_sn_config($pid, $eid, $platform, $upload_youtube_video['videoId'], 'done');
                             if ($add_vod_sn_config['success']) {
                                 $success = array('success' => true);
                             } else {
@@ -3353,7 +3353,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function add_vod_sn_config($pid, $eid, $platform, $video_id) {
+    public function add_vod_sn_config($pid, $eid, $platform, $video_id, $upload_status) {
         $success = array('success' => false);
         $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
         $vod_platforms = $this->get_vod_platforms(json_decode($partnerData['partnerData']));
@@ -3361,9 +3361,9 @@ class Sn_config_model extends CI_Model {
             
         } else {
             if ($platform == 'youtube') {
-                $build_vod_sn_config = $this->build_vod_sn_config($video_id, null);
+                $build_vod_sn_config = $this->build_vod_sn_config($video_id, $upload_status, null, null);
             } else if ($platform == 'facebook') {
-                $build_vod_sn_config = $this->build_vod_sn_config(null, $video_id);
+                $build_vod_sn_config = $this->build_vod_sn_config(null, null, $video_id, $upload_status);
             }
             $update_sn_partnerData = $this->update_sn_partnerData($pid, $eid, $build_vod_sn_config['sn_config']);
             if ($update_sn_partnerData['success']) {
