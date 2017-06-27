@@ -3375,6 +3375,35 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function update_sn_vod_config($pid, $ks, $eid, $snConfig, $projection) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $platforms = json_decode($snConfig, true);
+                foreach ($platforms['platforms'] as $platform) {
+                    if ($platform['platform'] == 'facebook') {
+                        if ($platform['status']) {
+                            
+                        }
+                    } else if ($platform['platform'] == 'youtube') {
+                        if ($platform['status']) {
+                            $this->insert_video_to_upload_queue($pid, $eid, $projection, 'youtube', 'ready');
+                        }
+                    }
+                }
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Social network service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+
+        return $success;
+    }
+
     public function insert_entry_to_youtube_vod($pid, $eid, $vid, $projection) {
         $success = array('success' => false);
         $data = array(
