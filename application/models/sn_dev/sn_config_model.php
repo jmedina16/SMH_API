@@ -4138,7 +4138,12 @@ class Sn_config_model extends CI_Model {
                 if (!$this->check_if_upload_queue_exists($pid, $eid, 'youtube') && !$this->check_if_youtube_vod_exists($pid, $eid)) {
                     $insert_video_to_upload_queue = $this->insert_video_to_upload_queue($pid, $eid, $get_auto_upload_statuses['auto_upload']['youtube_projection'], 'youtube', 'pending');
                     if ($insert_video_to_upload_queue['success']) {
-                        $success = array('success' => true);
+                        $vod_sn_config = $this->add_vod_sn_config($pid, $eid, 'youtube', 'pending', 'pending');
+                        if ($vod_sn_config['success']) {
+                            $success = array('success' => true);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not add vod sn config');
+                        }
                     } else {
                         $success = array('success' => false, 'message' => 'Could not insert into upload queue');
                     }
