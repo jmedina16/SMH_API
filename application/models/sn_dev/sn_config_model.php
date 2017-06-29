@@ -3567,10 +3567,12 @@ class Sn_config_model extends CI_Model {
                             if ($is_uploading) {
                                 $success = array('success' => true, 'message' => 'Entry is currently uploading');
                             } else {
-                                
-                            }
-                            if (!$this->check_if_upload_queue_exists($pid, $eid, 'youtube') && !$this->check_if_youtube_vod_exists($pid, $eid)) {
-                                
+                                if ($this->check_if_upload_queue_exists($pid, $eid, 'youtube')) {
+                                    
+                                }
+                                if ($this->check_if_youtube_vod_exists($pid, $eid)) {
+                                    
+                                }
                             }
                         }
                     }
