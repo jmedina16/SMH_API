@@ -3481,22 +3481,33 @@ class Sn_config_model extends CI_Model {
 
     public function add_vod_sn_config($pid, $eid, $platform, $video_id, $upload_status) {
         $success = array('success' => false);
-        $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
-        $vod_platforms = $this->get_vod_platforms(json_decode($partnerData['partnerData']));
-        if (count($vod_platforms['platforms']) > 0) {
-            
+//        $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
+//        $vod_platforms = $this->get_vod_platforms(json_decode($partnerData['partnerData']));
+//        if (count($vod_platforms['platforms']) > 0) {
+//            
+//        } else {
+//            if ($platform == 'youtube') {
+//                $build_vod_sn_config = $this->build_vod_sn_config($video_id, $upload_status, null, null);
+//            } else if ($platform == 'facebook') {
+//                $build_vod_sn_config = $this->build_vod_sn_config(null, null, $video_id, $upload_status);
+//            }
+//            $update_sn_partnerData = $this->update_sn_partnerData($pid, $eid, $build_vod_sn_config['sn_config']);
+//            if ($update_sn_partnerData['success']) {
+//                $success = array('success' => true);
+//            } else {
+//                $success = array('success' => false, 'message', 'Could not update partner data');
+//            }
+//        }
+        if ($platform == 'youtube') {
+            $build_vod_sn_config = $this->build_vod_sn_config($video_id, $upload_status, null, null);
+        } else if ($platform == 'facebook') {
+            $build_vod_sn_config = $this->build_vod_sn_config(null, null, $video_id, $upload_status);
+        }
+        $update_sn_partnerData = $this->update_sn_partnerData($pid, $eid, $build_vod_sn_config['sn_config']);
+        if ($update_sn_partnerData['success']) {
+            $success = array('success' => true);
         } else {
-            if ($platform == 'youtube') {
-                $build_vod_sn_config = $this->build_vod_sn_config($video_id, $upload_status, null, null);
-            } else if ($platform == 'facebook') {
-                $build_vod_sn_config = $this->build_vod_sn_config(null, null, $video_id, $upload_status);
-            }
-            $update_sn_partnerData = $this->update_sn_partnerData($pid, $eid, $build_vod_sn_config['sn_config']);
-            if ($update_sn_partnerData['success']) {
-                $success = array('success' => true);
-            } else {
-                $success = array('success' => false, 'message', 'Could not update partner data');
-            }
+            $success = array('success' => false, 'message', 'Could not update partner data');
         }
         return $success;
     }
