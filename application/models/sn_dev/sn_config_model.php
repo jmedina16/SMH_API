@@ -3550,7 +3550,7 @@ class Sn_config_model extends CI_Model {
                             if (count($vod_platforms['platforms']) > 0) {
                                 if (!$this->check_if_upload_queue_exists($pid, $eid, 'youtube') && !$this->check_if_youtube_vod_exists($pid, $eid)) {
                                     syslog(LOG_NOTICE, "SMH DEBUG : update_sn_vod_config1: " . print_r($vod_platforms, true));
-                                    $updated_config = $this->insert_into_vod_sn_config('pending', 'ready', null, null, $vod_platforms['platforms']);
+                                    $updated_config = $this->insert_into_vod_sn_config('pending', 'ready', null, null, $platforms['platforms']);
                                     syslog(LOG_NOTICE, "SMH DEBUG : update_sn_vod_config2: " . print_r($updated_config, true));
                                     if ($updated_config['success']) {
                                         $partnerData = $this->update_sn_partnerData($pid, $eid, $updated_config['sn_config']);
@@ -3588,28 +3588,33 @@ class Sn_config_model extends CI_Model {
                             if ($is_uploading) {
                                 $success = array('success' => true, 'message' => 'Entry is currently uploading');
                             } else {
-                                if ($this->check_if_upload_queue_exists($pid, $eid, 'youtube')) {
-                                    $removeQueuedUploadEntry = $this->removeQueuedUploadEntry($pid, $eid);
-                                    if ($removeQueuedUploadEntry['success']) {
-                                        $success = array('success' => true);
-                                    } else {
-                                        $success = array('success' => false, 'message' => 'Could not remove entry from upload queue');
-                                    }
-                                }
-                                if ($this->check_if_youtube_vod_exists($pid, $eid)) {
-                                    
-                                }
-                                $updated_config = $this->set_youtube_vod_config_false($vod_platforms['platforms']);
-                                if ($updated_config['success']) {
-                                    $partnerData = $this->update_sn_partnerData($pid, $eid, $updated_config['sn_config']);
-                                    if ($partnerData['success']) {
-                                        
-                                    } else {
-                                        $success = array('success' => false, 'message' => 'Could not update entry partnerData');
-                                    }
+                                if (count($vod_platforms['platforms']) > 0) {
+                                    $success = array('success' => 'Found Something');
                                 } else {
-                                    $success = array('success' => false, 'message' => 'Could not update vod sn config');
+                                    $success = array('success' => 'Nothing Found');
                                 }
+//                                if ($this->check_if_upload_queue_exists($pid, $eid, 'youtube')) {
+//                                    $removeQueuedUploadEntry = $this->removeQueuedUploadEntry($pid, $eid);
+//                                    if ($removeQueuedUploadEntry['success']) {
+//                                        $success = array('success' => true);
+//                                    } else {
+//                                        $success = array('success' => false, 'message' => 'Could not remove entry from upload queue');
+//                                    }
+//                                }
+//                                if ($this->check_if_youtube_vod_exists($pid, $eid)) {
+//                                    
+//                                }
+//                                $updated_config = $this->set_youtube_vod_config_false($vod_platforms['platforms']);
+//                                if ($updated_config['success']) {
+//                                    $partnerData = $this->update_sn_partnerData($pid, $eid, $updated_config['sn_config']);
+//                                    if ($partnerData['success']) {
+//                                        $success = array('success' => true);
+//                                    } else {
+//                                        $success = array('success' => false, 'message' => 'Could not update entry partnerData');
+//                                    }
+//                                } else {
+//                                    $success = array('success' => false, 'message' => 'Could not update vod sn config');
+//                                }
                             }
                         }
                     }
