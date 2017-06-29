@@ -3519,6 +3519,8 @@ class Sn_config_model extends CI_Model {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
                 $platforms = json_decode($snConfig, true);
+                $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
+                $vod_platforms = $this->get_vod_platforms(json_decode($partnerData['partnerData']));
                 foreach ($platforms['platforms'] as $platform) {
                     if ($platform['platform'] == 'facebook') {
                         if ($platform['status']) {
@@ -3526,24 +3528,36 @@ class Sn_config_model extends CI_Model {
                         }
                     } else if ($platform['platform'] == 'youtube') {
                         if ($platform['status']) {
-                            $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
-                            $vod_platforms = $this->get_vod_platforms(json_decode($partnerData['partnerData']));
                             if (count($vod_platforms['platforms']) > 0) {
-                                $updated_config = $this->insert_into_vod_sn_config('pending', 'ready', null, null, $vod_platforms['platforms']);
-                                if ($updated_config['success']) {
-                                    $partnerData = $this->update_sn_partnerData($pid, $eid, $updated_config['sn_config']);
-                                    if ($partnerData['success']) {
-                                        $this->insert_video_to_upload_queue($pid, $eid, $projection, 'youtube', 'ready');
+                                if (!$this->check_if_upload_queue_exists($pid, $eid, 'youtube') && !$this->check_if_youtube_vod_exists($pid, $eid)) {
+                                    $updated_config = $this->insert_into_vod_sn_config('pending', 'ready', null, null, $vod_platforms['platforms']);
+                                    if ($updated_config['success']) {
+                                        $partnerData = $this->update_sn_partnerData($pid, $eid, $updated_config['sn_config']);
+                                        if ($partnerData['success']) {
+                                            $insert_video_to_upload_queue = $this->insert_video_to_upload_queue($pid, $eid, $projection, 'youtube', 'ready');
+                                            if ($insert_video_to_upload_queue['success']) {
+                                                $success = array('success' => true);
+                                            } else {
+                                                $success = array('success' => false, 'message' => 'Could not insert VOD into upload queue');
+                                            }
+                                        } else {
+                                            $success = array('success' => false, 'message' => 'Could not update entry partnerData');
+                                        }
                                     } else {
-                                        $success = array('success' => false, 'message' => 'Could not update entry partnerData');
+                                        $success = array('success' => false, 'message' => 'Could not update vod sn config');
                                     }
                                 } else {
-                                    $success = array('success' => false, 'message' => 'Could not update vod sn config');
+                                    $success = array('success' => true, 'message' => 'VOD already exists in queue or platform');
                                 }
                             } else {
                                 $vod_sn_config = $this->add_vod_sn_config($pid, $eid, 'youtube', 'pending', 'ready');
                                 if ($vod_sn_config['success']) {
-                                    $this->insert_video_to_upload_queue($pid, $eid, $projection, 'youtube', 'ready');
+                                    $insert_video_to_upload_queue = $this->insert_video_to_upload_queue($pid, $eid, $projection, 'youtube', 'ready');
+                                    if ($insert_video_to_upload_queue['success']) {
+                                        $success = array('success' => true);
+                                    } else {
+                                        $success = array('success' => false, 'message' => 'Could not insert VOD into upload queue');
+                                    }
                                 } else {
                                     $success = array('success' => false, 'message' => 'Could not add vod sn config');
                                 }
@@ -3551,7 +3565,6 @@ class Sn_config_model extends CI_Model {
                         }
                     }
                 }
-                $success = array('success' => true);
             } else {
                 $success = array('success' => false, 'message' => 'Social network service not active');
             }
