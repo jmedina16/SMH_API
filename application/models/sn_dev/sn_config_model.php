@@ -3562,6 +3562,16 @@ class Sn_config_model extends CI_Model {
                                     $success = array('success' => false, 'message' => 'Could not add vod sn config');
                                 }
                             }
+                        } else {
+                            $is_uploading = $this->check_if_uploading($eid);
+                            if ($is_uploading) {
+                                $success = array('success' => true, 'message' => 'Entry is currently uploading');
+                            } else {
+                                
+                            }
+                            if (!$this->check_if_upload_queue_exists($pid, $eid, 'youtube') && !$this->check_if_youtube_vod_exists($pid, $eid)) {
+                                
+                            }
                         }
                     }
                 }
@@ -4377,7 +4387,23 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function check_if_uploading() {
+    public function check_if_uploading($eid) {
+        $success = false;
+        $this->config->select('*')
+                ->from('upload_queue')
+                ->where('status', 'uploading')
+                ->where('entryId', $eid);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
+        return $success;
+    }
+
+    public function check_if_entry_uploading() {
         $success = false;
         $this->config->select('*')
                 ->from('upload_queue')
