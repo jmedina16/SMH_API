@@ -3264,7 +3264,7 @@ class Sn_config_model extends CI_Model {
                     $date = strtotime($completed['created_at']);
                     $dateOneWeekAgo = strtotime("-1 week");
                     if ($date <= $dateOneWeekAgo) {
-                        $this->removeCompletedUploadEntry($completed['pid'], $completed['eid']);
+                        $this->removeQueuedUploadEntry($completed['pid'], $completed['eid']);
                     }
                 }
             }
@@ -3275,7 +3275,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function removeCompletedUploadEntry($pid, $eid) {
+    public function removeQueuedUploadEntry($pid, $eid) {
         $success = array('success' => false);
         $this->config->where('partner_id', $pid);
         $this->config->where('entryId', $eid);
@@ -3568,7 +3568,12 @@ class Sn_config_model extends CI_Model {
                                 $success = array('success' => true, 'message' => 'Entry is currently uploading');
                             } else {
                                 if ($this->check_if_upload_queue_exists($pid, $eid, 'youtube')) {
-                                    
+                                    $removeQueuedUploadEntry = $this->removeQueuedUploadEntry($pid, $eid);
+                                    if ($removeQueuedUploadEntry['success']) {
+                                        $success = array('success' => true);
+                                    } else {
+                                        $success = array('success' => false, 'message' => 'Could not remove entry from upload queue');
+                                    }
                                 }
                                 if ($this->check_if_youtube_vod_exists($pid, $eid)) {
                                     
