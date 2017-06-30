@@ -3540,6 +3540,49 @@ class Sn_config_model extends CI_Model {
                 $platforms = json_decode($snConfig, true);
                 $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
                 $vod_platforms = $this->get_vod_platforms(json_decode($partnerData['partnerData']));
+                $youtube_status = false;
+                $facebook_status = false;
+                foreach ($platforms['platforms'] as $platform) {
+                    if ($platform['platform'] == 'facebook') {
+                        if ($platform['status']) {
+                            $facebook_status = true;
+                        }
+                    } else if ($platform['platform'] == 'youtube') {
+                        if ($platform['status']) {
+                            $youtube_status = true;
+                        }
+                    }
+                }
+
+                if (count($vod_platforms['platforms']) > 0) {
+                    if ($facebook_status) {
+                        
+                    } else if (!$facebook_status) {
+                        
+                    }
+                    if ($youtube_status) {
+                        if (!$this->check_if_upload_queue_exists($pid, $eid, 'youtube') && !$this->check_if_youtube_vod_exists($pid, $eid)) {
+                            
+                        } else {
+                            $success = array('success' => true, 'message' => 'VOD already exists in queue or platform');
+                        }
+                    } else if (!$youtube_status) {
+                        
+                    }
+                } else {
+                    if ($facebook_status) {
+                        
+                    } else if (!$facebook_status) {
+                        
+                    }
+                    if ($youtube_status) {
+                        
+                    } else if (!$youtube_status) {
+                        
+                    }
+                }
+
+
                 foreach ($platforms['platforms'] as $platform) {
                     if ($platform['platform'] == 'facebook') {
                         if ($platform['status']) {
@@ -3549,9 +3592,7 @@ class Sn_config_model extends CI_Model {
                         if ($platform['status']) {
                             if (count($vod_platforms['platforms']) > 0) {
                                 if (!$this->check_if_upload_queue_exists($pid, $eid, 'youtube') && !$this->check_if_youtube_vod_exists($pid, $eid)) {
-                                    syslog(LOG_NOTICE, "SMH DEBUG : update_sn_vod_config1: " . print_r($vod_platforms, true));
                                     $updated_config = $this->insert_into_vod_sn_config('pending', 'ready', null, null, $platforms['platforms']);
-                                    syslog(LOG_NOTICE, "SMH DEBUG : update_sn_vod_config2: " . print_r($updated_config, true));
                                     if ($updated_config['success']) {
                                         $partnerData = $this->update_sn_partnerData($pid, $eid, $updated_config['sn_config']);
                                         if ($partnerData['success']) {
