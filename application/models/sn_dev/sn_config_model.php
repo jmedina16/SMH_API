@@ -3333,55 +3333,114 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function process_youtube_upload_queue($pid, $eid, $platform, $projection) {
-        $success = array('success' => false);
+    public function update_youtube_upload_status($pid, $eid, $upload_status, $videoId) {
+        $config = array();
         $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
         $vod_platforms = $this->get_vod_platforms(json_decode($partnerData['partnerData']));
-        if ($projection == 'rectangular') {
-            $updated_config = $this->insert_into_vod_sn_config('pending', 'uploading', null, null, $vod_platforms['platforms']);
-            if ($updated_config['success']) {
-                $partnerData = $this->update_sn_partnerData($pid, $eid, $updated_config['sn_config']);
-                if ($partnerData['success']) {
-                    $update_upload_queue_status = $this->update_upload_queue_status($pid, $eid, $platform, 'uploading');
-                    if ($update_upload_queue_status['success']) {
-                        $upload_youtube_video = $this->upload_rect_youtube_video($pid, $eid);
-                        if ($upload_youtube_video['success']) {
-                            $update_upload_queue_status = $this->update_upload_queue_status($pid, $eid, $platform, 'completed');
-                            if ($update_upload_queue_status['success']) {
-                                $insert_entry_to_youtube_vod = $this->insert_entry_to_youtube_vod($pid, $eid, $upload_youtube_video['videoId'], $projection);
-                                if ($insert_entry_to_youtube_vod['success']) {
-                                    $updated_config = $this->insert_into_vod_sn_config($upload_youtube_video['videoId'], 'completed', null, null, $vod_platforms['platforms']);
-                                    if ($updated_config['success']) {
-                                        $partnerData = $this->update_sn_partnerData($pid, $eid, $updated_config['sn_config']);
-                                        if ($partnerData['success']) {
-                                            $success = array('success' => true);
-                                        } else {
-                                            $success = array('success' => false, 'message' => 'Could not update entry partnerData');
-                                        }
-                                    } else {
-                                        $success = array('success' => false, 'message' => 'Could not update vod sn config');
-                                    }
-                                } else {
-                                    $success = array('success' => false, 'message' => 'Could not insert entry into YouTube vod');
-                                }
-                            } else {
-                                $success = array('success' => false, 'message' => 'Could not update upload status');
-                            }
-                        } else {
-                            $success = array('success' => false, 'message' => 'Could not upload video to YouTube');
-                        }
-                    } else {
-                        $success = array('success' => false, 'message' => 'Could not update upload status');
-                    }
+        foreach ($vod_platforms['platforms'] as $platform) {
+            if ($platform['platform'] !== 'youtube') {
+                if ($platform['status']) {
+                    $platform_config = $this->create_vod_sn_config($platform['platform'], true, $platform['upload_status'], $platform['videoId']);
+                    array_push($config, $platform_config['config']);
                 } else {
-                    $success = array('success' => false, 'message' => 'Could not update entry partnerData');
+                    $platform_config = $this->create_vod_sn_config($platform['platform'], false, null, null);
+                    array_push($config, $platform_config['config']);
                 }
-            } else {
-                $success = array('success' => false, 'message' => 'Could not update vod sn config');
             }
+        }
+        $youtube_config = $this->create_vod_sn_config('youtube', true, $upload_status, $videoId);
+        array_push($config, $youtube_config['config']);
+
+        $partnerData = $this->update_sn_partnerData($pid, $eid, $config[0]);
+        if ($partnerData['success']) {
+            $update_upload_queue_status = $this->update_upload_queue_status($pid, $eid, 'youtube', $upload_status);
+            if ($update_upload_queue_status['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Could not update upload status');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Could not update entry partnerData');
+        }
+
+        return $success;
+    }
+
+    public function process_youtube_upload_queue($pid, $eid, $platform, $projection) {
+        $success = array('success' => false);
+        if ($projection == 'rectangular') {
+            $update_youtube_upload_status = $this->update_youtube_upload_status($pid, $eid, 'uploading', 'pending');
+//            if ($update_youtube_upload_status['success']) {
+//                $upload_youtube_video = $this->upload_rect_youtube_video($pid, $eid);
+//                if ($upload_youtube_video['success']) {
+//                    $insert_entry_to_youtube_vod = $this->insert_entry_to_youtube_vod($pid, $eid, $upload_youtube_video['videoId'], $projection);
+//                    if ($insert_entry_to_youtube_vod['success']) {
+//                        $update_youtube_upload_status = $this->update_youtube_upload_status($pid, $eid, 'completed', $upload_youtube_video['videoId']);
+//                        if ($update_youtube_upload_status['success']) {
+//                            $success = array('success' => true);
+//                        } else {
+//                            $success = array('success' => false, 'message' => $update_youtube_upload_status['message']);
+//                        }
+//                    } else {
+//                        $success = array('success' => false, 'message' => 'Could not insert entry into YouTube vod');
+//                    }
+//                } else {
+//                    $success = array('success' => false, 'message' => 'Could not upload video to YouTube');
+//                }
+//            } else {
+//                $success = array('success' => false, 'message' => $update_youtube_upload_status['message']);
+//            }
         } else {
             
         }
+        
+//        $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
+//        $vod_platforms = $this->get_vod_platforms(json_decode($partnerData['partnerData']));
+//        if ($projection == 'rectangular') {
+//            $updated_config = $this->insert_into_vod_sn_config('pending', 'uploading', null, null, $vod_platforms['platforms']);
+//            if ($updated_config['success']) {
+//                $partnerData = $this->update_sn_partnerData($pid, $eid, $updated_config['sn_config']);
+//                if ($partnerData['success']) {
+//                    $update_upload_queue_status = $this->update_upload_queue_status($pid, $eid, $platform, 'uploading');
+//                    if ($update_upload_queue_status['success']) {
+//                        $upload_youtube_video = $this->upload_rect_youtube_video($pid, $eid);
+//                        if ($upload_youtube_video['success']) {
+//                            $update_upload_queue_status = $this->update_upload_queue_status($pid, $eid, $platform, 'completed');
+//                            if ($update_upload_queue_status['success']) {
+//                                $insert_entry_to_youtube_vod = $this->insert_entry_to_youtube_vod($pid, $eid, $upload_youtube_video['videoId'], $projection);
+//                                if ($insert_entry_to_youtube_vod['success']) {
+//                                    $updated_config = $this->insert_into_vod_sn_config($upload_youtube_video['videoId'], 'completed', null, null, $vod_platforms['platforms']);
+//                                    if ($updated_config['success']) {
+//                                        $partnerData = $this->update_sn_partnerData($pid, $eid, $updated_config['sn_config']);
+//                                        if ($partnerData['success']) {
+//                                            $success = array('success' => true);
+//                                        } else {
+//                                            $success = array('success' => false, 'message' => 'Could not update entry partnerData');
+//                                        }
+//                                    } else {
+//                                        $success = array('success' => false, 'message' => 'Could not update vod sn config');
+//                                    }
+//                                } else {
+//                                    $success = array('success' => false, 'message' => 'Could not insert entry into YouTube vod');
+//                                }
+//                            } else {
+//                                $success = array('success' => false, 'message' => 'Could not update upload status');
+//                            }
+//                        } else {
+//                            $success = array('success' => false, 'message' => 'Could not upload video to YouTube');
+//                        }
+//                    } else {
+//                        $success = array('success' => false, 'message' => 'Could not update upload status');
+//                    }
+//                } else {
+//                    $success = array('success' => false, 'message' => 'Could not update entry partnerData');
+//                }
+//            } else {
+//                $success = array('success' => false, 'message' => 'Could not update vod sn config');
+//            }
+//        } else {
+//            
+//        }
 //        if (count($vod_platforms['platforms']) > 0) {
 //            $process_youtube_upload_a = $this->process_youtube_upload_a($pid, $eid, $platform, $projection, $vod_platforms, $partnerData);
 //            if ($process_youtube_upload_a['success']) {
@@ -3602,7 +3661,7 @@ class Sn_config_model extends CI_Model {
                     array_push($config, $facebook_config['config']);
                 }
             } else if (!$facebook_status) {
-                $is_uploading = $this->check_if_uploading($eid, 'facebook');
+                $is_uploading = $this->check_if_platform_uploading($eid, 'facebook');
                 if ($is_uploading) {
                     $facebook_config = $this->create_vod_sn_config('facebook', $current_facebook_status, $current_facebook_upload_status, $current_facebook_videoId);
                     array_push($config, $facebook_config['config']);
@@ -3656,7 +3715,7 @@ class Sn_config_model extends CI_Model {
                     array_push($config, $youtube_config['config']);
                 }
             } else if (!$youtube_status) {
-                $is_uploading = $this->check_if_uploading($eid, 'youtube');
+                $is_uploading = $this->check_if_platform_uploading($eid, 'youtube');
                 if ($is_uploading) {
                     $youtube_config = $this->create_vod_sn_config('youtube', $current_youtube_status, $current_youtube_upload_status, $current_youtube_videoId);
                     array_push($config, $youtube_config['config']);
@@ -4551,7 +4610,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function check_if_uploading($eid, $platform) {
+    public function check_if_platform_uploading($eid, $platform) {
         $success = false;
         $this->config->select('*')
                 ->from('upload_queue')
@@ -4568,7 +4627,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function check_if_entry_uploading() {
+    public function check_if_uploading() {
         $success = false;
         $this->config->select('*')
                 ->from('upload_queue')
@@ -4582,6 +4641,21 @@ class Sn_config_model extends CI_Model {
 
         return $success;
     }
+
+//    public function check_if_entry_uploading() {
+//        $success = false;
+//        $this->config->select('*')
+//                ->from('upload_queue')
+//                ->where('status', 'uploading');
+//        $query = $this->config->get();
+//        if ($query->num_rows() > 0) {
+//            $success = true;
+//        } else {
+//            $success = false;
+//        }
+//
+//        return $success;
+//    }
 
     public function check_if_youtube_vod_exists($pid, $eid) {
         $success = false;
