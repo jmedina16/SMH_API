@@ -3564,6 +3564,8 @@ class Sn_config_model extends CI_Model {
                     if ($youtube_status) {
                         if (!$this->check_if_upload_queue_exists($pid, $eid, 'youtube') && !$this->check_if_youtube_vod_exists($pid, $eid)) {
                             $youtube_config = $this->create_vod_sn_config('youtube', $youtube_status, 'ready', 'pending');
+                            array_push($config, $youtube_config['config']);
+                            $this->insert_video_to_upload_queue($pid, $eid, $projection, 'youtube', 'ready');
                         } else {
                             $success = array('success' => true, 'message' => 'VOD already exists in queue or platform');
                         }
@@ -3574,6 +3576,7 @@ class Sn_config_model extends CI_Model {
                     if ($facebook_status) {
                         $facebook_config = $this->create_vod_sn_config('facebook', $facebook_status, 'ready', 'pending');
                         array_push($config, $facebook_config['config']);
+                        $this->insert_video_to_upload_queue($pid, $eid, $projection, 'facebook', 'ready');
                     } else if (!$facebook_status) {
                         $facebook_config = $this->create_vod_sn_config('facebook', $facebook_status, null, null);
                         array_push($config, $facebook_config['config']);
@@ -3581,13 +3584,19 @@ class Sn_config_model extends CI_Model {
                     if ($youtube_status) {
                         $youtube_config = $this->create_vod_sn_config('youtube', $youtube_status, 'ready', 'pending');
                         array_push($config, $youtube_config['config']);
+                        $this->insert_video_to_upload_queue($pid, $eid, $projection, 'youtube', 'ready');
                     } else if (!$youtube_status) {
                         $youtube_config = $this->create_vod_sn_config('youtube', $youtube_status, null, null);
                         array_push($config, $youtube_config['config']);
                     }
                 }
 
-                syslog(LOG_NOTICE, "SMH DEBUG : update_sn_vod_config: " . print_r($config, true));
+                $partnerData = $this->update_sn_partnerData($pid, $eid, $config);
+                if ($partnerData['success']) {
+                    $success = array('success' => true);
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not update entry partnerData');
+                }
 
 
 //                foreach ($platforms['platforms'] as $platform) {
