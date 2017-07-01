@@ -3557,20 +3557,44 @@ class Sn_config_model extends CI_Model {
 
                 if (count($vod_platforms['platforms']) > 0) {
                     if ($facebook_status) {
-                        
+                        if (!$this->check_if_upload_queue_exists($pid, $eid, 'facebook') && !$this->check_if_facebook_vod_exists($pid, $eid)) {
+                            $facebook_config = $this->create_vod_sn_config('facebook', $facebook_status, 'ready', 'pending');
+                            array_push($config, $facebook_config['config']);
+                            $this->insert_video_to_upload_queue($pid, $eid, $projection, 'facebook', 'ready');
+                        } else {
+                            $success = array('success' => true, 'message' => 'VOD already exists in queue or platform');
+                        }
                     } else if (!$facebook_status) {
-                        
+                        $facebook_config = $this->create_vod_sn_config('facebook', $facebook_status, null, null);
+                        array_push($config, $facebook_config['config']);
                     }
+
+
+                    $youtube_upload_exists = $this->check_if_upload_queue_exists($pid, $eid, 'youtube');
+                    $youtube_vod_exists = $this->check_if_youtube_vod_exists($pid, $eid);
                     if ($youtube_status) {
-                        if (!$this->check_if_upload_queue_exists($pid, $eid, 'youtube') && !$this->check_if_youtube_vod_exists($pid, $eid)) {
+                        if (!$youtube_upload_exists && !$youtube_vod_exists) {
                             $youtube_config = $this->create_vod_sn_config('youtube', $youtube_status, 'ready', 'pending');
                             array_push($config, $youtube_config['config']);
                             $this->insert_video_to_upload_queue($pid, $eid, $projection, 'youtube', 'ready');
                         } else {
-                            $success = array('success' => true, 'message' => 'VOD already exists in queue or platform');
+                            syslog(LOG_NOTICE, "SMH DEBUG : update_sn_vod_config " . print_r($vod_platforms, true));
+                            $status = '';
+                            $upload_status = '';
+                            $videoId = '';
+                            foreach ($vod_platforms['platforms'] as $platform) {
+                                if ($platform['platform'] == 'youtube') {
+                                    $status = $platform['status'];
+                                    $upload_status = $platform['upload_status'];
+                                    $videoId = $platform['videoId'];
+                                }
+                            }
+                            $youtube_config = $this->create_vod_sn_config('youtube', $status, $upload_status, $videoId);
+                            array_push($config, $youtube_config['config']);
                         }
                     } else if (!$youtube_status) {
-                        
+                        $youtube_config = $this->create_vod_sn_config('youtube', $youtube_status, null, null);
+                        array_push($config, $youtube_config['config']);
                     }
                 } else {
                     if ($facebook_status) {
@@ -4560,6 +4584,22 @@ class Sn_config_model extends CI_Model {
         $success = false;
         $this->config->select('*')
                 ->from('youtube_vod_entries')
+                ->where('partner_id', $pid)
+                ->where('entryId', $eid);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
+        return $success;
+    }
+
+    public function check_if_facebook_vod_exists($pid, $eid) {
+        $success = false;
+        $this->config->select('*')
+                ->from('facebook_vod_entries')
                 ->where('partner_id', $pid)
                 ->where('entryId', $eid);
         $query = $this->config->get();
