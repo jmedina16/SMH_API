@@ -668,7 +668,20 @@ class Sn_config_model extends CI_Model {
 
     public function remove_youtube_vod_entries($pid) {
         $success = array('success' => false);
-        $this->config->where('partner_id = "' . $pid . '"');
+        $this->config->where('partner_id', $pid);
+        $this->config->delete('youtube_vod_entries');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'message' => 'Nothing removed');
+        }
+        return $success;
+    }
+
+    public function remove_youtube_vod_entry($pid, $eid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id', $pid);
+        $this->config->where('entryId', $eid);
         $this->config->delete('youtube_vod_entries');
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
@@ -2764,6 +2777,22 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function remove_youtube_video($pid, $videoId) {
+        $success = array('success' => false);
+        $access_token = $this->validate_youtube_token($pid);
+        if ($access_token['success']) {
+            $remove_video = $this->google_client_api->removeVideo($access_token['access_token'], $videoId);
+            if ($remove_video['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'YouTube: could not remove video');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'YouTube: invalid access token');
+        }
+        return $success;
+    }
+
     public function upload_rect_facebook_video($pid, $eid) {
 //        $success = array('success' => false);
 //        $entry_details = $this->smportal->get_entry_details($pid, $eid);
@@ -3586,7 +3615,13 @@ class Sn_config_model extends CI_Model {
                         $this->removeQueuedUploadEntry($pid, $eid);
                     }
                     if ($youtube_vod_exists) {
-                        //TODO
+                        $youtube_video = $this->get_youtube_vod_id($pid, $eid);
+                        $remove_youtube_video = $this->remove_youtube_video($pid, $youtube_video['videoId']);
+                        if ($remove_youtube_video['success']) {
+                            $this->remove_youtube_vod_entry($pid, $eid);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not delete YouTube video');
+                        }
                     }
                     $youtube_config = $this->create_vod_sn_config('youtube', $youtube_status, null, null);
                     array_push($config, $youtube_config['config']);
@@ -4537,6 +4572,27 @@ class Sn_config_model extends CI_Model {
             $success = false;
         }
 
+        return $success;
+    }
+
+    public function get_youtube_vod_id($pid, $eid) {
+        $success = array('success' => false);
+        $videoId = '';
+        $this->config->select('*')
+                ->from('youtube_vod_entries')
+                ->where('partner_id', $pid)
+                ->where('entryId', $eid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $videoId = $res['videoId'];
+            }
+            $success = array('success' => true, 'videoId' => $videoId);
+        } else {
+            $success = array('success' => false);
+        }
         return $success;
     }
 
