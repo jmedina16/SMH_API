@@ -4079,9 +4079,10 @@ class Sn_config_model extends CI_Model {
                 $privacy = $res['privacy'];
                 $create_vod = ($res['create_vod']) ? 'true' : 'false';
                 $cont_streaming = ($res['cont_streaming']) ? 'true' : 'false';
+                $auto_upload = ($res['auto_upload']) ? true : false;
                 $projection = $res['projection'];
             }
-            array_push($userSettings, array('asset_id' => $asset_id, 'stream_to' => $stream_to, 'privacy' => $privacy, 'create_vod' => $create_vod, 'cont_streaming' => $cont_streaming, 'projection' => $projection));
+            array_push($userSettings, array('asset_id' => $asset_id, 'stream_to' => $stream_to, 'privacy' => $privacy, 'create_vod' => $create_vod, 'cont_streaming' => $cont_streaming, 'auto_upload' => $auto_upload, 'projection' => $projection));
             $success = array('success' => true, 'userSettings' => $userSettings);
         } else {
             $success = array('success' => false);
@@ -4419,23 +4420,20 @@ class Sn_config_model extends CI_Model {
     public function add_to_upload_queue($pid, $eid) {
         $has_service = $this->verify_service($pid);
         if ($has_service) {
+            $config = array();
             $get_auto_upload_statuses = $this->get_auto_upload_statuses($pid);
-            if ($get_auto_upload_statuses['auto_upload']['youtube']) {
-                if (!$this->check_if_upload_queue_exists($pid, $eid, 'youtube') && !$this->check_if_youtube_vod_exists($pid, $eid)) {
-                    $insert_video_to_upload_queue = $this->insert_video_to_upload_queue($pid, $eid, $get_auto_upload_statuses['auto_upload']['youtube_projection'], 'youtube', 'pending');
-                    if ($insert_video_to_upload_queue['success']) {
-                        $vod_sn_config = $this->add_vod_sn_config($pid, $eid, 'youtube', 'pending', 'pending');
-                        if ($vod_sn_config['success']) {
-                            $success = array('success' => true);
-                        } else {
-                            $success = array('success' => false, 'message' => 'Could not add vod sn config');
-                        }
-                    } else {
-                        $success = array('success' => false, 'message' => 'Could not insert into upload queue');
-                    }
-                } else {
-                    $success = array('success' => true, 'message' => 'VOD already exists in queue or platform');
-                }
+
+            $youtube_to_upload_queue = $this->add_youtube_to_upload_queue($pid, $eid, $get_auto_upload_statuses);
+            array_push($config, $youtube_to_upload_queue);
+
+            $facebook_to_upload_queue = $this->add_facebook_to_upload_queue($pid, $eid, $get_auto_upload_statuses);
+            array_push($config, $facebook_to_upload_queue);
+
+            $partnerData = $this->update_sn_partnerData($pid, $eid, $config);
+            if ($partnerData['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Could not update entry partnerData');
             }
         } else {
             $success = array('success' => false, 'message' => 'Social network service not active');
@@ -4443,15 +4441,71 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function add_youtube_to_upload_queue($pid, $eid, $youtube_upload_status) {
+        $config = array();
+        $youtube_status = (isset($youtube_upload_status['auto_upload']['youtube'])) ? true : false;
+        if ($youtube_status) {
+            $youtube_auto_upload_status = $youtube_upload_status['auto_upload']['youtube'];
+            if ($youtube_auto_upload_status) {
+                $insert_video_to_upload_queue = $this->insert_video_to_upload_queue($pid, $eid, $youtube_upload_status['auto_upload']['youtube_projection'], 'youtube', 'pending');
+                if ($insert_video_to_upload_queue['success']) {
+                    $youtube_config = $this->create_vod_sn_config('youtube', true, 'pending', 'pending');
+                    array_push($config, $youtube_config['config']);
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not insert into upload queue');
+                }
+            } else {
+                $youtube_config = $this->create_vod_sn_config('youtube', false, null, null);
+                array_push($config, $youtube_config['config']);
+            }
+        } else {
+            $youtube_config = $this->create_vod_sn_config('youtube', false, null, null);
+            array_push($config, $youtube_config['config']);
+        }
+        return $config[0];
+    }
+
+    public function add_facebook_to_upload_queue($pid, $eid, $facebook_upload_status) {
+        $config = array();
+        $facebook_status = (isset($facebook_upload_status['auto_upload']['facebook'])) ? true : false;
+        if ($facebook_status) {
+            $facebook_auto_upload_status = $facebook_upload_status['auto_upload']['facebook'];
+            if ($facebook_auto_upload_status) {
+                $insert_video_to_upload_queue = $this->insert_video_to_upload_queue($pid, $eid, $facebook_upload_status['auto_upload']['facebook_projection'], 'facebook', 'pending');
+                if ($insert_video_to_upload_queue['success']) {
+                    $facebook_config = $this->create_vod_sn_config('facebook', true, 'pending', 'pending');
+                    array_push($config, $facebook_config['config']);
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not insert into upload queue');
+                }
+            } else {
+                $facebook_config = $this->create_vod_sn_config('facebook', false, null, null);
+                array_push($config, $facebook_config['config']);
+            }
+        } else {
+            $facebook_config = $this->create_vod_sn_config('facebook', false, null, null);
+            array_push($config, $facebook_config['config']);
+        }
+        return $config[0];
+    }
+
     public function get_auto_upload_statuses($pid) {
         $success = array('success' => false);
         $statuses = array();
         $youtube_status = $this->get_youtube_status($pid);
+        $facebook_status = $this->get_facebook_status($pid);
         if ($youtube_status['status']) {
             $youtube = $this->get_yt_settings($pid);
             if ($youtube['success']) {
                 $statuses['youtube'] = $youtube['auto_upload'];
                 $statuses['youtube_projection'] = $youtube['projection'];
+            }
+        }
+        if ($facebook_status['status']) {
+            $faecbook = $this->get_facebook_user_settings($pid);
+            if ($faecbook['success']) {
+                $statuses['facebook'] = $faecbook['userSettings'][0]['auto_upload'];
+                $statuses['facebook_projection'] = $faecbook['userSettings'][0]['projection'];
             }
         }
         $success = array('success' => true, 'auto_upload' => $statuses);
