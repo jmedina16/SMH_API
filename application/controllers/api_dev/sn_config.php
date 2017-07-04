@@ -368,6 +368,36 @@ class Sn_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code 
     }
 
+    public function delete_sn_entry_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+        $eid = $this->get('eid');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing pid'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        if (!isset($eid) || $eid == null) {
+
+            $this->response(array('error' => 'Missing eid'), 200);
+        }
+
+        $result = $this->sn_config_model->delete_sn_entry($pid, $ks, $eid);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code 
+    }
+
     public function get_youtube_broadcast_id_get($param) {
         $pid = $this->get('pid');
         $eid = $this->get('eid');
