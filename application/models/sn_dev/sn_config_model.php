@@ -2658,17 +2658,17 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function update_sn_metadata($pid, $ks, $name, $desc, $eid) {
+    public function update_vod_sn_metadata($pid, $ks, $name, $desc, $eid) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $platforms_status = $this->get_live_entry_platforms_status($pid, $eid);
+                $platforms_status = $this->get_vod_entry_platforms_status($pid, $eid);
                 if ($platforms_status['success']) {
                     if (count($platforms_status['platforms_status'])) {
                         if ($platforms_status['platforms_status']['youtube']) {
-                            $success = $this->update_youtube_metadata($pid, $name, $desc, $eid);
+                            $success = $this->update_youtube_vod_metadata($pid, $name, $desc, $eid);
                         } else {
                             $success = array('success' => true, 'message' => 'Social network: nothing to update');
                         }
@@ -2688,13 +2688,43 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function update_youtube_metadata($pid, $name, $desc, $eid) {
+    public function update_live_sn_metadata($pid, $ks, $name, $desc, $eid) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $platforms_status = $this->get_live_entry_platforms_status($pid, $eid);
+                if ($platforms_status['success']) {
+                    if (count($platforms_status['platforms_status'])) {
+                        if ($platforms_status['platforms_status']['youtube']) {
+                            $success = $this->update_youtube_live_metadata($pid, $name, $desc, $eid);
+                        } else {
+                            $success = array('success' => true, 'message' => 'Social network: nothing to update');
+                        }
+                    } else {
+                        $success = array('success' => true, 'message' => 'Social network config not present');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not get platforms status');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Social network service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+
+        return $success;
+    }
+
+    public function update_youtube_live_metadata($pid, $name, $desc, $eid) {
         $success = array('success' => false);
         $youtube_ids = $this->get_youtube_event_ids($pid, $eid);
         if ($youtube_ids['success']) {
             $access_token = $this->validate_youtube_token($pid);
             if ($access_token['success']) {
-                $updateMetaData = $this->google_client_api->updateMetaData($access_token['access_token'], $youtube_ids['bid'], $name, $desc);
+                $updateMetaData = $this->google_client_api->updateLiveMetaData($access_token['access_token'], $youtube_ids['bid'], $name, $desc);
                 if ($updateMetaData['success']) {
                     $success = array('success' => true);
                 } else {
@@ -2705,6 +2735,23 @@ class Sn_config_model extends CI_Model {
             }
         } else {
             $success = array('success' => true);
+        }
+        return $success;
+    }
+
+    public function update_youtube_vod_metadata($pid, $name, $desc, $eid) {
+        $success = array('success' => false);
+        $youtube_video = $this->get_youtube_vod_id($pid, $eid);
+        $access_token = $this->validate_youtube_token($pid);
+        if ($access_token['success']) {
+            $updateMetaData = $this->google_client_api->updateVodMetaData($access_token['access_token'], $youtube_video['videoId'], $name, $desc);
+            if ($updateMetaData['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'YouTube: Could not update metadata');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'YouTube: invalid access token');
         }
         return $success;
     }
