@@ -271,7 +271,7 @@ class Sn_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code 
     }
 
-    public function update_sn_metadata_get() {
+    public function update_live_sn_metadata_get() {
         $pid = $this->get('pid');
         $ks = $this->get('ks');
         $name = $this->get('name');
@@ -298,7 +298,44 @@ class Sn_config extends REST_Controller {
             $this->response(array('error' => 'Missing eid'), 200);
         }
 
-        $result = $this->sn_config_model->update_sn_metadata($pid, $ks, $name, $desc, $eid);
+        $result = $this->sn_config_model->update_live_sn_metadata($pid, $ks, $name, $desc, $eid);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code 
+    }
+
+    public function update_vod_sn_metadata_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+        $name = $this->get('name');
+        $desc = $this->get('desc');
+        $eid = $this->get('eid');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing pid'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        if (!isset($name) || $name == null) {
+
+            $this->response(array('error' => 'Missing name'), 200);
+        }
+
+        if (!isset($eid) || $eid == null) {
+
+            $this->response(array('error' => 'Missing eid'), 200);
+        }
+
+        $result = $this->sn_config_model->update_vod_sn_metadata($pid, $ks, $name, $desc, $eid);
 
         if (!$result) {
 
