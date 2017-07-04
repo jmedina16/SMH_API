@@ -390,7 +390,7 @@ class Google_client_api {
         }
     }
 
-    public function updateMetaData($access_token, $bid, $name, $desc) {
+    public function updateLiveMetaData($access_token, $bid, $name, $desc) {
         $success = array('success' => false);
         try {
             $client = new Google_Client();
@@ -421,6 +421,62 @@ class Google_client_api {
                     $broadcastsResponse = $youtube->liveBroadcasts->update('snippet,status', $broadcastUpdate, array());
 
                     if (isset($broadcastsResponse['id'])) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false);
+                    }
+
+                    return $success;
+                } catch (Google_Service_Exception $e) {
+                    syslog(LOG_NOTICE, "SMH DEBUG : A service error occurred: code: " . $e->getMessage());
+                } catch (Google_Exception $e) {
+                    syslog(LOG_NOTICE, "SMH DEBUG : An client error occurred: code: " . $e->getMessage());
+                }
+            }
+        } catch (Google_Service_Exception $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage());
+            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+        } catch (Exception $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage());
+            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+        }
+    }
+
+    public function updateVodMetaData($access_token, $vid, $name, $desc) {
+        $success = array('success' => false);
+        try {
+            $client = new Google_Client();
+            $client->setClientId($this->OAUTH2_CLIENT_ID);
+            $client->setClientSecret($this->OAUTH2_CLIENT_SECRET);
+            $client->addScope('https://www.googleapis.com/auth/youtube');
+            $redirect = filter_var('http://devplatform.streamingmediahosting.com/apps/sn/v1.0/oauth2callback.php', FILTER_SANITIZE_URL);
+            $client->setRedirectUri($redirect);
+            $client->setAccessToken($access_token);
+
+            $youtube = new Google_Service_YouTube($client);
+            if ($client->getAccessToken()) {
+                try {
+
+                    $listResponse = $youtube->videos->listVideos('snippet', array(
+                        'id' => $vid
+                    ));
+
+                    foreach ($listResponse['items'] as $item) {
+                        $categoryId = $item['snippet']['categoryId'];
+                    }
+
+                    $videoSnippet = new Google_Service_YouTube_VideoSnippet();
+                    $videoSnippet->setTitle($name);
+                    if (isset($desc) && $desc !== '')
+                        $videoSnippet->setDescription($desc);
+                    $videoSnippet->setCategoryId($categoryId);
+
+                    $videoUpdate = new Google_Service_YouTube_Video();
+                    $videoUpdate->setId($vid);
+                    $videoUpdate->setSnippet($videoSnippet);
+                    $videoResponse = $youtube->videos->update('snippet,status', $videoUpdate, array());
+
+                    if (isset($videoResponse['id'])) {
                         $success = array('success' => true);
                     } else {
                         $success = array('success' => false);
