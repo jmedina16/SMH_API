@@ -678,7 +678,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function remove_youtube_vod_entry($pid, $eid) {
+    public function remove_db_youtube_vod_entry($pid, $eid) {
         $success = array('success' => false);
         $this->config->where('partner_id', $pid);
         $this->config->where('entryId', $eid);
@@ -2664,7 +2664,7 @@ class Sn_config_model extends CI_Model {
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $platforms_status = $this->get_entry_platforms_status($pid, $eid);
+                $platforms_status = $this->get_live_entry_platforms_status($pid, $eid);
                 if ($platforms_status['success']) {
                     if (count($platforms_status['platforms_status'])) {
                         if ($platforms_status['platforms_status']['youtube']) {
@@ -2709,7 +2709,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function get_entry_platforms_status($pid, $eid) {
+    public function get_live_entry_platforms_status($pid, $eid) {
         $success = array('success' => false);
         $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
         if ($partnerData['success']) {
@@ -2735,11 +2735,34 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function get_vod_entry_platforms_status($pid, $eid) {
+        $success = array('success' => false);
+        $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
+        if ($partnerData['success']) {
+            $temp_partnerData = json_decode($partnerData['partnerData'], true);
+            $platforms_status = array();
+            if (isset($temp_partnerData['snConfig'])) {
+                foreach ($temp_partnerData['snConfig'] as $platform) {
+                    if ($platform['platform'] == 'facebook') {
+                        $platforms_status['facebook'] = $platform['status'];
+                    }
+                    if ($platform['platform'] == 'youtube') {
+                        $platforms_status['youtube'] = $platform['status'];
+                    }
+                }
+            }
+            $success = array('success' => true, 'platforms_status' => $platforms_status);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
     public function upload_queued_video_to_youtube($pid, $eid) {
         $success = array('success' => false);
         $has_service = $this->verify_service($pid);
         if ($has_service) {
-//            $platforms_status = $this->get_entry_platforms_status($pid, $eid);
+//            $platforms_status = $this->get_live_entry_platforms_status($pid, $eid);
 //            if ($platforms_status['success']) {
 //                if (count($platforms_status['platforms_status'])) {
 //                    if ($platforms_status['platforms_status']['youtube']) {
@@ -2793,6 +2816,57 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function delete_sn_entry($pid, $ks, $eid) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $platforms_status = $this->get_vod_entry_platforms_status($pid, $eid);
+                if ($platforms_status['success']) {
+                    if (count($platforms_status['platforms_status'])) {
+                        if ($platforms_status['platforms_status']['youtube']) {
+                            $success = $this->delete_youtube_vod_entry($pid, $eid);
+                        }
+                        if ($platforms_status['platforms_status']['facebook']) {
+                            //TODO
+                        }
+                        if (!$platforms_status['platforms_status']['youtube'] && !$platforms_status['platforms_status']['facebook']) {
+                            $success = array('success' => true, 'message' => 'Social network: nothing to update');
+                        }
+                    } else {
+                        $success = array('success' => true, 'message' => 'Social network config not present');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not get platforms status');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Social network service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+
+        return $success;
+    }
+
+    public function delete_youtube_vod_entry($pid, $eid) {
+        $success = array('success' => false);
+        $youtube_video = $this->get_youtube_vod_id($pid, $eid);
+        $remove_youtube_video = $this->remove_youtube_video($pid, $youtube_video['videoId']);
+        if ($remove_youtube_video['success']) {
+            $remove_db_youtube_vod_entry = $this->remove_db_youtube_vod_entry($pid, $eid);
+            if ($remove_db_youtube_vod_entry['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Could not remove YouTube video');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Could not delete YouTube video');
+        }
+        return $success;
+    }
+
     public function upload_rect_facebook_video($pid, $eid) {
 //        $success = array('success' => false);
 //        $entry_details = $this->smportal->get_entry_details($pid, $eid);
@@ -2817,7 +2891,7 @@ class Sn_config_model extends CI_Model {
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $platforms_status = $this->get_entry_platforms_status($pid, $eid);
+                $platforms_status = $this->get_live_entry_platforms_status($pid, $eid);
                 if ($platforms_status['success']) {
                     if (count($platforms_status['platforms_status'])) {
                         if ($platforms_status['platforms_status']['youtube']) {
@@ -2869,7 +2943,7 @@ class Sn_config_model extends CI_Model {
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $platforms_status = $this->get_entry_platforms_status($pid, $eid);
+                $platforms_status = $this->get_live_entry_platforms_status($pid, $eid);
                 if ($platforms_status['success']) {
                     if (count($platforms_status['platforms_status'])) {
                         if ($platforms_status['platforms_status']['youtube']) {
@@ -3013,7 +3087,7 @@ class Sn_config_model extends CI_Model {
                 $youtube_status = $this->get_youtube_status($pid);
                 $facebook_status = $this->get_facebook_status($pid);
                 if ($youtube_status['status'] || $facebook_status['status']) {
-                    $platforms_status = $this->get_entry_platforms_status($pid, $eid);
+                    $platforms_status = $this->get_live_entry_platforms_status($pid, $eid);
                     if ($platforms_status['success']) {
                         if (count($platforms_status['platforms_status'])) {
                             array_push($platforms, array('platform' => 'edgecast', 'status' => $platforms_status['platforms_status']['smh']));
@@ -3618,7 +3692,7 @@ class Sn_config_model extends CI_Model {
                         $youtube_video = $this->get_youtube_vod_id($pid, $eid);
                         $remove_youtube_video = $this->remove_youtube_video($pid, $youtube_video['videoId']);
                         if ($remove_youtube_video['success']) {
-                            $this->remove_youtube_vod_entry($pid, $eid);
+                            $this->remove_db_youtube_vod_entry($pid, $eid);
                         } else {
                             $success = array('success' => false, 'message' => 'Could not delete YouTube video');
                         }
