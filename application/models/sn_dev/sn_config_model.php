@@ -2915,21 +2915,35 @@ class Sn_config_model extends CI_Model {
     }
 
     public function upload_rect_facebook_video($pid, $eid) {
-//        $success = array('success' => false);
-//        $entry_details = $this->smportal->get_entry_details($pid, $eid);
-//        $entry_path = $this->smportal->get_entry_path($pid, $eid);
-//        $access_token = $this->validate_youtube_token($pid);
-//        if ($access_token['success']) {
-//            $upload_video = $this->google_client_api->uploadVideo($access_token['access_token'], $entry_details['name'], $entry_details['desc'], $entry_path);
-//            if ($upload_video['success']) {
-//                $success = array('success' => true, 'videoId' => $upload_video['videoId']);
-//            } else {
-//                $success = array('success' => false, 'message' => 'YouTube: could not upload video');
-//            }
-//        } else {
-//            $success = array('success' => false, 'message' => 'YouTube: invalid access token');
-//        }
-//        return $success;
+        syslog(LOG_NOTICE, "SMH DEBUG : upload_rect_facebook_video");
+        $success = array('success' => false);
+        $entry_details = $this->smportal->get_entry_details($pid, $eid);
+        $entry_path = $this->smportal->get_entry_path($pid, $eid);
+        $access_token = $this->validate_facebook_token($pid);
+        syslog(LOG_NOTICE, "SMH DEBUG : upload_rect_facebook_video: access_token: " . print_r($access_token, true));
+        if ($access_token['success']) {
+            $get_user_settings = $this->get_facebook_vod_settings($pid);
+            syslog(LOG_NOTICE, "SMH DEBUG : upload_rect_facebook_video: get_user_settings: " . print_r($get_user_settings, true));
+            if ($get_user_settings['success']) {
+                $get_asset = $this->get_asset($pid, $get_user_settings['userSettings'][0]['publish_to'], $get_user_settings['userSettings'][0]['asset_id'], $access_token['access_token']);
+                syslog(LOG_NOTICE, "SMH DEBUG : upload_rect_facebook_video: get_asset: " . print_r($get_asset, true));
+                if ($get_asset['success']) {
+                    $upload_video = $this->facebook_client_api->uploadVideo($get_asset['asset'], $entry_details['name'], $entry_details['desc'], $entry_path, $get_user_settings['userSettings'][0]['projection']);
+                    if ($upload_video['success']) {
+                        $success = array('success' => true, 'videoId' => $upload_video['videoId']);
+                    } else {
+                        $success = array('success' => false, 'message' => 'Facebook: could not upload video');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not get asset Id');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Could not get Facebook user settings');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Facebook: invalid access token');
+        }
+        return $success;
     }
 
     public function update_sn_thumbnail($pid, $ks, $eid) {
@@ -3427,7 +3441,7 @@ class Sn_config_model extends CI_Model {
             if ($process_upload_queue['success']) {
                 $success = array('success' => true);
             } else {
-                $success = array('success' => false, 'message' => 'Could not process upload queue');
+                $success = array('success' => false, 'message' => $process_upload_queue['message']);
             }
         }
         return $success;
@@ -3486,14 +3500,14 @@ class Sn_config_model extends CI_Model {
                     if ($process_youtube_upload_queue['success']) {
                         $success = array('success' => true);
                     } else {
-                        $success = array('success' => false, 'message' => 'Could not process YouTube upload queue');
+                        $success = array('success' => false, 'message' => $process_youtube_upload_queue['message']);
                     }
                 } else if ($get_ready_upload['ready_upload']['platform'] === 'facebook') {
                     $process_facebook_upload_queue = $this->process_facebook_upload_queue($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid'], $get_ready_upload['ready_upload']['projection']);
                     if ($process_facebook_upload_queue['success']) {
                         $success = array('success' => true);
                     } else {
-                        $success = array('success' => false, 'message' => 'Could not process Facebook upload queue');
+                        $success = array('success' => false, 'message' => $process_facebook_upload_queue['message']);
                     }
                 }
             } else {
@@ -3823,7 +3837,6 @@ class Sn_config_model extends CI_Model {
         $this->config->where('entryId', $eid);
         $this->config->where('platform', $platform);
         $this->config->update('upload_queue', $data);
-        $this->config->limit(1);
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
         } else {
