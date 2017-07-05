@@ -298,6 +298,41 @@ class Facebook_client_api {
         }
     }
 
+    public function uploadVideo($asset, $name, $desc, $videoPath, $projection) {
+        $success = array('success' => false);
+        try {
+            $fb = new Facebook\Facebook([
+                'app_id' => $this->OAUTH2_CLIENT_ID,
+                'app_secret' => $this->OAUTH2_CLIENT_SECRET,
+                'default_graph_version' => $this->GRAPH_VERSION,
+            ]);
+
+            $data = array(
+                'title' => $name,
+                'description' => $desc
+            );
+            if ($projection === '360') {
+                $data['spherical'] = true;
+            }
+            $uploadVideo = $fb->uploadVideo($asset['asset_id'], $videoPath, $data, $asset['access_token']);
+            $video = $uploadVideo->getGraphNode()->asArray();
+            if (isset($video['id'])) {
+                syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo: " . print_r($video, true));
+                $success = array('success' => true, 'videoId' => $video['id']);
+            } else {
+                $success = array('success' => false);
+            }
+            return $success;
+        } catch (\Facebook\Exceptions\FacebookResponseException $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
+            $success = array('success' => false, 'message' => 'Does not have permission to create live stream');
+            return $success;
+        } catch (\Facebook\Exceptions\FacebookSDKException $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
+            exit;
+        }
+    }
+
     public function updateLiveStream($asset_id, $name, $desc, $access_token) {
         $success = array('success' => false);
         try {
