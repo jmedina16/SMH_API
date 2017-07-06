@@ -398,7 +398,8 @@ class Sn_config_model extends CI_Model {
                 $privacy = $res['privacy'];
                 $create_vod = $res['create_vod'];
                 $cont_streaming = $res['cont_streaming'];
-                array_push($settings, array('publish_to' => $publish_to, 'asset_id' => $asset_id, 'privacy' => $privacy, 'create_vod' => $create_vod, 'cont_streaming' => $cont_streaming));
+                $auto_upload = $res['auto_upload'];
+                array_push($settings, array('publish_to' => $publish_to, 'asset_id' => $asset_id, 'privacy' => $privacy, 'create_vod' => $create_vod, 'cont_streaming' => $cont_streaming, 'auto_upload' => $auto_upload));
             }
             $success = array('success' => true, 'settings' => $settings);
         } else {
