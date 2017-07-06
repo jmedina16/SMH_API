@@ -2710,6 +2710,11 @@ class Sn_config_model extends CI_Model {
                         } else {
                             $success = array('success' => true, 'message' => 'Social network: nothing to update');
                         }
+                        if ($platforms_status['platforms_status']['facebook']) {
+                            $success = $this->update_facebook_vod_metadata($pid, $name, $desc, $eid);
+                        } else {
+                            $success = array('success' => true, 'message' => 'Social network: nothing to update');
+                        }
                     } else {
                         $success = array('success' => true, 'message' => 'Social network config not present');
                     }
@@ -2773,6 +2778,23 @@ class Sn_config_model extends CI_Model {
             }
         } else {
             $success = array('success' => true);
+        }
+        return $success;
+    }
+
+    public function update_facebook_vod_metadata($pid, $name, $desc, $eid) {
+        $success = array('success' => false);
+        $facebook_video = $this->get_facebook_vod_id($pid, $eid);
+        $access_token = $this->validate_facebook_token($pid);
+        if ($access_token['success']) {
+            $updateMetaData = $this->facebook_client_api->updateVodMetaData($access_token['access_token'], $facebook_video['videoId'], $name, $desc);
+            if ($updateMetaData['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Facebook: Could not update metadata');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Facebook: invalid access token');
         }
         return $success;
     }
@@ -3532,7 +3554,7 @@ class Sn_config_model extends CI_Model {
                     $date = strtotime($completed['created_at']);
                     $dateOneWeekAgo = strtotime("-1 week");
                     if ($date <= $dateOneWeekAgo) {
-                        $this->removeQueuedUploadEntry($completed['pid'], $completed['eid']);
+                        $this->removeCompletedQueuedUploadEntry($completed['pid'], $completed['eid']);
                     }
                 }
             }
@@ -3543,7 +3565,21 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function removeQueuedUploadEntry($pid, $eid) {
+    public function removeQueuedPlatformUploadEntry($pid, $eid, $platform) {
+        $success = array('success' => false);
+        $this->config->where('partner_id', $pid);
+        $this->config->where('entryId', $eid);
+        $this->config->where('platform', $platform);
+        $this->config->delete('upload_queue');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function removeCompletedQueuedUploadEntry($pid, $eid) {
         $success = array('success' => false);
         $this->config->where('partner_id', $pid);
         $this->config->where('entryId', $eid);
@@ -3759,7 +3795,7 @@ class Sn_config_model extends CI_Model {
                     array_push($config, $facebook_config['config']);
                 } else {
                     if ($facebook_upload_exists) {
-                        $this->removeQueuedUploadEntry($pid, $eid);
+                        $this->removeQueuedPlatformUploadEntry($pid, $eid, 'facebook');
                     }
                     if ($facebook_vod_exists) {
                         $facebook_video = $this->get_facebook_vod_id($pid, $eid);
@@ -3819,7 +3855,7 @@ class Sn_config_model extends CI_Model {
                     array_push($config, $youtube_config['config']);
                 } else {
                     if ($youtube_upload_exists) {
-                        $this->removeQueuedUploadEntry($pid, $eid);
+                        $this->removeQueuedPlatformUploadEntry($pid, $eid, 'youtube');
                     }
                     if ($youtube_vod_exists) {
                         $youtube_video = $this->get_youtube_vod_id($pid, $eid);
