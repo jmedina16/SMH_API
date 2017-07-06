@@ -1018,6 +1018,44 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function remove_facebook_upload_queues($pid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id = "' . $pid . '"');
+        $this->config->where('platform = "facebook"');
+        $this->config->delete('upload_queue');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'message' => 'Nothing removed');
+        }
+        return $success;
+    }
+
+    public function remove_facebook_vod_entries($pid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id', $pid);
+        $this->config->delete('facebook_vod_entries');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'message' => 'Nothing removed');
+        }
+        return $success;
+    }
+
+    public function remove_db_facebook_vod_entry($pid, $eid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id', $pid);
+        $this->config->where('entryId', $eid);
+        $this->config->delete('facebook_vod_entries');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'message' => 'Nothing removed');
+        }
+        return $success;
+    }
+
     public function check_fb_pages($pid) {
         $success = false;
         $this->config->select('*')
@@ -2863,6 +2901,22 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function remove_facebook_video($pid, $videoId) {
+        $success = array('success' => false);
+        $access_token = $this->validate_facebook_token($pid);
+        if ($access_token['success']) {
+            $remove_video = $this->facebook_client_api->removeVideo($access_token['access_token'], $videoId);
+            if ($remove_video['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Facebook: could not remove video');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Facebook: invalid access token');
+        }
+        return $success;
+    }
+
     public function delete_sn_entry($pid, $ks, $eid) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
@@ -2876,7 +2930,7 @@ class Sn_config_model extends CI_Model {
                             $success = $this->delete_youtube_vod_entry($pid, $eid);
                         }
                         if ($platforms_status['platforms_status']['facebook']) {
-                            //TODO
+                            $success = $this->delete_facebook_vod_entry($pid, $eid);
                         }
                         if (!$platforms_status['platforms_status']['youtube'] && !$platforms_status['platforms_status']['facebook']) {
                             $success = array('success' => true, 'message' => 'Social network: nothing to update');
@@ -2894,6 +2948,23 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
         }
 
+        return $success;
+    }
+
+    public function delete_facebook_vod_entry($pid, $eid) {
+        $success = array('success' => false);
+        $facebook_video = $this->get_facebook_vod_id($pid, $eid);
+        $remove_facebook_video = $this->remove_facebook_video($pid, $facebook_video['videoId']);
+        if ($remove_facebook_video['success']) {
+            $remove_db_facebook_vod_entry = $this->remove_db_facebook_vod_entry($pid, $eid);
+            if ($remove_db_facebook_vod_entry['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Could not remove Facebook video');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Could not delete Facebook video');
+        }
         return $success;
     }
 
@@ -3521,7 +3592,6 @@ class Sn_config_model extends CI_Model {
         if ($projection == 'rectangular') {
             $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'uploading', 'pending');
             if ($update_facebook_upload_status['success']) {
-                //TODO
                 $upload_facebook_video = $this->upload_rect_facebook_video($pid, $eid);
                 if ($upload_facebook_video['success']) {
                     $insert_entry_to_facebook_vod = $this->insert_entry_to_facebook_vod($pid, $eid, $upload_facebook_video['videoId'], $projection);
@@ -3692,7 +3762,13 @@ class Sn_config_model extends CI_Model {
                         $this->removeQueuedUploadEntry($pid, $eid);
                     }
                     if ($facebook_vod_exists) {
-                        //TODO
+                        $facebook_video = $this->get_facebook_vod_id($pid, $eid);
+                        $remove_facebook_video = $this->remove_facebook_video($pid, $facebook_video['videoId']);
+                        if ($remove_facebook_video['success']) {
+                            $this->remove_db_facebook_vod_entry($pid, $eid);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not delete Facebook video');
+                        }
                     }
                     $facebook_config = $this->create_vod_sn_config('facebook', $facebook_status, null, null);
                     array_push($config, $facebook_config['config']);
@@ -4762,6 +4838,27 @@ class Sn_config_model extends CI_Model {
             $success = false;
         }
 
+        return $success;
+    }
+
+    public function get_facebook_vod_id($pid, $eid) {
+        $success = array('success' => false);
+        $videoId = '';
+        $this->config->select('*')
+                ->from('facebook_vod_entries')
+                ->where('partner_id', $pid)
+                ->where('entryId', $eid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $videoId = $res['videoId'];
+            }
+            $success = array('success' => true, 'videoId' => $videoId);
+        } else {
+            $success = array('success' => false);
+        }
         return $success;
     }
 
