@@ -125,9 +125,9 @@ class Sn_config_model extends CI_Model {
             $user_details = $this->get_fb_account_details($pid);
             $livestream_settings = $this->get_fb_ls_settings($pid);
             $details = ($user_details['success']) ? $user_details['user_details'] : null;
-            $facebook = array('platform' => 'facebook_live', 'authorized' => $auth, 'user_details' => $details, 'stream_to' => $livestream_settings['stream_to'], 'settings' => $livestream_settings['settings']);
+            $facebook = array('platform' => 'facebook_live', 'authorized' => $auth, 'user_details' => $details, 'publish_to' => $livestream_settings['publish_to'], 'settings' => $livestream_settings['settings']);
         } else {
-            $facebook = array('platform' => 'facebook_live', 'authorized' => $auth, 'user_details' => null, 'stream_to' => null, 'settings' => null, 'redirect_url' => $this->facebook_client_api->getRedirectURL($pid, $ks));
+            $facebook = array('platform' => 'facebook_live', 'authorized' => $auth, 'user_details' => null, 'publish_to' => null, 'settings' => null, 'redirect_url' => $this->facebook_client_api->getRedirectURL($pid, $ks));
         }
         return $facebook;
     }
@@ -163,7 +163,7 @@ class Sn_config_model extends CI_Model {
 
     public function facebook_invalidation_removal($pid) {
         $success = array('success' => false);
-        $remove_settings = $this->remove_fb_live_settings($pid);
+        $remove_settings = $this->remove_fb_publish_settings($pid);
         if ($remove_settings['success']) {
             $remove_pages = $this->remove_fb_pages($pid);
             if ($remove_pages['success']) {
@@ -198,19 +198,19 @@ class Sn_config_model extends CI_Model {
         $pages = $this->get_fb_pages($pid);
         $groups = $this->get_fb_groups($pid);
         $events = $this->get_fb_events($pid);
-        $settings = $this->get_fb_live_settings($pid);
-        $stream_to_arr = array();
-        array_push($stream_to_arr, array('type' => 1, 'id' => $account_details['id'], 'name' => $account_details['user_name']));
+        $settings = $this->get_fb_publish_settings($pid);
+        $publish_to_arr = array();
+        array_push($publish_to_arr, array('type' => 1, 'id' => $account_details['id'], 'name' => $account_details['user_name']));
         foreach ($pages['pages'] as $page) {
-            array_push($stream_to_arr, array('type' => 2, 'id' => $page['id'], 'name' => $page['name']));
+            array_push($publish_to_arr, array('type' => 2, 'id' => $page['id'], 'name' => $page['name']));
         }
         foreach ($groups['groups'] as $group) {
-            array_push($stream_to_arr, array('type' => 3, 'id' => $group['id'], 'name' => $group['name']));
+            array_push($publish_to_arr, array('type' => 3, 'id' => $group['id'], 'name' => $group['name']));
         }
         foreach ($events['events'] as $event) {
-            array_push($stream_to_arr, array('type' => 4, 'id' => $event['id'], 'name' => $event['name']));
+            array_push($publish_to_arr, array('type' => 4, 'id' => $event['id'], 'name' => $event['name']));
         }
-        $success = array('success' => true, 'stream_to' => $stream_to_arr, 'settings' => $settings['settings']);
+        $success = array('success' => true, 'publish_to' => $publish_to_arr, 'settings' => $settings['settings']);
         return $success;
     }
 
@@ -382,10 +382,10 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function get_fb_live_settings($pid) {
+    public function get_fb_publish_settings($pid) {
         $success = array('success' => false);
         $this->config->select('*')
-                ->from('facebook_live_settings')
+                ->from('facebook_publish_settings')
                 ->where('partner_id', $pid);
 
         $query = $this->config->get();
@@ -393,12 +393,12 @@ class Sn_config_model extends CI_Model {
         if ($query->num_rows() > 0) {
             $settings = array();
             foreach ($result as $res) {
-                $stream_to = $res['stream_to'];
+                $publish_to = $res['publish_to'];
                 $asset_id = $res['asset_Id'];
                 $privacy = $res['privacy'];
                 $create_vod = $res['create_vod'];
                 $cont_streaming = $res['cont_streaming'];
-                array_push($settings, array('stream_to' => $stream_to, 'asset_id' => $asset_id, 'privacy' => $privacy, 'create_vod' => $create_vod, 'cont_streaming' => $cont_streaming));
+                array_push($settings, array('publish_to' => $publish_to, 'asset_id' => $asset_id, 'privacy' => $privacy, 'create_vod' => $create_vod, 'cont_streaming' => $cont_streaming));
             }
             $success = array('success' => true, 'settings' => $settings);
         } else {
@@ -731,7 +731,7 @@ class Sn_config_model extends CI_Model {
             if ($pid['success']) {
                 $remove_profile = $this->remove_fb_profile($pid['pid']);
                 if ($remove_profile['success']) {
-                    $remove_settings = $this->remove_fb_live_settings($pid['pid']);
+                    $remove_settings = $this->remove_fb_publish_settings($pid['pid']);
                     if ($remove_settings['success']) {
                         $remove_pages = $this->remove_fb_pages($pid['pid']);
                         if ($remove_pages['success']) {
@@ -811,7 +811,7 @@ class Sn_config_model extends CI_Model {
                     if ($remove['success']) {
                         $remove_profile = $this->remove_fb_profile($pid);
                         if ($remove_profile['success']) {
-                            $remove_settings = $this->remove_fb_live_settings($pid);
+                            $remove_settings = $this->remove_fb_publish_settings($pid);
                             if ($remove_settings['success']) {
                                 $remove_pages = $this->remove_fb_pages($pid);
                                 if ($remove_pages['success']) {
@@ -878,11 +878,11 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function remove_fb_live_settings($pid) {
+    public function remove_fb_publish_settings($pid) {
         $success = array('success' => false);
-        if ($this->check_fb_live_settings($pid)) {
+        if ($this->check_fb_publish_settings($pid)) {
             $this->config->where('partner_id = "' . $pid . '"');
-            $this->config->delete('facebook_live_settings');
+            $this->config->delete('facebook_publish_settings');
             if ($this->config->affected_rows() > 0) {
                 $success = array('success' => true);
             } else {
@@ -1413,7 +1413,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function create_fb_livestream($pid, $ks, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
+    public function create_fb_livestream($pid, $ks, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
@@ -1421,13 +1421,13 @@ class Sn_config_model extends CI_Model {
             if ($has_service) {
                 $access_token = $this->validate_facebook_token($valid['pid']);
                 if ($access_token['success']) {
-                    $get_asset = $this->get_asset($pid, $stream_to, $asset_id, $access_token['access_token']);
+                    $get_asset = $this->get_asset($pid, $publish_to, $asset_id, $access_token['access_token']);
                     if ($get_asset['success']) {
                         $livestream = $this->facebook_client_api->createLiveStream($get_asset['asset'], $privacy, $create_vod, $cont_streaming, $projection);
                         if ($livestream['success']) {
                             $add_fb_livestream = $this->add_fb_livestream($pid, $livestream['address'], $livestream['stream_name'], $livestream['embed_code'], $livestream['live_id']);
                             if ($add_fb_livestream['success']) {
-                                $add_fb_settings = $this->add_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection);
+                                $add_fb_settings = $this->add_fb_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection);
                                 if ($add_fb_settings['success']) {
                                     $success = array('success' => true);
                                 } else {
@@ -1455,11 +1455,11 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function add_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
-        if ($this->check_fb_live_settings($pid)) {
-            $result = $this->update_fb_live_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection);
+    public function add_fb_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
+        if ($this->check_fb_publish_settings($pid)) {
+            $result = $this->update_fb_publish_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection);
         } else {
-            $result = $this->insert_fb_live_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection);
+            $result = $this->insert_fb_publish_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection);
         }
         if ($result['success']) {
             $success = array('success' => true);
@@ -1470,10 +1470,10 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function check_fb_live_settings($pid) {
+    public function check_fb_publish_settings($pid) {
         $success = false;
         $this->config->select('*')
-                ->from('facebook_live_settings')
+                ->from('facebook_publish_settings')
                 ->where('partner_id', $pid);
         $query = $this->config->get();
         if ($query->num_rows() > 0) {
@@ -1485,10 +1485,10 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function update_fb_live_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
+    public function update_fb_publish_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
         $success = array('success' => false);
         $data = array(
-            'stream_to' => $stream_to,
+            'publish_to' => $publish_to,
             'asset_id' => $asset_id,
             'privacy' => $privacy,
             'create_vod' => ($create_vod == 'true') ? true : false,
@@ -1497,7 +1497,7 @@ class Sn_config_model extends CI_Model {
             'updated_at' => date("Y-m-d H:i:s")
         );
         $this->config->where('partner_id', $pid);
-        $this->config->update('facebook_live_settings', $data);
+        $this->config->update('facebook_publish_settings', $data);
         $this->config->limit(1);
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
@@ -1507,14 +1507,14 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function update_fb_live_settings_asset_id($pid, $asset_id) {
+    public function update_fb_publish_settings_asset_id($pid, $asset_id) {
         $success = array('success' => false);
         $data = array(
             'asset_id' => $asset_id,
             'updated_at' => date("Y-m-d H:i:s")
         );
         $this->config->where('partner_id', $pid);
-        $this->config->update('facebook_live_settings', $data);
+        $this->config->update('facebook_publish_settings', $data);
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
         } else {
@@ -1523,11 +1523,11 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function insert_fb_live_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
+    public function insert_fb_publish_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
         $success = array('success' => false);
         $data = array(
             'partner_id' => $pid,
-            'stream_to' => $stream_to,
+            'publish_to' => $publish_to,
             'asset_id' => $asset_id,
             'privacy' => $privacy,
             'create_vod' => ($create_vod == 'true') ? true : false,
@@ -1536,7 +1536,7 @@ class Sn_config_model extends CI_Model {
             'created_at' => date("Y-m-d H:i:s")
         );
 
-        $this->config->insert('facebook_live_settings', $data);
+        $this->config->insert('facebook_publish_settings', $data);
         $this->config->limit(1);
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
@@ -1619,21 +1619,21 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function get_asset($pid, $stream_to, $asset_id, $access_token) {
+    public function get_asset($pid, $publish_to, $asset_id, $access_token) {
         $success = array('success' => false);
-        if ($stream_to == 1) {
+        if ($publish_to == 1) {
             $user_id = $this->get_fb_user_name($pid);
             $asset = array('asset_type' => 'user', 'asset_id' => $user_id['user_id'], 'access_token' => $access_token);
             $success = array('success' => true, 'asset' => $asset);
-        } else if ($stream_to == 2) {
+        } else if ($publish_to == 2) {
             $page = $this->get_fb_page($pid, $asset_id);
             $asset = array('asset_type' => 'page', 'asset_id' => $page['page_id'], 'access_token' => $page['access_token']);
             $success = array('success' => true, 'asset' => $asset);
-        } else if ($stream_to == 3) {
+        } else if ($publish_to == 3) {
             $group = $this->get_fb_group($pid, $asset_id);
             $asset = array('asset_type' => 'group', 'asset_id' => $group['group_id'], 'access_token' => $access_token);
             $success = array('success' => true, 'asset' => $asset);
-        } else if ($stream_to == 4) {
+        } else if ($publish_to == 4) {
             $event = $this->get_fb_event($pid, $asset_id);
             $asset = array('asset_type' => 'event', 'asset_id' => $event['event_id'], 'access_token' => $access_token);
             $success = array('success' => true, 'asset' => $asset);
@@ -3013,11 +3013,11 @@ class Sn_config_model extends CI_Model {
         $entry_path = $this->smportal->get_entry_path($pid, $eid);
         $access_token = $this->validate_facebook_token($pid);
         if ($access_token['success']) {
-            $get_user_settings = $this->get_facebook_vod_settings($pid);
+            $get_user_settings = $this->get_facebook_publish_settings($pid);
             if ($get_user_settings['success']) {
                 $get_asset = $this->get_asset($pid, $get_user_settings['userSettings'][0]['publish_to'], $get_user_settings['userSettings'][0]['asset_id'], $access_token['access_token']);
                 if ($get_asset['success']) {
-                    $upload_video = $this->facebook_client_api->uploadVideo($get_asset['asset'], $entry_details['name'], $entry_details['desc'], $entry_path, $get_user_settings['userSettings'][0]['projection']);
+                    $upload_video = $this->facebook_client_api->uploadVideo($get_asset['asset'], $entry_details['name'], $entry_details['desc'], $get_user_settings['userSettings'][0]['privacy'], $entry_path, $get_user_settings['userSettings'][0]['projection']);
                     if ($upload_video['success']) {
                         $success = array('success' => true, 'videoId' => $upload_video['videoId']);
                     } else {
@@ -4035,9 +4035,9 @@ class Sn_config_model extends CI_Model {
         foreach ($livestreams as $livestream) {
             $date = strtotime($livestream['date']);
             if ($date <= $dateTwentyThreeHoursAgo) {
-                $get_user_settings = $this->get_facebook_live_settings($livestream['pid']);
+                $get_user_settings = $this->get_facebook_publish_settings($livestream['pid']);
                 if ($get_user_settings['success']) {
-                    $create_new_livestream = $this->create_new_fb_livestream($livestream['pid'], $get_user_settings['userSettings'][0]['stream_to'], $get_user_settings['userSettings'][0]['asset_id'], $get_user_settings['userSettings'][0]['privacy'], $get_user_settings['userSettings'][0]['create_vod'], $get_user_settings['userSettings'][0]['cont_streaming'], $get_user_settings['userSettings'][0]['projection']);
+                    $create_new_livestream = $this->create_new_fb_livestream($livestream['pid'], $get_user_settings['userSettings'][0]['publish_to'], $get_user_settings['userSettings'][0]['asset_id'], $get_user_settings['userSettings'][0]['privacy'], $get_user_settings['userSettings'][0]['create_vod'], $get_user_settings['userSettings'][0]['cont_streaming'], $get_user_settings['userSettings'][0]['projection']);
                     if ($create_new_livestream['success']) {
                         $success = array('success' => true);
                     } else {
@@ -4262,9 +4262,9 @@ class Sn_config_model extends CI_Model {
                 }
             }
             if ($is_facebook_live) {
-                $get_user_settings = $this->get_facebook_live_settings($pid);
+                $get_user_settings = $this->get_facebook_publish_settings($pid);
                 if ($get_user_settings['success']) {
-                    $create_new_livestream = $this->create_new_fb_livestream($pid, $get_user_settings['userSettings'][0]['stream_to'], $get_user_settings['userSettings'][0]['asset_id'], $get_user_settings['userSettings'][0]['privacy'], $get_user_settings['userSettings'][0]['create_vod'], $get_user_settings['userSettings'][0]['cont_streaming'], $get_user_settings['userSettings'][0]['projection']);
+                    $create_new_livestream = $this->create_new_fb_livestream($pid, $get_user_settings['userSettings'][0]['publish_to'], $get_user_settings['userSettings'][0]['asset_id'], $get_user_settings['userSettings'][0]['privacy'], $get_user_settings['userSettings'][0]['create_vod'], $get_user_settings['userSettings'][0]['cont_streaming'], $get_user_settings['userSettings'][0]['projection']);
                     if ($create_new_livestream['success']) {
                         $success = array('success' => true);
                     } else {
@@ -4281,36 +4281,10 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function get_facebook_live_settings($pid) {
+    public function get_facebook_publish_settings($pid) {
         $success = array('success' => false);
         $this->config->select('*')
-                ->from('facebook_live_settings')
-                ->where('partner_id', $pid);
-
-        $query = $this->config->get();
-        $result = $query->result_array();
-        if ($query->num_rows() > 0) {
-            $userSettings = array();
-            foreach ($result as $res) {
-                $stream_to = $res['stream_to'];
-                $asset_id = $res['asset_Id'];
-                $privacy = $res['privacy'];
-                $create_vod = ($res['create_vod']) ? 'true' : 'false';
-                $cont_streaming = ($res['cont_streaming']) ? 'true' : 'false';
-                $projection = $res['projection'];
-            }
-            array_push($userSettings, array('asset_id' => $asset_id, 'stream_to' => $stream_to, 'privacy' => $privacy, 'create_vod' => $create_vod, 'cont_streaming' => $cont_streaming, 'projection' => $projection));
-            $success = array('success' => true, 'userSettings' => $userSettings);
-        } else {
-            $success = array('success' => false);
-        }
-        return $success;
-    }
-
-    public function get_facebook_vod_settings($pid) {
-        $success = array('success' => false);
-        $this->config->select('*')
-                ->from('facebook_vod_settings')
+                ->from('facebook_publish_settings')
                 ->where('partner_id', $pid);
 
         $query = $this->config->get();
@@ -4320,10 +4294,13 @@ class Sn_config_model extends CI_Model {
             foreach ($result as $res) {
                 $publish_to = $res['publish_to'];
                 $asset_id = $res['asset_Id'];
+                $privacy = $res['privacy'];
+                $create_vod = ($res['create_vod']) ? 'true' : 'false';
+                $cont_streaming = ($res['cont_streaming']) ? 'true' : 'false';
                 $auto_upload = ($res['auto_upload']) ? true : false;
                 $projection = $res['projection'];
             }
-            array_push($userSettings, array('asset_id' => $asset_id, 'publish_to' => $publish_to, 'auto_upload' => $auto_upload, 'projection' => $projection));
+            array_push($userSettings, array('asset_id' => $asset_id, 'publish_to' => $publish_to, 'privacy' => $privacy, 'create_vod' => $create_vod, 'cont_streaming' => $cont_streaming, 'auto_upload' => $auto_upload, 'projection' => $projection));
             $success = array('success' => true, 'userSettings' => $userSettings);
         } else {
             $success = array('success' => false);
@@ -4331,11 +4308,11 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function create_new_fb_livestream($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
+    public function create_new_fb_livestream($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
         $success = array('success' => false);
         $access_token = $this->validate_facebook_token($pid);
         if ($access_token['success']) {
-            $get_asset = $this->get_asset($pid, $stream_to, $asset_id, $access_token['access_token']);
+            $get_asset = $this->get_asset($pid, $publish_to, $asset_id, $access_token['access_token']);
             if ($get_asset['success']) {
                 $livestream = $this->facebook_client_api->createLiveStream($get_asset['asset'], $privacy, $create_vod, $cont_streaming, $projection);
                 if ($livestream['success']) {
@@ -4515,25 +4492,25 @@ class Sn_config_model extends CI_Model {
             if ($has_service) {
                 $access_token = $this->validate_facebook_token($pid);
                 $found_settings = false;
-                $stream_to = 0;
+                $publish_to = 0;
                 if ($access_token['success']) {
-                    $get_fb_live_settings = $this->get_fb_live_settings($pid);
-                    if ($get_fb_live_settings['success']) {
+                    $get_fb_publish_settings = $this->get_fb_publish_settings($pid);
+                    if ($get_fb_publish_settings['success']) {
                         $found_settings = true;
                     }
                     if ($found_settings) {
-                        $stream_to = $get_fb_live_settings['settings'][0]['stream_to'];
-                        $asset_id = $get_fb_live_settings['settings'][0]['asset_id'];
+                        $publish_to = $get_fb_publish_settings['settings'][0]['publish_to'];
+                        $asset_id = $get_fb_publish_settings['settings'][0]['asset_id'];
                         $page_found = false;
                         $group_found = false;
                         $event_found = false;
-                        if ($stream_to == 2) {
+                        if ($publish_to == 2) {
                             $get_fb_page = $this->get_fb_page($pid, $asset_id);
                             $page_id = $get_fb_page['page_id'];
-                        } else if ($stream_to == 3) {
+                        } else if ($publish_to == 3) {
                             $get_fb_group = $this->get_fb_group($pid, $asset_id);
                             $group_id = $get_fb_group['group_id'];
-                        } else if ($stream_to == 4) {
+                        } else if ($publish_to == 4) {
                             $get_fb_event = $this->get_fb_event($pid, $asset_id);
                             $event_id = $get_fb_event['event_id'];
                         }
@@ -4558,7 +4535,7 @@ class Sn_config_model extends CI_Model {
                     } else {
                         $insert_facebook_pages = $this->insert_facebook_pages($pid, $pages);
                     }
-                    if ($stream_to == 2) {
+                    if ($publish_to == 2) {
                         if (count($pages) > 0) {
                             foreach ($pages as $page) {
                                 if ($page_id == $page['page_id']) {
@@ -4568,7 +4545,7 @@ class Sn_config_model extends CI_Model {
                             if ($page_found) {
                                 $get_fb_page_asset_id = $this->get_fb_page_asset_id($pid, $page_id);
                                 $new_page_asset_id = $get_fb_page_asset_id['id'];
-                                $this->update_fb_live_settings_asset_id($pid, $new_page_asset_id);
+                                $this->update_fb_publish_settings_asset_id($pid, $new_page_asset_id);
                             }
                         }
                     }
@@ -4585,7 +4562,7 @@ class Sn_config_model extends CI_Model {
                     } else {
                         $insert_facebook_groups = $this->insert_facebook_groups($pid, $groups);
                     }
-                    if ($stream_to == 3) {
+                    if ($publish_to == 3) {
                         if (count($groups) > 0) {
                             foreach ($groups as $group) {
                                 if ($group_id == $group['group_id']) {
@@ -4595,7 +4572,7 @@ class Sn_config_model extends CI_Model {
                             if ($group_found) {
                                 $get_fb_group_asset_id = $this->get_fb_group_asset_id($pid, $group_id);
                                 $new_group_asset_id = $get_fb_group_asset_id['id'];
-                                $this->update_fb_live_settings_asset_id($pid, $new_group_asset_id);
+                                $this->update_fb_publish_settings_asset_id($pid, $new_group_asset_id);
                             }
                         }
                     }
@@ -4612,7 +4589,7 @@ class Sn_config_model extends CI_Model {
                     } else {
                         $insert_facebook_events = $this->insert_facebook_events($pid, $events);
                     }
-                    if ($stream_to == 4) {
+                    if ($publish_to == 4) {
                         if (count($events) > 0) {
                             foreach ($events as $event) {
                                 if ($event_id == $event['event_id']) {
@@ -4622,19 +4599,19 @@ class Sn_config_model extends CI_Model {
                             if ($event_found) {
                                 $get_fb_event_asset_id = $this->get_fb_event_asset_id($pid, $event_id);
                                 $new_event_asset_id = $get_fb_event_asset_id['id'];
-                                $this->update_fb_live_settings_asset_id($pid, $new_event_asset_id);
+                                $this->update_fb_publish_settings_asset_id($pid, $new_event_asset_id);
                             }
                         }
                     }
 
-                    if (($stream_to == 2 || $stream_to == 3 || $stream_to == 4) && (!$page_found && !$group_found && !$event_found)) {
+                    if (($publish_to == 2 || $publish_to == 3 || $publish_to == 4) && (!$page_found && !$group_found && !$event_found)) {
                         $profile_details = array('user_name' => $user_name, 'user_thumbnail' => $account_pic['user_pic']);
-                        $remove_fb_live_settings = $this->remove_fb_live_settings($pid);
-                        if ($remove_fb_live_settings['success']) {
+                        $remove_fb_publish_settings = $this->remove_fb_publish_settings($pid);
+                        if ($remove_fb_publish_settings['success']) {
                             $remove_livestream = $this->remove_fb_livestream($pid);
                             if ($remove_livestream['success']) {
                                 $livestream_settings = $this->get_fb_ls_settings($pid);
-                                $success = array('success' => true, 'stream_to' => $livestream_settings['stream_to'], 'settings' => $livestream_settings['settings'], 'profile_details' => $profile_details);
+                                $success = array('success' => true, 'publish_to' => $livestream_settings['publish_to'], 'settings' => $livestream_settings['settings'], 'profile_details' => $profile_details);
                             } else {
                                 $success = array('success' => false, 'message' => 'Could not remove facebook user livestream');
                             }
@@ -4644,7 +4621,7 @@ class Sn_config_model extends CI_Model {
                     } else {
                         $profile_details = array('user_name' => $user_name, 'user_thumbnail' => $account_pic['user_pic']);
                         $livestream_settings = $this->get_fb_ls_settings($pid);
-                        $success = array('success' => true, 'stream_to' => $livestream_settings['stream_to'], 'settings' => $livestream_settings['settings'], 'profile_details' => $profile_details);
+                        $success = array('success' => true, 'publish_to' => $livestream_settings['publish_to'], 'settings' => $livestream_settings['settings'], 'profile_details' => $profile_details);
                     }
                 } else {
                     $success = array('success' => false, 'message' => 'Facebook: invalid access token');
@@ -4743,7 +4720,7 @@ class Sn_config_model extends CI_Model {
             }
         }
         if ($facebook_status['status']) {
-            $facebook = $this->get_facebook_vod_settings($pid);
+            $facebook = $this->get_facebook_publish_settings($pid);
             if ($facebook['success']) {
                 $statuses['facebook'] = $facebook['userSettings'][0]['auto_upload'];
                 $statuses['facebook_projection'] = $facebook['userSettings'][0]['projection'];
