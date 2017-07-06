@@ -574,7 +574,7 @@ class Sn_config extends REST_Controller {
     public function create_fb_livestream_get() {
         $pid = $this->get('pid');
         $ks = $this->get('ks');
-        $stream_to = $this->get('stream_to');
+        $publish_to = $this->get('publish_to');
         $asset_id = $this->get('asset_id');
         $privacy = $this->get('privacy');
         $create_vod = $this->get('create_vod');
@@ -591,7 +591,7 @@ class Sn_config extends REST_Controller {
             $this->response(array('error' => 'Missing ks'), 200);
         }
 
-        if (!isset($stream_to) || $stream_to == null) {
+        if (!isset($publish_to) || $publish_to == null) {
 
             $this->response(array('error' => 'Missing Stream To'), 200);
         }
@@ -621,7 +621,7 @@ class Sn_config extends REST_Controller {
             $this->response(array('error' => 'Missing projection'), 200);
         }
 
-        $result = $this->sn_config_model->create_fb_livestream($pid, $ks, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection);
+        $result = $this->sn_config_model->create_fb_livestream($pid, $ks, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection);
 
         if (!$result) {
 
