@@ -3648,8 +3648,8 @@ class Sn_config_model extends CI_Model {
 
     public function process_facebook_upload_queue($pid, $eid, $projection) {
         $success = array('success' => false);
-        if ($projection == 'rectangular') {
-            $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'uploading', 'pending');
+//        if ($projection == 'rectangular') {
+        $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'uploading', 'pending');
             if ($update_facebook_upload_status['success']) {
                 $upload_facebook_video = $this->upload_rect_facebook_video($pid, $eid);
                 if ($upload_facebook_video['success']) {
@@ -3670,9 +3670,9 @@ class Sn_config_model extends CI_Model {
             } else {
                 $success = array('success' => false, 'message' => $update_facebook_upload_status['message']);
             }
-        } else {
-            //TODO
-        }
+//        } else {
+//            //TODO
+//        }
 
         return $success;
     }
