@@ -298,7 +298,7 @@ class Facebook_client_api {
         }
     }
 
-    public function uploadVideo($asset, $name, $desc, $videoPath, $projection) {
+    public function uploadVideo($asset, $name, $desc, $privacy, $videoPath, $projection) {
         $success = array('success' => false);
         try {
             $fb = new Facebook\Facebook([
@@ -307,9 +307,23 @@ class Facebook_client_api {
                 'default_graph_version' => $this->GRAPH_VERSION,
             ]);
 
+            $value = '';
+            if ($privacy == 1) {
+                $value = 'EVERYONE';
+            } else if ($privacy == 2) {
+                $value = 'ALL_FRIENDS';
+            } else if ($privacy == 3) {
+                $value = 'SELF';
+            }
+
+            $privacy_value = array(
+                'value' => $value
+            );
+
             $data = array(
                 'title' => $name,
-                'description' => $desc
+                'description' => $desc,
+                'privacy' => json_encode($privacy_value),
             );
             if ($projection === '360') {
                 $data['spherical'] = true;
