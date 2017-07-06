@@ -359,6 +359,37 @@ class Facebook_client_api {
         }
     }
 
+    public function updateVodMetaData($access_token, $vid, $name, $desc) {
+        $success = array('success' => false);
+        try {
+            $fb = new Facebook\Facebook([
+                'app_id' => $this->OAUTH2_CLIENT_ID,
+                'app_secret' => $this->OAUTH2_CLIENT_SECRET,
+                'default_graph_version' => $this->GRAPH_VERSION,
+            ]);
+
+            $data = array(
+                'name' => $name,
+                'description' => $desc
+            );
+
+            $updateVideo = $fb->post('/' . $vid, $data, $access_token);
+            $updateResponse = $updateVideo->getGraphNode()->asArray();
+            if ($updateResponse['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false);
+            }
+            return $success;
+        } catch (\Facebook\Exceptions\FacebookResponseException $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
+            exit;
+        } catch (\Facebook\Exceptions\FacebookSDKException $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
+            exit;
+        }
+    }
+
     public function updateLiveStream($asset_id, $name, $desc, $access_token) {
         $success = array('success' => false);
         try {
