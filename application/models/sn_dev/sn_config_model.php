@@ -740,11 +740,21 @@ class Sn_config_model extends CI_Model {
                             if ($remove_livestream['success']) {
                                 $remove_live_entries = $this->remove_fb_live_entries($pid['pid']);
                                 if ($remove_live_entries['success']) {
-                                    $update_status = $this->update_sn_config($pid['pid'], 'facebook', 0);
-                                    if ($update_status['success']) {
-                                        $success = array('success' => true);
+                                    $remove_facebook_upload_queues = $this->remove_facebook_upload_queues($pid['pid']);
+                                    if ($remove_facebook_upload_queues['success']) {
+                                        $remove_facebook_vod_entries = $this->remove_facebook_vod_entries($pid['pid']);
+                                        if ($remove_facebook_vod_entries['success']) {
+                                            $update_status = $this->update_sn_config($pid['pid'], 'facebook', 0);
+                                            if ($update_status['success']) {
+                                                $success = array('success' => true);
+                                            } else {
+                                                $success = array('success' => false, 'message' => 'Could not update platform status');
+                                            }
+                                        } else {
+                                            $success = array('success' => false, 'message' => 'Could not remove vod entries');
+                                        }
                                     } else {
-                                        $success = array('success' => false);
+                                        $success = array('success' => false, 'message' => 'Could not remove upload queues');
                                     }
                                 } else {
                                     $success = array('success' => false, 'message' => 'Could not remove facebook live entries');
@@ -824,11 +834,21 @@ class Sn_config_model extends CI_Model {
                                             if ($remove_livestream['success']) {
                                                 $remove_live_entries = $this->remove_fb_live_entries($pid);
                                                 if ($remove_live_entries['success']) {
-                                                    $update_status = $this->update_sn_config($pid, 'facebook', 0);
-                                                    if ($update_status['success']) {
-                                                        $success = array('success' => true);
+                                                    $remove_facebook_upload_queues = $this->remove_facebook_upload_queues($pid);
+                                                    if ($remove_facebook_upload_queues['success']) {
+                                                        $remove_facebook_vod_entries = $this->remove_facebook_vod_entries($pid);
+                                                        if ($remove_facebook_vod_entries['success']) {
+                                                            $update_status = $this->update_sn_config($pid, 'facebook', 0);
+                                                            if ($update_status['success']) {
+                                                                $success = array('success' => true);
+                                                            } else {
+                                                                $success = array('success' => false);
+                                                            }
+                                                        } else {
+                                                            $success = array('success' => false, 'message' => 'Could not remove vod entries');
+                                                        }
                                                     } else {
-                                                        $success = array('success' => false);
+                                                        $success = array('success' => false, 'message' => 'Could not remove upload queues');
                                                     }
                                                 } else {
                                                     $success = array('success' => false, 'message' => 'Could not remove facebook live entries');
@@ -1414,7 +1434,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function create_fb_livestream($pid, $ks, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
+    public function create_fb_livestream($pid, $ks, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $auto_upload, $projection) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
@@ -1428,7 +1448,7 @@ class Sn_config_model extends CI_Model {
                         if ($livestream['success']) {
                             $add_fb_livestream = $this->add_fb_livestream($pid, $livestream['address'], $livestream['stream_name'], $livestream['embed_code'], $livestream['live_id']);
                             if ($add_fb_livestream['success']) {
-                                $add_fb_settings = $this->add_fb_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection);
+                                $add_fb_settings = $this->add_fb_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $auto_upload, $projection);
                                 if ($add_fb_settings['success']) {
                                     $success = array('success' => true);
                                 } else {
@@ -1456,11 +1476,11 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function add_fb_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
+    public function add_fb_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $auto_upload, $projection) {
         if ($this->check_fb_publish_settings($pid)) {
-            $result = $this->update_fb_publish_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection);
+            $result = $this->update_fb_publish_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $auto_upload, $projection);
         } else {
-            $result = $this->insert_fb_publish_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection);
+            $result = $this->insert_fb_publish_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $auto_upload, $projection);
         }
         if ($result['success']) {
             $success = array('success' => true);
@@ -1486,7 +1506,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function update_fb_publish_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
+    public function update_fb_publish_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $auto_upload, $projection) {
         $success = array('success' => false);
         $data = array(
             'publish_to' => $publish_to,
@@ -1494,6 +1514,7 @@ class Sn_config_model extends CI_Model {
             'privacy' => $privacy,
             'create_vod' => ($create_vod == 'true') ? true : false,
             'cont_streaming' => ($cont_streaming == 'true') ? true : false,
+            'auto_upload' => ($auto_upload == 'true') ? true : false,
             'projection' => $projection,
             'updated_at' => date("Y-m-d H:i:s")
         );
@@ -1524,7 +1545,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function insert_fb_publish_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
+    public function insert_fb_publish_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $auto_upload, $projection) {
         $success = array('success' => false);
         $data = array(
             'partner_id' => $pid,
@@ -1533,6 +1554,7 @@ class Sn_config_model extends CI_Model {
             'privacy' => $privacy,
             'create_vod' => ($create_vod == 'true') ? true : false,
             'cont_streaming' => ($cont_streaming == 'true') ? true : false,
+            'auto_upload' => ($auto_upload == 'true') ? true : false,
             'projection' => $projection,
             'created_at' => date("Y-m-d H:i:s")
         );
