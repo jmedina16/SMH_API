@@ -325,11 +325,9 @@ class Facebook_client_api {
                 'description' => $desc,
                 'privacy' => json_encode($privacy_value),
             );
-            if ($projection === '360') {
-                $data['is_spherical'] = true;
+            if ($projection == '360') {
+                $data['spherical'] = true;
             }
-
-            syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo: " . print_r($data, true));
 
             $uploadVideo = $fb->uploadVideo($asset['asset_id'], $videoPath, $data, $asset['access_token']);
             if ($uploadVideo['success']) {
