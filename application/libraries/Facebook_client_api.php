@@ -315,10 +315,8 @@ class Facebook_client_api {
                 $data['spherical'] = true;
             }
             $uploadVideo = $fb->uploadVideo($asset['asset_id'], $videoPath, $data, $asset['access_token']);
-            $video = $uploadVideo->getGraphNode()->asArray();
-            if (isset($video['id'])) {
-                syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo: " . print_r($video, true));
-                $success = array('success' => true, 'videoId' => $video['id']);
+            if ($uploadVideo['success']) {
+                $success = array('success' => true, 'videoId' => $uploadVideo['video_id']);
             } else {
                 $success = array('success' => false);
             }
