@@ -2912,10 +2912,8 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function upload_rect_youtube_video($pid, $eid) {
+    public function upload_rect_youtube_video($pid, $entry_details, $entry_path) {
         $success = array('success' => false);
-        $entry_details = $this->smportal->get_entry_details($pid, $eid);
-        $entry_path = $this->smportal->get_entry_path($pid, $eid);
         $access_token = $this->validate_youtube_token($pid);
         if ($access_token['success']) {
             $upload_video = $this->google_client_api->uploadVideo($access_token['access_token'], $entry_details['name'], $entry_details['desc'], $entry_path);
@@ -3030,19 +3028,53 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function upload_rect_facebook_video($pid, $eid) {
+    public function upload_rect_facebook_video($pid, $entry_details, $entry_path) {
         $success = array('success' => false);
-        $entry_details = $this->smportal->get_entry_details($pid, $eid);
-        $entry_path = $this->smportal->get_entry_path($pid, $eid);
         $access_token = $this->validate_facebook_token($pid);
         if ($access_token['success']) {
             $get_user_settings = $this->get_facebook_publish_settings($pid);
             if ($get_user_settings['success']) {
                 $get_asset = $this->get_asset($pid, $get_user_settings['userSettings'][0]['publish_to'], $get_user_settings['userSettings'][0]['asset_id'], $access_token['access_token']);
                 if ($get_asset['success']) {
-                    $upload_video = $this->facebook_client_api->uploadVideo($get_asset['asset'], $entry_details['name'], $entry_details['desc'], $get_user_settings['userSettings'][0]['privacy'], $entry_path, $get_user_settings['userSettings'][0]['projection']);
+                    $upload_video = $this->facebook_client_api->uploadVideo($get_asset['asset'], $entry_details['name'], $entry_details['desc'], $get_user_settings['userSettings'][0]['privacy'], $entry_path['original_path']);
                     if ($upload_video['success']) {
                         $success = array('success' => true, 'videoId' => $upload_video['videoId']);
+                    } else {
+                        $success = array('success' => false, 'message' => 'Facebook: could not upload video');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not get asset Id');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Could not get Facebook user settings');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Facebook: invalid access token');
+        }
+        return $success;
+    }
+
+    public function upload_threesixty_facebook_video($pid, $entry_details, $entry_path) {
+        $success = array('success' => false);
+
+        ob_start();
+        passthru('/usr/bin/python2.7 /var/www/vhosts/api/application/libraries/spatial-media/spatialmedia -i --stereo none ' . $entry_path['original_path'] . ' ' . $entry_path['threesixty_tmp_path']);
+        ob_get_clean();
+
+        $access_token = $this->validate_facebook_token($pid);
+        if ($access_token['success']) {
+            $get_user_settings = $this->get_facebook_publish_settings($pid);
+            if ($get_user_settings['success']) {
+                $get_asset = $this->get_asset($pid, $get_user_settings['userSettings'][0]['publish_to'], $get_user_settings['userSettings'][0]['asset_id'], $access_token['access_token']);
+                if ($get_asset['success']) {
+                    $upload_video = $this->facebook_client_api->uploadVideo($get_asset['asset'], $entry_details['name'], $entry_details['desc'], $get_user_settings['userSettings'][0]['privacy'], $entry_path['threesixty_tmp_path']);
+                    if ($upload_video['success']) {
+                        $res = @unlink($entry_path['threesixty_tmp_path']);
+                        if ($res) {
+                            $success = array('success' => true, 'videoId' => $upload_video['videoId']);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not delete temp 360 file');
+                        }
                     } else {
                         $success = array('success' => false, 'message' => 'Facebook: could not upload video');
                     }
@@ -3621,15 +3653,17 @@ class Sn_config_model extends CI_Model {
         if (!$currently_uploading) {
             $get_ready_upload = $this->get_ready_upload();
             if (count($get_ready_upload['ready_upload']) > 0) {
+                $entry_details = $this->smportal->get_entry_details($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid']);
+                $entry_path = $this->smportal->get_entry_path($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid']);
                 if ($get_ready_upload['ready_upload']['platform'] == 'youtube') {
-                    $process_youtube_upload_queue = $this->process_youtube_upload_queue($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid'], $get_ready_upload['ready_upload']['projection']);
+                    $process_youtube_upload_queue = $this->process_youtube_upload_queue($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid'], $get_ready_upload['ready_upload']['projection'], $entry_details, $entry_path);
                     if ($process_youtube_upload_queue['success']) {
                         $success = array('success' => true);
                     } else {
                         $success = array('success' => false, 'message' => $process_youtube_upload_queue['message']);
                     }
                 } else if ($get_ready_upload['ready_upload']['platform'] === 'facebook') {
-                    $process_facebook_upload_queue = $this->process_facebook_upload_queue($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid'], $get_ready_upload['ready_upload']['projection']);
+                    $process_facebook_upload_queue = $this->process_facebook_upload_queue($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid'], $get_ready_upload['ready_upload']['projection'], $entry_details, $entry_path);
                     if ($process_facebook_upload_queue['success']) {
                         $success = array('success' => true);
                     } else {
@@ -3646,51 +3680,83 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function process_facebook_upload_queue($pid, $eid, $projection) {
+    public function process_facebook_upload_queue($pid, $eid, $projection, $entry_details, $entry_path) {
         $success = array('success' => false);
-        if ($projection == 'rectangular') {
-            $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'uploading', 'pending');
-            if ($update_facebook_upload_status['success']) {
-                $upload_facebook_video = $this->upload_rect_facebook_video($pid, $eid);
+        $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'uploading', 'pending');
+        if ($update_facebook_upload_status['success']) {
+            $videoId = '';
+            if ($projection == 'rectangular') {
+                $upload_facebook_video = $this->upload_rect_facebook_video($pid, $entry_details, $entry_path);
                 if ($upload_facebook_video['success']) {
-                    $insert_entry_to_facebook_vod = $this->insert_entry_to_facebook_vod($pid, $eid, $upload_facebook_video['videoId'], $projection);
-                    if ($insert_entry_to_facebook_vod['success']) {
-                        $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'completed', $upload_facebook_video['videoId']);
-                        if ($update_facebook_upload_status['success']) {
-                            $success = array('success' => true);
-                        } else {
-                            $success = array('success' => false, 'message' => $update_facebook_upload_status['message']);
-                        }
-                    } else {
-                        $success = array('success' => false, 'message' => 'Could not insert entry into Facebook vod');
-                    }
+                    $videoId = $upload_facebook_video['videoId'];
                 } else {
                     $success = array('success' => false, 'message' => 'Could not upload video to Facebook');
                 }
             } else {
-                $success = array('success' => false, 'message' => $update_facebook_upload_status['message']);
+                $upload_facebook_video = $this->upload_threesixty_facebook_video($pid, $entry_details, $entry_path);
+                if ($upload_facebook_video['success']) {
+                    $videoId = $upload_facebook_video['videoId'];
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not upload video to Facebook');
+                }
+            }
+            $insert_entry_to_facebook_vod = $this->insert_entry_to_facebook_vod($pid, $eid, $videoId, $projection);
+            if ($insert_entry_to_facebook_vod['success']) {
+                $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'completed', $videoId);
+                if ($update_facebook_upload_status['success']) {
+                    $success = array('success' => true);
+                } else {
+                    $success = array('success' => false, 'message' => $update_facebook_upload_status['message']);
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Could not insert entry into Facebook vod');
             }
         } else {
-            //TODO
-            ob_start();
-            passthru('/usr/bin/python2.7 /var/www/vhosts/api/application/libraries/spatial-media/spatialmedia /opt/kaltura/web/content/entry/data/10012/0_wmlv33mq_0_qtdvmulu_2_tmp1.mp4');
-            $output = ob_get_clean();
-            if (strpos($output, 'Spherical = true') !== false) {
-                syslog(LOG_NOTICE, "SMH DEBUG : process_facebook_upload_queue: FOUND SPHERICAL");
-            } else {
-                syslog(LOG_NOTICE, "SMH DEBUG : process_facebook_upload_queue: DID NOT FIND SPHERICAL");
-            }
+            $success = array('success' => false, 'message' => $update_facebook_upload_status['message']);
         }
+//        if ($projection == 'rectangular') {
+//            $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'uploading', 'pending');
+//            if ($update_facebook_upload_status['success']) {
+//                $upload_facebook_video = $this->upload_rect_facebook_video($pid, $eid);
+//                if ($upload_facebook_video['success']) {
+//                    $insert_entry_to_facebook_vod = $this->insert_entry_to_facebook_vod($pid, $eid, $upload_facebook_video['videoId'], $projection);
+//                    if ($insert_entry_to_facebook_vod['success']) {
+//                        $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'completed', $upload_facebook_video['videoId']);
+//                        if ($update_facebook_upload_status['success']) {
+//                            $success = array('success' => true);
+//                        } else {
+//                            $success = array('success' => false, 'message' => $update_facebook_upload_status['message']);
+//                        }
+//                    } else {
+//                        $success = array('success' => false, 'message' => 'Could not insert entry into Facebook vod');
+//                    }
+//                } else {
+//                    $success = array('success' => false, 'message' => 'Could not upload video to Facebook');
+//                }
+//            } else {
+//                $success = array('success' => false, 'message' => $update_facebook_upload_status['message']);
+//            }
+//        } else {
+//            //TODO
+//            ob_start();
+//            passthru('/usr/bin/python2.7 /var/www/vhosts/api/application/libraries/spatial-media/spatialmedia /opt/kaltura/web/content/entry/data/10012/0_wmlv33mq_0_qtdvmulu_2_tmp1.mp4');
+//            $output = ob_get_clean();
+//            if (strpos($output, 'Spherical = true') !== false) {
+//                syslog(LOG_NOTICE, "SMH DEBUG : process_facebook_upload_queue: FOUND SPHERICAL");
+//            } else {
+//                syslog(LOG_NOTICE, "SMH DEBUG : process_facebook_upload_queue: DID NOT FIND SPHERICAL");
+//            }
+//        }
 
         return $success;
     }
 
-    public function process_youtube_upload_queue($pid, $eid, $projection) {
+    public function process_youtube_upload_queue($pid, $eid, $projection, $entry_details, $entry_path) {
         $success = array('success' => false);
         if ($projection == 'rectangular') {
             $update_youtube_upload_status = $this->update_platform_upload_status($pid, $eid, 'youtube', 'uploading', 'pending');
             if ($update_youtube_upload_status['success']) {
-                $upload_youtube_video = $this->upload_rect_youtube_video($pid, $eid);
+                $upload_youtube_video = $this->upload_rect_youtube_video($pid, $entry_details, $entry_path);
                 if ($upload_youtube_video['success']) {
                     $insert_entry_to_youtube_vod = $this->insert_entry_to_youtube_vod($pid, $eid, $upload_youtube_video['videoId'], $projection);
                     if ($insert_entry_to_youtube_vod['success']) {
