@@ -298,7 +298,7 @@ class Facebook_client_api {
         }
     }
 
-    public function uploadVideo($asset, $name, $desc, $privacy, $videoPath, $projection) {
+    public function uploadVideo($asset, $name, $desc, $privacy, $videoPath) {
         $success = array('success' => false);
         try {
             $fb = new Facebook\Facebook([
@@ -325,9 +325,6 @@ class Facebook_client_api {
                 'description' => $desc,
                 'privacy' => json_encode($privacy_value),
             );
-            if ($projection == '360') {
-                $data['spherical'] = true;
-            }
 
             $uploadVideo = $fb->uploadVideo($asset['asset_id'], $videoPath, $data, $asset['access_token']);
             if ($uploadVideo['success']) {

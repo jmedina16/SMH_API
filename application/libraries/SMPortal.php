@@ -261,9 +261,12 @@ class SMPortal {
             }
         }
 
-        $path = '/opt/kaltura/web/content/entry/data/' . $pid . '/' . $entryId . '_' . $id . '_' . $version . '.' . $ext;
+        $original_path = '/opt/kaltura/web/content/entry/data/' . $pid . '/' . $entryId . '_' . $id . '_' . $version . '.' . $ext;
+        $threesixty_tmp_path = '/opt/kaltura/web/content/entry/data/' . $pid . '/' . $entryId . '_' . $id . '_' . $version . '_tmp.' . $ext;
+        
+        $success = array('success' => true, 'original_path' => $original_path, 'threesixty_tmp_path' => $threesixty_tmp_path);
 
-        return $path;
+        return $success;
     }
 
     public function get_entry_partnerData($pid, $entryId) {
