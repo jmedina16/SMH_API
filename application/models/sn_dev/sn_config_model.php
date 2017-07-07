@@ -3644,47 +3644,77 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function getEntryVrSettings($pid, $eid) {
+        $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
+        $vr_settings = json_decode($partnerData['partnerData']);
+        $result = array();
+        $result['vrSettings'] = false;
+        foreach ($vr_settings as $key => $value) {
+            if ($key == 'vrSettings') {
+                $result['vrSettings'] = true;
+                foreach ($value as $setting) {
+                    syslog(LOG_NOTICE, "SMH DEBUG : getEntryVrSettings1: " . print_r($setting, true));
+                    syslog(LOG_NOTICE, "SMH DEBUG : getEntryVrSettings2: " . print_r($setting->stereo_mode, true));
+                    $settings = array('stereo_mode' => $setting->stereo_mode);
+                    syslog(LOG_NOTICE, "SMH DEBUG : getEntryVrSettings3: " . print_r($settings, true));
+                    array_push($result['settings'], $settings);
+                }
+            }
+        }
+        syslog(LOG_NOTICE, "SMH DEBUG : getEntryVrSettings4: " . print_r($result, true));
+        return $result;
+    }
+
     public function process_facebook_upload_queue($pid, $eid, $projection, $entry_details, $entry_path) {
         $success = array('success' => false);
         if ($projection == '360') {
-            ob_start();
-            passthru('/usr/bin/python2.7 /var/www/vhosts/api/application/libraries/spatial-media/spatialmedia -i --stereo top-bottom ' . $entry_path['original_path'] . ' ' . $entry_path['threesixty_tmp_path']);
-            ob_get_clean();
+            $entryVrSettings = $this->getEntryVrSettings($pid, $eid);
+            $stereo_mode = '';
+            if ($entryVrSettings['vrSettings']) {
+                $stereo_mode = $entryVrSettings['settings']['stereo_mode'];
+            } else {
+                $stereo_mode = 'none';
+            }
+            syslog(LOG_NOTICE, "SMH DEBUG : process_facebook_upload_queue1: " . print_r($entryVrSettings, true));
+            syslog(LOG_NOTICE, "SMH DEBUG : process_facebook_upload_queue2: " . $stereo_mode);
+            //ob_start();
+            //passthru('/usr/bin/python2.7 /var/www/vhosts/api/application/libraries/spatial-media/spatialmedia -i --stereo ' . $stereo_mode . ' ' . $entry_path['original_path'] . ' ' . $entry_path['threesixty_tmp_path']);
+            //ob_get_clean();
             $video_path = $entry_path['threesixty_tmp_path'];
         } else {
             $video_path = $entry_path['original_path'];
         }
-        $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'uploading', 'pending');
-        if ($update_facebook_upload_status['success']) {
-            $upload_facebook_video = $this->upload_facebook_video($pid, $entry_details, $video_path);
-            if ($upload_facebook_video['success']) {
-                $insert_entry_to_facebook_vod = $this->insert_entry_to_facebook_vod($pid, $eid, $upload_facebook_video['videoId'], $projection);
-                if ($insert_entry_to_facebook_vod['success']) {
-                    $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'completed', $upload_facebook_video['videoId']);
-                    if ($update_facebook_upload_status['success']) {
-                        if ($projection == '360') {
-                            $res = @unlink($entry_path['threesixty_tmp_path']);
-                            if ($res) {
-                                $success = array('success' => true);
-                            } else {
-                                $success = array('success' => false, 'message' => 'Could not delete temp 360 file');
-                            }
-                        } else {
-                            $success = array('success' => true);
-                        }
-                    } else {
-                        $success = array('success' => false, 'message' => $update_facebook_upload_status['message']);
-                    }
-                } else {
-                    $success = array('success' => false, 'message' => 'Could not insert entry into Facebook vod');
-                }
-            } else {
-                $success = array('success' => false, 'message' => 'Could not upload video to Facebook');
-            }
-        } else {
-            $success = array('success' => false, 'message' => $update_facebook_upload_status['message']);
-        }
-        return $success;
+//        $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'uploading', 'pending');
+//        if ($update_facebook_upload_status['success']) {
+//            $upload_facebook_video = $this->upload_facebook_video($pid, $entry_details, $video_path);
+//            if ($upload_facebook_video['success']) {
+//                $insert_entry_to_facebook_vod = $this->insert_entry_to_facebook_vod($pid, $eid, $upload_facebook_video['videoId'], $projection);
+//                if ($insert_entry_to_facebook_vod['success']) {
+//                    $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'completed', $upload_facebook_video['videoId']);
+//                    if ($update_facebook_upload_status['success']) {
+//                        if ($projection == '360') {
+//                            $res = @unlink($entry_path['threesixty_tmp_path']);
+//                            if ($res) {
+//                                $success = array('success' => true);
+//                            } else {
+//                                $success = array('success' => false, 'message' => 'Could not delete temp 360 file');
+//                            }
+//                        } else {
+//                            $success = array('success' => true);
+//                        }
+//                    } else {
+//                        $success = array('success' => false, 'message' => $update_facebook_upload_status['message']);
+//                    }
+//                } else {
+//                    $success = array('success' => false, 'message' => 'Could not insert entry into Facebook vod');
+//                }
+//            } else {
+//                $success = array('success' => false, 'message' => 'Could not upload video to Facebook');
+//            }
+//        } else {
+//            $success = array('success' => false, 'message' => $update_facebook_upload_status['message']);
+//        }
+//        return $success;
     }
 
     public function process_youtube_upload_queue($pid, $eid, $projection, $entry_details, $entry_path) {
