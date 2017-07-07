@@ -3619,36 +3619,19 @@ class Sn_config_model extends CI_Model {
             if (count($get_ready_upload['ready_upload']) > 0) {
                 $entry_details = $this->smportal->get_entry_details($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid']);
                 $entry_path = $this->smportal->get_entry_path($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid']);
-                $video_path = '';
-                if ($get_ready_upload['ready_upload']['projection'] == '360') {
-                    ob_start();
-                    passthru('/usr/bin/python2.7 /var/www/vhosts/api/application/libraries/spatial-media/spatialmedia -i --stereo top-bottom ' . $entry_path['original_path'] . ' ' . $entry_path['threesixty_tmp_path']);
-                    ob_get_clean();
-                    $video_path = $entry_path['threesixty_tmp_path'];
-                } else {
-                    $video_path = $entry_path['original_path'];
-                }
                 if ($get_ready_upload['ready_upload']['platform'] == 'youtube') {
-                    $process_youtube_upload_queue = $this->process_youtube_upload_queue($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid'], $get_ready_upload['ready_upload']['projection'], $entry_details, $video_path);
+                    $process_youtube_upload_queue = $this->process_youtube_upload_queue($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid'], $get_ready_upload['ready_upload']['projection'], $entry_details, $entry_path);
                     if ($process_youtube_upload_queue['success']) {
                         $success = array('success' => true);
                     } else {
                         $success = array('success' => false, 'message' => $process_youtube_upload_queue['message']);
                     }
                 } else if ($get_ready_upload['ready_upload']['platform'] === 'facebook') {
-                    $process_facebook_upload_queue = $this->process_facebook_upload_queue($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid'], $get_ready_upload['ready_upload']['projection'], $entry_details, $video_path);
+                    $process_facebook_upload_queue = $this->process_facebook_upload_queue($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid'], $get_ready_upload['ready_upload']['projection'], $entry_details, $entry_path);
                     if ($process_facebook_upload_queue['success']) {
                         $success = array('success' => true);
                     } else {
                         $success = array('success' => false, 'message' => $process_facebook_upload_queue['message']);
-                    }
-                }
-                if ($get_ready_upload['ready_upload']['projection'] == '360') {
-                    $res = @unlink($entry_path['threesixty_tmp_path']);
-                    if ($res) {
-                        $success = array('success' => true);
-                    } else {
-                        $success = array('success' => false, 'message' => 'Could not delete temp 360 file');
                     }
                 }
             } else {
@@ -3661,8 +3644,16 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function process_facebook_upload_queue($pid, $eid, $projection, $entry_details, $video_path) {
+    public function process_facebook_upload_queue($pid, $eid, $projection, $entry_details, $entry_path) {
         $success = array('success' => false);
+        if ($projection == '360') {
+            ob_start();
+            passthru('/usr/bin/python2.7 /var/www/vhosts/api/application/libraries/spatial-media/spatialmedia -i --stereo top-bottom ' . $entry_path['original_path'] . ' ' . $entry_path['threesixty_tmp_path']);
+            ob_get_clean();
+            $video_path = $entry_path['threesixty_tmp_path'];
+        } else {
+            $video_path = $entry_path['original_path'];
+        }
         $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'uploading', 'pending');
         if ($update_facebook_upload_status['success']) {
             $upload_facebook_video = $this->upload_facebook_video($pid, $entry_details, $video_path);
@@ -3671,7 +3662,16 @@ class Sn_config_model extends CI_Model {
                 if ($insert_entry_to_facebook_vod['success']) {
                     $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'completed', $upload_facebook_video['videoId']);
                     if ($update_facebook_upload_status['success']) {
-                        $success = array('success' => true);
+                        if ($projection == '360') {
+                            $res = @unlink($entry_path['threesixty_tmp_path']);
+                            if ($res) {
+                                $success = array('success' => true);
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not delete temp 360 file');
+                            }
+                        } else {
+                            $success = array('success' => true);
+                        }
                     } else {
                         $success = array('success' => false, 'message' => $update_facebook_upload_status['message']);
                     }
@@ -3687,8 +3687,16 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function process_youtube_upload_queue($pid, $eid, $projection, $entry_details, $video_path) {
+    public function process_youtube_upload_queue($pid, $eid, $projection, $entry_details, $entry_path) {
         $success = array('success' => false);
+        if ($projection == '360') {
+            ob_start();
+            passthru('/usr/bin/python2.7 /var/www/vhosts/api/application/libraries/spatial-media/spatialmedia -i --stereo top-bottom ' . $entry_path['original_path'] . ' ' . $entry_path['threesixty_tmp_path']);
+            ob_get_clean();
+            $video_path = $entry_path['threesixty_tmp_path'];
+        } else {
+            $video_path = $entry_path['original_path'];
+        }
         $update_youtube_upload_status = $this->update_platform_upload_status($pid, $eid, 'youtube', 'uploading', 'pending');
         if ($update_youtube_upload_status['success']) {
             $upload_youtube_video = $this->upload_youtube_video($pid, $entry_details, $video_path);
@@ -3697,7 +3705,16 @@ class Sn_config_model extends CI_Model {
                 if ($insert_entry_to_youtube_vod['success']) {
                     $update_youtube_upload_status = $this->update_platform_upload_status($pid, $eid, 'youtube', 'completed', $upload_youtube_video['videoId']);
                     if ($update_youtube_upload_status['success']) {
-                        $success = array('success' => true);
+                        if ($projection == '360') {
+                            $res = @unlink($entry_path['threesixty_tmp_path']);
+                            if ($res) {
+                                $success = array('success' => true);
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not delete temp 360 file');
+                            }
+                        } else {
+                            $success = array('success' => true);
+                        }
                     } else {
                         $success = array('success' => false, 'message' => $update_youtube_upload_status['message']);
                     }
