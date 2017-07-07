@@ -3030,7 +3030,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function upload_facebook_video($pid, $eid) {
+    public function upload_rect_facebook_video($pid, $eid) {
         $success = array('success' => false);
         $entry_details = $this->smportal->get_entry_details($pid, $eid);
         $entry_path = $this->smportal->get_entry_path($pid, $eid);
@@ -3648,26 +3648,38 @@ class Sn_config_model extends CI_Model {
 
     public function process_facebook_upload_queue($pid, $eid, $projection) {
         $success = array('success' => false);
-        $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'uploading', 'pending');
-        if ($update_facebook_upload_status['success']) {
-            $upload_facebook_video = $this->upload_facebook_video($pid, $eid);
-            if ($upload_facebook_video['success']) {
-                $insert_entry_to_facebook_vod = $this->insert_entry_to_facebook_vod($pid, $eid, $upload_facebook_video['videoId'], $projection);
-                if ($insert_entry_to_facebook_vod['success']) {
-                    $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'completed', $upload_facebook_video['videoId']);
-                    if ($update_facebook_upload_status['success']) {
-                        $success = array('success' => true);
+        if ($projection == 'rectangular') {
+            $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'uploading', 'pending');
+            if ($update_facebook_upload_status['success']) {
+                $upload_facebook_video = $this->upload_rect_facebook_video($pid, $eid);
+                if ($upload_facebook_video['success']) {
+                    $insert_entry_to_facebook_vod = $this->insert_entry_to_facebook_vod($pid, $eid, $upload_facebook_video['videoId'], $projection);
+                    if ($insert_entry_to_facebook_vod['success']) {
+                        $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'completed', $upload_facebook_video['videoId']);
+                        if ($update_facebook_upload_status['success']) {
+                            $success = array('success' => true);
+                        } else {
+                            $success = array('success' => false, 'message' => $update_facebook_upload_status['message']);
+                        }
                     } else {
-                        $success = array('success' => false, 'message' => $update_facebook_upload_status['message']);
+                        $success = array('success' => false, 'message' => 'Could not insert entry into Facebook vod');
                     }
                 } else {
-                    $success = array('success' => false, 'message' => 'Could not insert entry into Facebook vod');
+                    $success = array('success' => false, 'message' => 'Could not upload video to Facebook');
                 }
             } else {
-                $success = array('success' => false, 'message' => 'Could not upload video to Facebook');
+                $success = array('success' => false, 'message' => $update_facebook_upload_status['message']);
             }
         } else {
-            $success = array('success' => false, 'message' => $update_facebook_upload_status['message']);
+            //TODO
+            ob_start();
+            passthru('/usr/bin/python2.7 /var/www/vhosts/api/application/libraries/spatial-media/spatialmedia /opt/kaltura/web/content/entry/data/10012/0_wmlv33mq_0_qtdvmulu_2_tmp1.mp4');
+            $output = ob_get_clean();
+            if (strpos($output, 'Spherical = true') !== false) {
+                syslog(LOG_NOTICE, "SMH DEBUG : process_facebook_upload_queue: FOUND SPHERICAL");
+            } else {
+                syslog(LOG_NOTICE, "SMH DEBUG : process_facebook_upload_queue: DID NOT FIND SPHERICAL");
+            }
         }
 
         return $success;
