@@ -787,6 +787,7 @@ class Sn_config extends REST_Controller {
         $eid = $this->get('eid');
         $snConfig = $this->get('snConfig');
         $projection = $this->get('projection');
+        $stereo_mode = $this->get('stereo_mode');
 
         if (!isset($pid) || $pid == null) {
 
@@ -813,7 +814,7 @@ class Sn_config extends REST_Controller {
             $this->response(array('error' => 'Missing projection'), 200);
         }
 
-        $result = $this->sn_config_model->update_sn_vod_config($pid, $ks, $eid, $snConfig, $projection);
+        $result = $this->sn_config_model->update_sn_vod_config($pid, $ks, $eid, $snConfig, $projection, $stereo_mode);
 
         if (!$result) {
 
