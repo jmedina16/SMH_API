@@ -3794,7 +3794,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function update_sn_vod_config($pid, $ks, $eid, $snConfig, $projection) {
+    public function update_sn_vod_config($pid, $ks, $eid, $snConfig, $projection, $stereo_mode) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
@@ -3824,12 +3824,14 @@ class Sn_config_model extends CI_Model {
                 $youtube_config = $this->process_youtube_vod_config($pid, $eid, $projection, $youtube_status, $vod_platforms);
                 array_push($config, $youtube_config);
 
-                $partnerData = $this->update_sn_partnerData($pid, $eid, $config);
-                if ($partnerData['success']) {
-                    $success = array('success' => true);
-                } else {
-                    $success = array('success' => false, 'message' => 'Could not update entry partnerData');
-                }
+                syslog(LOG_NOTICE, "SMH DEBUG : update_sn_vod_config: " . print_r($config, true));
+
+//                $partnerData = $this->update_sn_partnerData($pid, $eid, $config);
+//                if ($partnerData['success']) {
+//                    $success = array('success' => true);
+//                } else {
+//                    $success = array('success' => false, 'message' => 'Could not update entry partnerData');
+//                }
             } else {
                 $success = array('success' => false, 'message' => 'Social network service not active');
             }
