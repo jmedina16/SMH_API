@@ -1873,6 +1873,7 @@ class Sn_config_model extends CI_Model {
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
+                $config = array();
                 $snConfig = $this->build_live_sn_config($platforms);
                 $youtube_success = array('platform' => 'youtube', 'success' => false, 'message' => 'Was not asked to create a live stream');
                 $facebook_success = array('platform' => 'facebook', 'success' => false, 'message' => 'Was not asked to create a live stream');
@@ -1880,15 +1881,26 @@ class Sn_config_model extends CI_Model {
                 $youtube_embed = true;
                 $facebook_live_id = null;
 
+                if ($snConfig['smh']) {
+                    $smh_config = $this->create_live_sn_config('smh', true, null);
+                    array_push($config, $smh_config['config']);
+                } else {
+                    $smh_config = $this->create_live_sn_config('smh', false, null);
+                    array_push($config, $smh_config['config']);
+                }
                 if ($snConfig['youtube']) {
                     $create_youtube_live_stream = $this->create_youtube_live_stream($pid, $name, $desc, $eid, $snConfig, $projection);
                     if ($create_youtube_live_stream['success']) {
                         $youtube_success['success'] = true;
                         $youtube_broadcast_id = $create_youtube_live_stream['broadcast_id'];
                         $youtube_embed = $create_youtube_live_stream['youtube_embed'];
+                        $youtube_live_config = $this->create_live_sn_config('youtube_live', true, $create_youtube_live_stream['broadcast_id']);
+                        array_push($config, $youtube_live_config['config']);
                     } else {
                         $youtube_success['success'] = false;
                         $youtube_success['message'] = $create_youtube_live_stream['message'];
+                        $youtube_live_config = $this->create_live_sn_config('youtube', false, null);
+                        array_push($config, $youtube_live_config['config']);
                     }
                 }
                 if ($snConfig['facebook']) {
@@ -1896,12 +1908,17 @@ class Sn_config_model extends CI_Model {
                     if ($create_facebook_live_stream['success']) {
                         $facebook_success['success'] = true;
                         $facebook_live_id = $create_facebook_live_stream['live_id'];
+                        $facebook_live_config = $this->create_live_sn_config('facebook_live', true, $create_facebook_live_stream['live_id']);
+                        array_push($config, $facebook_live_config['config']);
                     } else {
                         $facebook_success['success'] = false;
                         $facebook_success['message'] = $create_facebook_live_stream['message'];
+                        $facebook_live_config = $this->create_live_sn_config('facebook_live', true, null);
+                        array_push($config, $facebook_live_config['config']);
                     }
                 }
                 if ($snConfig['facebook'] || $snConfig['youtube']) {
+                    syslog(LOG_NOTICE, "SMH DEBUG : create_sn_livestreams: " . print_r($config, true));
                     $platforms_responses = array();
                     array_push($platforms_responses, $youtube_success);
                     array_push($platforms_responses, $facebook_success);
@@ -2165,33 +2182,6 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function insert_into_vod_sn_config($youtube_video_id, $youtube_upload_status, $facebook_video_id, $facebook_upload_status, $platforms_config) {
-        $new_platforms_config = array();
-        foreach ($platforms_config as $platform) {
-            if ($platform['platform'] == 'facebook') {
-                if ($platform['status'] && $facebook_video_id) {
-                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status'], "upload_status" => $facebook_upload_status, 'videoId' => $facebook_video_id));
-                } else if ($platform['status'] && $platform['videoId'] && !$facebook_video_id) {
-                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status'], "upload_status" => $platform['upload_status'], 'videoId' => $platform['videoId']));
-                } else {
-                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status']));
-                }
-            } else if ($platform['platform'] == 'youtube') {
-                if ($platform['status'] && $youtube_video_id) {
-                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status'], "upload_status" => $youtube_upload_status, 'videoId' => $youtube_video_id));
-                } else if ($platform['status'] && $platform['videoId'] && !$youtube_video_id) {
-                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status'], "upload_status" => $platform['upload_status'], 'videoId' => $platform['videoId']));
-                } else {
-                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status']));
-                }
-            } else {
-                array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status']));
-            }
-        }
-        $success = array('success' => true, 'sn_config' => $new_platforms_config);
-        return $success;
-    }
-
     public function set_facebook_live_config_false($platforms_config) {
         $new_platforms_config = array();
         foreach ($platforms_config as $platform) {
@@ -2296,11 +2286,15 @@ class Sn_config_model extends CI_Model {
         $success = array('success' => false);
         $platforms_config = array();
         $platforms = json_decode($platforms, true);
+        $smh = false;
         $facebook = false;
         $youtube = false;
         $res = '240p';
         foreach ($platforms['platforms'] as $platform) {
             if ($platform['platform'] == 'smh') {
+                if ($platform['status']) {
+                    $smh = true;
+                }
                 array_push($platforms_config, array('platform' => 'smh', 'status' => $platform['status']));
             } else if ($platform['platform'] == 'facebook_live') {
                 if ($platform['status']) {
@@ -2315,7 +2309,7 @@ class Sn_config_model extends CI_Model {
                 array_push($platforms_config, array('platform' => 'youtube_live', 'status' => $platform['status']));
             }
         }
-        $success = array('success' => true, 'sn_config' => $platforms_config, 'youtube' => $youtube, 'youtube_res' => $res, 'facebook' => $facebook);
+        $success = array('success' => true, 'sn_config' => $platforms_config, 'smh' => $smh, 'youtube' => $youtube, 'youtube_res' => $res, 'facebook' => $facebook);
         return $success;
     }
 
@@ -3985,6 +3979,19 @@ class Sn_config_model extends CI_Model {
         $config = array();
         if ($status) {
             $config = array('platform' => $platform, 'status' => $status, "upload_status" => $upload_status, 'videoId' => $video_id);
+        } else {
+            $config = array('platform' => $platform, 'status' => $status);
+        }
+        $success = array('success' => true, 'config' => $config);
+        return $success;
+    }
+
+    public function create_live_sn_config($platform, $status, $live_id) {
+        $config = array();
+        if ($status && $live_id) {
+            $config = array('platform' => $platform, 'status' => $status, 'liveId' => $live_id);
+        }if ($status && !$live_id) {
+            $config = array('platform' => $platform, 'status' => $status);
         } else {
             $config = array('platform' => $platform, 'status' => $status);
         }
