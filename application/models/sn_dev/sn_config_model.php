@@ -2337,6 +2337,7 @@ class Sn_config_model extends CI_Model {
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
+                $config = array();
                 $snConfig = $this->build_live_sn_config($platforms);
                 $youtube_success = array('platform' => 'youtube', 'success' => false, 'message' => 'Was not asked to create or update a live stream');
                 $facebook_success = array('platform' => 'facebook', 'success' => false, 'message' => 'Was not asked to create or update a live stream');
@@ -2344,27 +2345,57 @@ class Sn_config_model extends CI_Model {
                 $youtube_embed = true;
                 $facebook_live_id = null;
 
+                if ($snConfig['smh']) {
+                    $smh_config = $this->create_live_sn_config('smh', true, null);
+                    array_push($config, $smh_config['config']);
+                } else {
+                    $smh_config = $this->create_live_sn_config('smh', false, null);
+                    array_push($config, $smh_config['config']);
+                }
+
                 $update_youtube_live_stream = $this->update_youtube_live_stream($pid, $ks, $name, $desc, $eid, $snConfig, $projection);
                 if ($update_youtube_live_stream['success']) {
                     $youtube_success['success'] = true;
                     $youtube_broadcast_id = $update_youtube_live_stream['broadcast_id'];
                     $youtube_embed = $update_youtube_live_stream['youtube_embed'];
+                    if ($update_youtube_live_stream['broadcast_id']) {
+                        syslog(LOG_NOTICE, "SMH DEBUG : update_sn_livestreams1: " . print_r($update_youtube_live_stream, true));
+                        $youtube_live_config = $this->create_live_sn_config('youtube_live', true, $update_youtube_live_stream['broadcast_id']);
+                        array_push($config, $youtube_live_config['config']);
+                    } else {
+                        $youtube_live_config = $this->create_live_sn_config('youtube_live', false, null);
+                        array_push($config, $youtube_live_config['config']);
+                    }
                 } else {
                     $youtube_success['success'] = false;
                     $youtube_success['message'] = $update_youtube_live_stream['message'];
+                    $youtube_live_config = $this->create_live_sn_config('youtube_live', false, null);
+                    array_push($config, $youtube_live_config['config']);
                 }
 
                 $update_facebook_live_stream = $this->update_facebook_live_stream($pid, $eid, $snConfig);
                 if ($update_facebook_live_stream['success']) {
                     $facebook_success['success'] = true;
                     $facebook_live_id = $update_facebook_live_stream['live_id'];
+                    if ($update_facebook_live_stream['live_id']) {
+                        $facebook_live_config = $this->create_live_sn_config('facebook_live', true, $update_facebook_live_stream['live_id']);
+                        array_push($config, $facebook_live_config['config']);
+                    } else {
+                        $facebook_live_config = $this->create_live_sn_config('facebook_live', false, null);
+                        array_push($config, $facebook_live_config['config']);
+                    }
                 } else {
                     $facebook_success['success'] = false;
                     $facebook_success['message'] = $update_facebook_live_stream['message'];
+                    $facebook_live_config = $this->create_live_sn_config('facebook_live', false, null);
+                    array_push($config, $facebook_live_config['config']);
                 }
 
-                $update_sn_config = $this->insert_into_live_sn_config($youtube_broadcast_id, $facebook_live_id, $snConfig['sn_config']);
-                $partnerData = $this->update_sn_partnerData($pid, $eid, $update_sn_config['sn_config'], $vr);
+                syslog(LOG_NOTICE, "SMH DEBUG : update_sn_livestreams2: " . print_r($config, true));
+
+                //$update_sn_config = $this->insert_into_live_sn_config($youtube_broadcast_id, $facebook_live_id, $snConfig['sn_config']);
+                
+                $partnerData = $this->update_sn_partnerData($pid, $eid, $config, $vr);
                 if ($partnerData['success']) {
                     $platforms_responses = array();
                     array_push($platforms_responses, $youtube_success);
@@ -3990,7 +4021,7 @@ class Sn_config_model extends CI_Model {
         $config = array();
         if ($status && $live_id) {
             $config = array('platform' => $platform, 'status' => $status, 'liveId' => $live_id);
-        }if ($status && !$live_id) {
+        } else if ($status && !$live_id) {
             $config = array('platform' => $platform, 'status' => $status);
         } else {
             $config = array('platform' => $platform, 'status' => $status);
