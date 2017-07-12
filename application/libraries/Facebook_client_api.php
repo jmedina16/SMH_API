@@ -58,10 +58,8 @@ class Facebook_client_api {
             return array('user_name' => $user_name, 'user_id' => $user_id);
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
-            exit;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
-            exit;
         }
     }
 
@@ -87,10 +85,8 @@ class Facebook_client_api {
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
-            exit;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
-            exit;
         }
     }
 
@@ -116,10 +112,8 @@ class Facebook_client_api {
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
-            exit;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
-            exit;
         }
     }
 
@@ -145,10 +139,8 @@ class Facebook_client_api {
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
-            exit;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
-            exit;
         }
     }
 
@@ -215,10 +207,8 @@ class Facebook_client_api {
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
-            exit;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
-            exit;
         }
     }
 
@@ -236,10 +226,8 @@ class Facebook_client_api {
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
-            exit;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
-            exit;
         }
     }
 
@@ -294,7 +282,6 @@ class Facebook_client_api {
             return $success;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
-            exit;
         }
     }
 
@@ -339,7 +326,6 @@ class Facebook_client_api {
             return $success;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
-            exit;
         }
     }
 
@@ -364,10 +350,16 @@ class Facebook_client_api {
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
-            exit;
+
+            if ($e->getCode() == 100) {
+                $success = array('success' => true);
+                return $success;
+            } else {
+                $success = array('success' => false);
+                return $success;
+            }
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
-            exit;
         }
     }
 
@@ -395,10 +387,8 @@ class Facebook_client_api {
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
-            exit;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
-            exit;
         }
     }
 
@@ -426,10 +416,8 @@ class Facebook_client_api {
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
-            exit;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
-            exit;
         }
     }
 
@@ -453,10 +441,8 @@ class Facebook_client_api {
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
-            exit;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
-            exit;
         }
     }
 
