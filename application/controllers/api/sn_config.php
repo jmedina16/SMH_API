@@ -14,6 +14,8 @@ class Sn_config extends REST_Controller {
     public function get_sn_config_get() {
         $pid = $this->get('pid');
         $ks = $this->get('ks');
+        $projection = $this->get('projection');
+
         if (!isset($pid) || $pid == null) {
 
             $this->response(array('error' => 'Missing pid'), 200);
@@ -24,7 +26,12 @@ class Sn_config extends REST_Controller {
             $this->response(array('error' => 'Missing ks'), 200);
         }
 
-        $result = $this->sn_config_model->get_sn_config($pid, $ks);
+        if (!isset($projection) || $projection == null) {
+
+            $this->response(array('error' => 'Missing projection'), 200);
+        }
+
+        $result = $this->sn_config_model->get_sn_config($pid, $ks, $projection);
 
         if (!$result) {
 
@@ -68,6 +75,7 @@ class Sn_config extends REST_Controller {
         $pid = $this->get('pid');
         $ks = $this->get('ks');
         $code = $this->get('code');
+        $projection = $this->get('projection');
 
         if (!isset($pid) || $pid == null) {
 
@@ -84,7 +92,12 @@ class Sn_config extends REST_Controller {
             $this->response(array('error' => 'Missing code'), 200);
         }
 
-        $result = $this->sn_config_model->store_youtube_authorization($pid, $ks, $code);
+        if (!isset($projection) || $projection == null) {
+
+            $this->response(array('error' => 'Missing projection'), 200);
+        }
+
+        $result = $this->sn_config_model->store_youtube_authorization($pid, $ks, $code, $projection);
 
         if (!$result) {
 
@@ -258,7 +271,7 @@ class Sn_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code 
     }
 
-    public function update_sn_metadata_get() {
+    public function update_live_sn_metadata_get() {
         $pid = $this->get('pid');
         $ks = $this->get('ks');
         $name = $this->get('name');
@@ -285,7 +298,44 @@ class Sn_config extends REST_Controller {
             $this->response(array('error' => 'Missing eid'), 200);
         }
 
-        $result = $this->sn_config_model->update_sn_metadata($pid, $ks, $name, $desc, $eid);
+        $result = $this->sn_config_model->update_live_sn_metadata($pid, $ks, $name, $desc, $eid);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code 
+    }
+
+    public function update_vod_sn_metadata_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+        $name = $this->get('name');
+        $desc = $this->get('desc');
+        $eid = $this->get('eid');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing pid'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        if (!isset($name) || $name == null) {
+
+            $this->response(array('error' => 'Missing name'), 200);
+        }
+
+        if (!isset($eid) || $eid == null) {
+
+            $this->response(array('error' => 'Missing eid'), 200);
+        }
+
+        $result = $this->sn_config_model->update_vod_sn_metadata($pid, $ks, $name, $desc, $eid);
 
         if (!$result) {
 
@@ -346,6 +396,36 @@ class Sn_config extends REST_Controller {
         }
 
         $result = $this->sn_config_model->delete_sn_livestream($pid, $ks, $eid);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code 
+    }
+
+    public function delete_sn_entry_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+        $eid = $this->get('eid');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing pid'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        if (!isset($eid) || $eid == null) {
+
+            $this->response(array('error' => 'Missing eid'), 200);
+        }
+
+        $result = $this->sn_config_model->delete_sn_entry($pid, $ks, $eid);
 
         if (!$result) {
 
@@ -494,11 +574,12 @@ class Sn_config extends REST_Controller {
     public function create_fb_livestream_get() {
         $pid = $this->get('pid');
         $ks = $this->get('ks');
-        $stream_to = $this->get('stream_to');
+        $publish_to = $this->get('publish_to');
         $asset_id = $this->get('asset_id');
         $privacy = $this->get('privacy');
         $create_vod = $this->get('create_vod');
         $cont_streaming = $this->get('cont_streaming');
+        $auto_upload = $this->get('auto_upload');
         $projection = $this->get('projection');
 
         if (!isset($pid) || $pid == null) {
@@ -511,7 +592,7 @@ class Sn_config extends REST_Controller {
             $this->response(array('error' => 'Missing ks'), 200);
         }
 
-        if (!isset($stream_to) || $stream_to == null) {
+        if (!isset($publish_to) || $publish_to == null) {
 
             $this->response(array('error' => 'Missing Stream To'), 200);
         }
@@ -536,12 +617,17 @@ class Sn_config extends REST_Controller {
             $this->response(array('error' => 'Missing Cont Streaming'), 200);
         }
 
+        if (!isset($auto_upload) || $auto_upload == null) {
+
+            $this->response(array('error' => 'Missing auto_upload'), 200);
+        }
+
         if (!isset($projection) || $projection == null) {
 
             $this->response(array('error' => 'Missing projection'), 200);
         }
 
-        $result = $this->sn_config_model->create_fb_livestream($pid, $ks, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection);
+        $result = $this->sn_config_model->create_fb_livestream($pid, $ks, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $auto_upload, $projection);
 
         if (!$result) {
 
@@ -575,6 +661,30 @@ class Sn_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code 
     }
 
+    public function resync_yt_account_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing Partner Id'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        $result = $this->sn_config_model->resync_yt_account($pid, $ks);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code 
+    }
+
     public function get_facebook_embed_get() {
         $pid = $this->get('pid');
 
@@ -584,6 +694,127 @@ class Sn_config extends REST_Controller {
         }
 
         $result = $this->sn_config_model->get_facebook_embed($pid);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code 
+    }
+
+    public function upload_queued_video_to_youtube_get() {
+        $pid = $this->get('pid');
+        $eid = $this->get('eid');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing Partner Id'), 200);
+        }
+
+        if (!isset($eid) || $eid == null) {
+
+            $this->response(array('error' => 'Missing Entry Id'), 200);
+        }
+
+        $result = $this->sn_config_model->upload_queued_video_to_youtube($pid, $eid);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code 
+    }
+
+    public function update_yt_settings_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+        $auto_upload = $this->get('auto_upload');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing Partner Id'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        if (!isset($auto_upload) || $auto_upload == null) {
+
+            $this->response(array('error' => 'Missing auto_upload'), 200);
+        }
+
+        $result = $this->sn_config_model->update_youtube_channel_settings($pid, $ks, $auto_upload);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code 
+    }
+
+    public function add_to_upload_queue_get() {
+        $pid = $this->get('pid');
+        $eid = $this->get('eid');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing Partner Id'), 200);
+        }
+
+        if (!isset($eid) || $eid == null) {
+
+            $this->response(array('error' => 'Missing Entry Id'), 200);
+        }
+
+        $result = $this->sn_config_model->add_to_upload_queue($pid, $eid);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code 
+    }
+
+    public function update_sn_vod_config_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+        $eid = $this->get('eid');
+        $snConfig = $this->get('snConfig');
+        $projection = $this->get('projection');
+        $stereo_mode = $this->get('stereo_mode');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing pid'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        if (!isset($eid) || $eid == null) {
+
+            $this->response(array('error' => 'Missing eid'), 200);
+        }
+
+        if (!isset($snConfig) || $snConfig == null) {
+
+            $this->response(array('error' => 'Missing snConfig'), 200);
+        }
+
+        if (!isset($projection) || $projection == null) {
+
+            $this->response(array('error' => 'Missing projection'), 200);
+        }
+
+        $result = $this->sn_config_model->update_sn_vod_config($pid, $ks, $eid, $snConfig, $projection, $stereo_mode);
 
         if (!$result) {
 
