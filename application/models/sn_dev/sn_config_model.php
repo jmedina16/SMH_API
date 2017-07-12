@@ -8,7 +8,7 @@ class Sn_config_model extends CI_Model {
 
     public function __construct() {
 // Open the correct DB connection
-        $this->config = $this->load->database('sn_dev', TRUE);
+        $this->config = $this->load->database('sn', TRUE);
         $this->_ci = & get_instance();
         $this->_ci->load->library("curl");
         $this->load->library('SMPortal');
@@ -3697,6 +3697,8 @@ class Sn_config_model extends CI_Model {
                         }
                     }
                 }
+
+                syslog(LOG_NOTICE, "SMH DEBUG : update_sn_vod_config: " . print_r($vod_platforms, true));
 
                 $facebook_config = $this->process_facebook_vod_config($pid, $eid, $projection, $facebook_status, $vod_platforms);
                 array_push($config, $facebook_config);
