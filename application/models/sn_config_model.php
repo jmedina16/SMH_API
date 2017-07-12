@@ -97,7 +97,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function get_sn_config($pid, $ks) {
+    public function get_sn_config($pid, $ks, $projection) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
@@ -105,7 +105,7 @@ class Sn_config_model extends CI_Model {
             if ($has_service) {
                 $platforms = array();
                 $facebook = $this->facebook_platform($valid['pid'], $ks);
-                $youtube = $this->youtube_platform($valid['pid'], $ks);
+                $youtube = $this->youtube_platform($valid['pid'], $ks, $projection);
                 array_push($platforms, $facebook, $youtube);
                 $success = array('success' => true, 'platforms' => $platforms);
             } else {
@@ -122,12 +122,12 @@ class Sn_config_model extends CI_Model {
         $facebook_auth = $this->validate_facebook_token($pid);
         $auth = ($facebook_auth['success']) ? true : false;
         if ($auth) {
-            $user_details = $this->get_fb_account_details($pid, $facebook_auth['access_token']);
+            $user_details = $this->get_fb_account_details($pid);
             $livestream_settings = $this->get_fb_ls_settings($pid);
             $details = ($user_details['success']) ? $user_details['user_details'] : null;
-            $facebook = array('platform' => 'facebook_live', 'authorized' => $auth, 'user_details' => $details, 'stream_to' => $livestream_settings['stream_to'], 'settings' => $livestream_settings['settings']);
+            $facebook = array('platform' => 'facebook_live', 'authorized' => $auth, 'user_details' => $details, 'publish_to' => $livestream_settings['publish_to'], 'settings' => $livestream_settings['settings']);
         } else {
-            $facebook = array('platform' => 'facebook_live', 'authorized' => $auth, 'user_details' => null, 'stream_to' => null, 'settings' => null, 'redirect_url' => $this->facebook_client_api->getRedirectURL($pid, $ks));
+            $facebook = array('platform' => 'facebook_live', 'authorized' => $auth, 'user_details' => null, 'publish_to' => null, 'settings' => null, 'redirect_url' => $this->facebook_client_api->getRedirectURL($pid, $ks));
         }
         return $facebook;
     }
@@ -163,7 +163,7 @@ class Sn_config_model extends CI_Model {
 
     public function facebook_invalidation_removal($pid) {
         $success = array('success' => false);
-        $remove_settings = $this->remove_fb_settings($pid);
+        $remove_settings = $this->remove_fb_publish_settings($pid);
         if ($remove_settings['success']) {
             $remove_pages = $this->remove_fb_pages($pid);
             if ($remove_pages['success']) {
@@ -198,28 +198,36 @@ class Sn_config_model extends CI_Model {
         $pages = $this->get_fb_pages($pid);
         $groups = $this->get_fb_groups($pid);
         $events = $this->get_fb_events($pid);
-        $settings = $this->get_fb_settings($pid);
-        $stream_to_arr = array();
-        array_push($stream_to_arr, array('type' => 1, 'id' => $account_details['id'], 'name' => $account_details['user_name']));
+        $settings = $this->get_fb_publish_settings($pid);
+        $publish_to_arr = array();
+        array_push($publish_to_arr, array('type' => 1, 'id' => $account_details['id'], 'name' => $account_details['user_name']));
         foreach ($pages['pages'] as $page) {
-            array_push($stream_to_arr, array('type' => 2, 'id' => $page['id'], 'name' => $page['name']));
+            array_push($publish_to_arr, array('type' => 2, 'id' => $page['id'], 'name' => $page['name']));
         }
         foreach ($groups['groups'] as $group) {
-            array_push($stream_to_arr, array('type' => 3, 'id' => $group['id'], 'name' => $group['name']));
+            array_push($publish_to_arr, array('type' => 3, 'id' => $group['id'], 'name' => $group['name']));
         }
         foreach ($events['events'] as $event) {
-            array_push($stream_to_arr, array('type' => 4, 'id' => $event['id'], 'name' => $event['name']));
+            array_push($publish_to_arr, array('type' => 4, 'id' => $event['id'], 'name' => $event['name']));
         }
-        $success = array('success' => true, 'stream_to' => $stream_to_arr, 'settings' => $settings['settings']);
+        $success = array('success' => true, 'publish_to' => $publish_to_arr, 'settings' => $settings['settings']);
         return $success;
     }
 
-    public function get_fb_account_details($pid, $access_token) {
+    public function get_fb_account_details($pid) {
         $success = array('success' => false);
-        $account_details = $this->get_fb_user_name($pid);
-        $account_pic = $this->facebook_client_api->get_account_pic($access_token, $account_details['user_id']);
-        if ($account_details['success'] && $account_pic['success']) {
-            $user_details = array('user_name' => $account_details['user_name'], 'user_thumb' => $account_pic['user_pic']);
+        $this->config->select('*')
+                ->from('facebook_user_profile')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $name = $res['name'];
+                $thumbnail = $res['thumbnail'];
+            }
+            $user_details = array('user_name' => $name, 'user_thumb' => $thumbnail);
             $success = array('success' => true, 'user_details' => $user_details);
         } else {
             $success = array('success' => false);
@@ -374,10 +382,10 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function get_fb_settings($pid) {
+    public function get_fb_publish_settings($pid) {
         $success = array('success' => false);
         $this->config->select('*')
-                ->from('facebook_user_settings')
+                ->from('facebook_publish_settings')
                 ->where('partner_id', $pid);
 
         $query = $this->config->get();
@@ -385,12 +393,13 @@ class Sn_config_model extends CI_Model {
         if ($query->num_rows() > 0) {
             $settings = array();
             foreach ($result as $res) {
-                $stream_to = $res['stream_to'];
+                $publish_to = $res['publish_to'];
                 $asset_id = $res['asset_Id'];
                 $privacy = $res['privacy'];
                 $create_vod = $res['create_vod'];
                 $cont_streaming = $res['cont_streaming'];
-                array_push($settings, array('stream_to' => $stream_to, 'asset_id' => $asset_id, 'privacy' => $privacy, 'create_vod' => $create_vod, 'cont_streaming' => $cont_streaming));
+                $auto_upload = $res['auto_upload'];
+                array_push($settings, array('publish_to' => $publish_to, 'asset_id' => $asset_id, 'privacy' => $privacy, 'create_vod' => $create_vod, 'cont_streaming' => $cont_streaming, 'auto_upload' => $auto_upload));
             }
             $success = array('success' => true, 'settings' => $settings);
         } else {
@@ -418,21 +427,43 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function youtube_platform($pid, $ks) {
+    public function youtube_platform($pid, $ks, $projection) {
         $youtube_auth = $this->validate_youtube_token($pid);
         $auth = ($youtube_auth['success']) ? true : false;
         if ($auth) {
             $is_ls_enabled = $this->is_youtube_ls_enabled($pid, $youtube_auth['access_token']);
-            $channel_details = $this->get_yt_account_details($pid, $youtube_auth['access_token']);
-            $embed = $this->get_youtube_embed_status($pid);
+            $channel_details = $this->get_youtube_channel_details($pid);
             $ls_enabled = ($is_ls_enabled['success']) ? true : false;
+            $settings = $this->get_yt_settings($pid);
             $details = ($channel_details['success']) ? $channel_details['channel_details'] : null;
-            $embed_status = ($embed['success']) ? $embed['embed_status'] : false;
-            $youtube = array('platform' => 'youtube_live', 'authorized' => $auth, 'ls_enabled' => $ls_enabled, 'embed_status' => $embed_status, 'channel_details' => $details);
+            $embed_status = ($settings['success']) ? $settings['embed_status'] : false;
+            $auto_upload = ($settings['success']) ? $settings['auto_upload'] : false;
+            $youtube = array('platform' => 'youtube_live', 'authorized' => $auth, 'ls_enabled' => $ls_enabled, 'embed_status' => $embed_status, 'auto_upload' => $auto_upload, 'channel_details' => $details);
         } else {
-            $youtube = array('platform' => 'youtube_live', 'authorized' => $auth, 'ls_enabled' => false, 'embed_status' => false, 'channel_details' => null, 'redirect_url' => $this->google_client_api->getRedirectURL($pid, $ks));
+            $youtube = array('platform' => 'youtube_live', 'authorized' => $auth, 'ls_enabled' => false, 'embed_status' => false, 'auto_upload' => null, 'channel_details' => null, 'redirect_url' => $this->google_client_api->getRedirectURL($pid, $ks, $projection));
         }
         return $youtube;
+    }
+
+    public function get_yt_settings($pid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('youtube_channel_settings')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $embed_status = ($res['embed']) ? true : false;
+                $auto_upload = ($res['auto_upload']) ? true : false;
+                $projection = $res['projection'];
+            }
+            $success = array('success' => true, 'embed_status' => $embed_status, 'auto_upload' => $auto_upload, 'projection' => $projection);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
     }
 
     public function get_youtube_status($pid) {
@@ -457,7 +488,7 @@ class Sn_config_model extends CI_Model {
     public function validate_youtube_token($pid) {
         $success = array('success' => false);
         $this->config->select('*')
-                ->from('youtube_live')
+                ->from('youtube_channel')
                 ->where('partner_id', $pid);
 
         $query = $this->config->get();
@@ -500,11 +531,33 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function get_yt_account_details($pid, $access_token) {
+    public function retrieve_youtube_channel_details($pid, $access_token) {
         $success = array('success' => false);
         $account_details = $this->google_client_api->get_account_details($access_token);
         if ($account_details['success']) {
             $channel_details = array('channel_title' => $account_details['channel_title'], 'channel_thumb' => $account_details['channel_thumb']);
+            $success = array('success' => true, 'channel_details' => $channel_details);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function get_youtube_channel_details($pid) {
+        $success = array('success' => false);
+        $name = '';
+        $thumbnail = '';
+        $this->config->select('*')
+                ->from('youtube_channel')
+                ->where('partner_id', $pid);
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $name = $res['name'];
+                $thumbnail = $res['thumbnail'];
+            }
+            $channel_details = array('channel_title' => $name, 'channel_thumb' => $thumbnail);
             $success = array('success' => true, 'channel_details' => $channel_details);
         } else {
             $success = array('success' => false);
@@ -519,7 +572,7 @@ class Sn_config_model extends CI_Model {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
                 $this->config->select('*')
-                        ->from('youtube_live')
+                        ->from('youtube_channel')
                         ->where('partner_id', $valid['pid']);
 
                 $query = $this->config->get();
@@ -532,16 +585,31 @@ class Sn_config_model extends CI_Model {
                     if ($remove_yt_live_events['success']) {
                         $removeAuth = $this->google_client_api->removeAuth($access_token);
                         if ($removeAuth['success']) {
-                            $remove_yt_live = $this->remove_youtube_live($pid);
-                            if ($remove_yt_live['success']) {
-                                $update_status = $this->update_sn_config($pid, 'youtube', 0);
-                                if ($update_status['success']) {
-                                    $success = array('success' => true);
+                            $remove_yt_channel = $this->remove_youtube_channel($pid);
+                            if ($remove_yt_channel['success']) {
+                                $remove_yt_channel_settings = $this->remove_youtube_channel_settings($pid);
+                                if ($remove_yt_channel_settings['success']) {
+                                    $remove_youtube_upload_queues = $this->remove_youtube_upload_queues($pid);
+                                    if ($remove_youtube_upload_queues['success']) {
+                                        $remove_youtube_vod_entries = $this->remove_youtube_vod_entries($pid);
+                                        if ($remove_youtube_vod_entries['success']) {
+                                            $update_status = $this->update_sn_config($pid, 'youtube', 0);
+                                            if ($update_status['success']) {
+                                                $success = array('success' => true);
+                                            } else {
+                                                $success = array('success' => false, 'message' => 'Could not update platform status');
+                                            }
+                                        } else {
+                                            $success = array('success' => false, 'message' => 'Could not remove vod entries');
+                                        }
+                                    } else {
+                                        $success = array('success' => false, 'message' => 'Could not remove upload queues');
+                                    }
                                 } else {
-                                    $success = array('success' => false, 'message' => 'Could not update platform status');
+                                    $success = array('success' => false, 'message' => $remove_yt_channel_settings['message']);
                                 }
                             } else {
-                                $success = array('success' => false, 'message' => $remove_yt_live['message']);
+                                $success = array('success' => false, 'message' => $remove_yt_channel['message']);
                             }
                         } else {
                             $success = array('success' => false, 'message' => $removeAuth['message']);
@@ -562,14 +630,64 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function remove_youtube_live($pid) {
+    public function remove_youtube_channel($pid) {
         $success = array('success' => false);
         $this->config->where('partner_id = "' . $pid . '"');
-        $this->config->delete('youtube_live');
+        $this->config->delete('youtube_channel');
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
         } else {
             $success = array('success' => false, 'message' => 'Could not remove YouTube access token');
+        }
+        return $success;
+    }
+
+    public function remove_youtube_channel_settings($pid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id = "' . $pid . '"');
+        $this->config->delete('youtube_channel_settings');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'message' => 'Nothing removed');
+        }
+        return $success;
+    }
+
+    public function remove_youtube_upload_queues($pid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id = "' . $pid . '"');
+        $this->config->where('platform = "youtube"');
+        $this->config->delete('upload_queue');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'message' => 'Nothing removed');
+        }
+        return $success;
+    }
+
+    public function remove_youtube_vod_entries($pid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id', $pid);
+        $this->config->delete('youtube_vod_entries');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'message' => 'Nothing removed');
+        }
+        return $success;
+    }
+
+    public function remove_db_youtube_vod_entry($pid, $eid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id', $pid);
+        $this->config->where('entryId', $eid);
+        $this->config->delete('youtube_vod_entries');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'message' => 'Nothing removed');
         }
         return $success;
     }
@@ -614,7 +732,7 @@ class Sn_config_model extends CI_Model {
             if ($pid['success']) {
                 $remove_profile = $this->remove_fb_profile($pid['pid']);
                 if ($remove_profile['success']) {
-                    $remove_settings = $this->remove_fb_settings($pid['pid']);
+                    $remove_settings = $this->remove_fb_publish_settings($pid['pid']);
                     if ($remove_settings['success']) {
                         $remove_pages = $this->remove_fb_pages($pid['pid']);
                         if ($remove_pages['success']) {
@@ -622,11 +740,21 @@ class Sn_config_model extends CI_Model {
                             if ($remove_livestream['success']) {
                                 $remove_live_entries = $this->remove_fb_live_entries($pid['pid']);
                                 if ($remove_live_entries['success']) {
-                                    $update_status = $this->update_sn_config($pid['pid'], 'facebook', 0);
-                                    if ($update_status['success']) {
-                                        $success = array('success' => true);
+                                    $remove_facebook_upload_queues = $this->remove_facebook_upload_queues($pid['pid']);
+                                    if ($remove_facebook_upload_queues['success']) {
+                                        $remove_facebook_vod_entries = $this->remove_facebook_vod_entries($pid['pid']);
+                                        if ($remove_facebook_vod_entries['success']) {
+                                            $update_status = $this->update_sn_config($pid['pid'], 'facebook', 0);
+                                            if ($update_status['success']) {
+                                                $success = array('success' => true);
+                                            } else {
+                                                $success = array('success' => false, 'message' => 'Could not update platform status');
+                                            }
+                                        } else {
+                                            $success = array('success' => false, 'message' => 'Could not remove vod entries');
+                                        }
                                     } else {
-                                        $success = array('success' => false);
+                                        $success = array('success' => false, 'message' => 'Could not remove upload queues');
                                     }
                                 } else {
                                     $success = array('success' => false, 'message' => 'Could not remove facebook live entries');
@@ -694,7 +822,7 @@ class Sn_config_model extends CI_Model {
                     if ($remove['success']) {
                         $remove_profile = $this->remove_fb_profile($pid);
                         if ($remove_profile['success']) {
-                            $remove_settings = $this->remove_fb_settings($pid);
+                            $remove_settings = $this->remove_fb_publish_settings($pid);
                             if ($remove_settings['success']) {
                                 $remove_pages = $this->remove_fb_pages($pid);
                                 if ($remove_pages['success']) {
@@ -706,11 +834,21 @@ class Sn_config_model extends CI_Model {
                                             if ($remove_livestream['success']) {
                                                 $remove_live_entries = $this->remove_fb_live_entries($pid);
                                                 if ($remove_live_entries['success']) {
-                                                    $update_status = $this->update_sn_config($pid, 'facebook', 0);
-                                                    if ($update_status['success']) {
-                                                        $success = array('success' => true);
+                                                    $remove_facebook_upload_queues = $this->remove_facebook_upload_queues($pid);
+                                                    if ($remove_facebook_upload_queues['success']) {
+                                                        $remove_facebook_vod_entries = $this->remove_facebook_vod_entries($pid);
+                                                        if ($remove_facebook_vod_entries['success']) {
+                                                            $update_status = $this->update_sn_config($pid, 'facebook', 0);
+                                                            if ($update_status['success']) {
+                                                                $success = array('success' => true);
+                                                            } else {
+                                                                $success = array('success' => false);
+                                                            }
+                                                        } else {
+                                                            $success = array('success' => false, 'message' => 'Could not remove vod entries');
+                                                        }
                                                     } else {
-                                                        $success = array('success' => false);
+                                                        $success = array('success' => false, 'message' => 'Could not remove upload queues');
                                                     }
                                                 } else {
                                                     $success = array('success' => false, 'message' => 'Could not remove facebook live entries');
@@ -761,11 +899,11 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function remove_fb_settings($pid) {
+    public function remove_fb_publish_settings($pid) {
         $success = array('success' => false);
-        if ($this->check_fb_settings($pid)) {
+        if ($this->check_fb_publish_settings($pid)) {
             $this->config->where('partner_id = "' . $pid . '"');
-            $this->config->delete('facebook_user_settings');
+            $this->config->delete('facebook_publish_settings');
             if ($this->config->affected_rows() > 0) {
                 $success = array('success' => true);
             } else {
@@ -843,23 +981,18 @@ class Sn_config_model extends CI_Model {
 
     public function remove_yt_live_events($pid) {
         $success = array('success' => false);
+        $vr = array();
+        $vr['vrSettings'] = false;
         $events = $this->get_yt_live_events($pid);
         if (count($events['events']) > 0) {
             foreach ($events['events'] as $eid) {
                 $delete_youtube_livestream = $this->delete_youtube_livestream($pid, $eid);
                 if ($delete_youtube_livestream['success']) {
-                    $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
-                    if ($partnerData['success']) {
-                        $platforms = $this->getPlatforms(json_decode($partnerData['partnerData']));
-                        $update_sn_config = $this->set_youtube_config_false($platforms['platforms']);
-                        $partnerData = $this->update_sn_partnerData($pid, $eid, $update_sn_config['sn_config']);
-                        if ($partnerData['success']) {
-                            $success = array('success' => true);
-                        } else {
-                            $success = array('success' => false, 'message' => 'Could not update entry partnerData');
-                        }
+                    $update_sn_live_config = $this->update_sn_live_config($pid, $eid, 'youtube_live', false, null);
+                    if ($update_sn_live_config['success']) {
+                        $success = array('success' => true);
                     } else {
-                        $success = array('success' => false, 'message' => 'Could not get entry partnerData');
+                        $success = array('success' => false, 'message' => 'Could not update live configuration');
                     }
                 } else {
                     $success = array('success' => false, 'message' => $delete_youtube_livestream['message']);
@@ -873,30 +1006,63 @@ class Sn_config_model extends CI_Model {
 
     public function remove_fb_live_entries($pid) {
         $success = array('success' => false);
+        $vr = array();
+        $vr['vrSettings'] = false;
         $entries = $this->get_fb_live_entries($pid);
         if (count($entries['entries']) > 0) {
-            foreach ($entries['entries'] as $entry) {
-                $partnerData = $this->smportal->get_entry_partnerData($pid, $entry);
-                if ($partnerData['success']) {
-                    $platforms = $this->getPlatforms(json_decode($partnerData['partnerData']));
-                    $update_sn_config = $this->set_facebook_config_false($platforms['platforms']);
-                    $partnerData = $this->update_sn_partnerData($pid, $entry, $update_sn_config['sn_config']);
-                    if ($partnerData['success']) {
-                        $remove_fb_live_entry = $this->remove_fb_live_entry($pid, $entry);
-                        if ($remove_fb_live_entry['success']) {
-                            $success = array('success' => true);
-                        } else {
-                            $success = array('success' => false, 'message' => 'Could not remove facebook live entry');
-                        }
+            foreach ($entries['entries'] as $eid) {
+                $remove_fb_live_entry = $this->remove_fb_live_entry($pid, $eid);
+                if ($remove_fb_live_entry['success']) {
+                    $update_sn_live_config = $this->update_sn_live_config($pid, $eid, 'facebook_live', false, null);
+                    if ($update_sn_live_config['success']) {
+                        $success = array('success' => true);
                     } else {
-                        $success = array('success' => false, 'message' => 'Could not update entry partnerData');
+                        $success = array('success' => false, 'message' => 'Could not update live configuration');
                     }
                 } else {
-                    $success = array('success' => false);
+                    $success = array('success' => false, 'message' => 'Could not remove facebook live entry');
                 }
             }
         } else {
             $success = array('success' => true);
+        }
+        return $success;
+    }
+
+    public function remove_facebook_upload_queues($pid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id = "' . $pid . '"');
+        $this->config->where('platform = "facebook"');
+        $this->config->delete('upload_queue');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'message' => 'Nothing removed');
+        }
+        return $success;
+    }
+
+    public function remove_facebook_vod_entries($pid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id', $pid);
+        $this->config->delete('facebook_vod_entries');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'message' => 'Nothing removed');
+        }
+        return $success;
+    }
+
+    public function remove_db_facebook_vod_entry($pid, $eid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id', $pid);
+        $this->config->where('entryId', $eid);
+        $this->config->delete('facebook_vod_entries');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'message' => 'Nothing removed');
         }
         return $success;
     }
@@ -1133,6 +1299,7 @@ class Sn_config_model extends CI_Model {
         $data = array(
             'user_id' => $this->smcipher->encrypt($user['user_id']),
             'name' => $user['user_name'],
+            'thumbnail' => $user['user_thumbnail'],
             'user_access_token' => $this->smcipher->encrypt($user['access_token']),
             'updated_at' => date("Y-m-d H:i:s")
         );
@@ -1152,6 +1319,7 @@ class Sn_config_model extends CI_Model {
             'partner_id' => $pid,
             'user_id' => $this->smcipher->encrypt($user['user_id']),
             'name' => $user['user_name'],
+            'thumbnail' => $user['user_thumbnail'],
             'user_access_token' => $this->smcipher->encrypt($user['access_token']),
             'created_at' => date("Y-m-d H:i:s")
         );
@@ -1256,7 +1424,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function create_fb_livestream($pid, $ks, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
+    public function create_fb_livestream($pid, $ks, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $auto_upload, $projection) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
@@ -1264,13 +1432,13 @@ class Sn_config_model extends CI_Model {
             if ($has_service) {
                 $access_token = $this->validate_facebook_token($valid['pid']);
                 if ($access_token['success']) {
-                    $get_asset = $this->get_asset($pid, $stream_to, $asset_id, $access_token['access_token']);
+                    $get_asset = $this->get_asset($pid, $publish_to, $asset_id, $access_token['access_token']);
                     if ($get_asset['success']) {
                         $livestream = $this->facebook_client_api->createLiveStream($get_asset['asset'], $privacy, $create_vod, $cont_streaming, $projection);
                         if ($livestream['success']) {
                             $add_fb_livestream = $this->add_fb_livestream($pid, $livestream['address'], $livestream['stream_name'], $livestream['embed_code'], $livestream['live_id']);
                             if ($add_fb_livestream['success']) {
-                                $add_fb_settings = $this->add_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection);
+                                $add_fb_settings = $this->add_fb_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $auto_upload, $projection);
                                 if ($add_fb_settings['success']) {
                                     $success = array('success' => true);
                                 } else {
@@ -1298,11 +1466,11 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function add_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
-        if ($this->check_fb_settings($pid)) {
-            $result = $this->update_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection);
+    public function add_fb_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $auto_upload, $projection) {
+        if ($this->check_fb_publish_settings($pid)) {
+            $result = $this->update_fb_publish_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $auto_upload, $projection);
         } else {
-            $result = $this->insert_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection);
+            $result = $this->insert_fb_publish_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $auto_upload, $projection);
         }
         if ($result['success']) {
             $success = array('success' => true);
@@ -1313,10 +1481,10 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function check_fb_settings($pid) {
+    public function check_fb_publish_settings($pid) {
         $success = false;
         $this->config->select('*')
-                ->from('facebook_user_settings')
+                ->from('facebook_publish_settings')
                 ->where('partner_id', $pid);
         $query = $this->config->get();
         if ($query->num_rows() > 0) {
@@ -1328,19 +1496,20 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function update_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
+    public function update_fb_publish_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $auto_upload, $projection) {
         $success = array('success' => false);
         $data = array(
-            'stream_to' => $stream_to,
+            'publish_to' => $publish_to,
             'asset_id' => $asset_id,
             'privacy' => $privacy,
             'create_vod' => ($create_vod == 'true') ? true : false,
             'cont_streaming' => ($cont_streaming == 'true') ? true : false,
+            'auto_upload' => ($auto_upload == 'true') ? true : false,
             'projection' => $projection,
             'updated_at' => date("Y-m-d H:i:s")
         );
         $this->config->where('partner_id', $pid);
-        $this->config->update('facebook_user_settings', $data);
+        $this->config->update('facebook_publish_settings', $data);
         $this->config->limit(1);
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
@@ -1350,14 +1519,14 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function update_fb_settings_asset_id($pid, $asset_id) {
+    public function update_fb_publish_settings_asset_id($pid, $asset_id) {
         $success = array('success' => false);
         $data = array(
             'asset_id' => $asset_id,
             'updated_at' => date("Y-m-d H:i:s")
         );
         $this->config->where('partner_id', $pid);
-        $this->config->update('facebook_user_settings', $data);
+        $this->config->update('facebook_publish_settings', $data);
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
         } else {
@@ -1366,20 +1535,21 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function insert_fb_settings($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
+    public function insert_fb_publish_settings($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $auto_upload, $projection) {
         $success = array('success' => false);
         $data = array(
             'partner_id' => $pid,
-            'stream_to' => $stream_to,
+            'publish_to' => $publish_to,
             'asset_id' => $asset_id,
             'privacy' => $privacy,
             'create_vod' => ($create_vod == 'true') ? true : false,
             'cont_streaming' => ($cont_streaming == 'true') ? true : false,
+            'auto_upload' => ($auto_upload == 'true') ? true : false,
             'projection' => $projection,
             'created_at' => date("Y-m-d H:i:s")
         );
 
-        $this->config->insert('facebook_user_settings', $data);
+        $this->config->insert('facebook_publish_settings', $data);
         $this->config->limit(1);
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
@@ -1462,21 +1632,21 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function get_asset($pid, $stream_to, $asset_id, $access_token) {
+    public function get_asset($pid, $publish_to, $asset_id, $access_token) {
         $success = array('success' => false);
-        if ($stream_to == 1) {
+        if ($publish_to == 1) {
             $user_id = $this->get_fb_user_name($pid);
             $asset = array('asset_type' => 'user', 'asset_id' => $user_id['user_id'], 'access_token' => $access_token);
             $success = array('success' => true, 'asset' => $asset);
-        } else if ($stream_to == 2) {
+        } else if ($publish_to == 2) {
             $page = $this->get_fb_page($pid, $asset_id);
             $asset = array('asset_type' => 'page', 'asset_id' => $page['page_id'], 'access_token' => $page['access_token']);
             $success = array('success' => true, 'asset' => $asset);
-        } else if ($stream_to == 3) {
+        } else if ($publish_to == 3) {
             $group = $this->get_fb_group($pid, $asset_id);
             $asset = array('asset_type' => 'group', 'asset_id' => $group['group_id'], 'access_token' => $access_token);
             $success = array('success' => true, 'asset' => $asset);
-        } else if ($stream_to == 4) {
+        } else if ($publish_to == 4) {
             $event = $this->get_fb_event($pid, $asset_id);
             $asset = array('asset_type' => 'event', 'asset_id' => $event['event_id'], 'access_token' => $access_token);
             $success = array('success' => true, 'asset' => $asset);
@@ -1545,7 +1715,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function store_youtube_authorization($pid, $ks, $code) {
+    public function store_youtube_authorization($pid, $ks, $code, $projection) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
@@ -1558,11 +1728,26 @@ class Sn_config_model extends CI_Model {
                     $result = $this->insert_youtube_tokens($valid['pid'], $tokens);
                 }
                 if ($result['success']) {
-                    $update_status = $this->update_sn_config($pid, 'youtube', 1);
-                    if ($update_status['success']) {
-                        $success = array('success' => true);
+                    $channel = $this->retrieve_youtube_channel_details($pid, $tokens['access_token']);
+                    if ($channel['success']) {
+                        $update_youtube_channel_details = $this->update_youtube_channel_details($pid, $channel['channel_details']['channel_title'], $channel['channel_details']['channel_thumb']);
+                        if ($update_youtube_channel_details['success']) {
+                            $init_youtube_channel_settings = $this->init_youtube_channel_settings($pid, $projection);
+                            if ($init_youtube_channel_settings['success']) {
+                                $update_status = $this->update_sn_config($pid, 'youtube', 1);
+                                if ($update_status['success']) {
+                                    $success = array('success' => true);
+                                } else {
+                                    $success = array('success' => false);
+                                }
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not init channel settings');
+                            }
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not insert channel details');
+                        }
                     } else {
-                        $success = array('success' => false);
+                        $success = array('success' => false, 'message' => 'Could not get channel details');
                     }
                 } else {
                     $success = array('success' => false);
@@ -1587,7 +1772,7 @@ class Sn_config_model extends CI_Model {
             'expires_in' => $tokens['expires_in'],
             'created' => $tokens['created']
         );
-        $this->config->insert('youtube_live', $data);
+        $this->config->insert('youtube_channel', $data);
         $this->config->limit(1);
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
@@ -1608,7 +1793,25 @@ class Sn_config_model extends CI_Model {
         );
 
         $this->config->where('partner_id', $pid);
-        $this->config->update('youtube_live', $data);
+        $this->config->update('youtube_channel', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'notice' => 'no changes were made');
+        }
+        return $success;
+    }
+
+    public function update_youtube_channel_details($pid, $name, $thumbnail) {
+        $success = array('success' => false);
+        $data = array(
+            'name' => $this->config->escape_str($name),
+            'thumbnail' => $this->config->escape_str($thumbnail)
+        );
+
+        $this->config->where('partner_id', $pid);
+        $this->config->update('youtube_channel', $data);
         $this->config->limit(1);
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
@@ -1621,7 +1824,7 @@ class Sn_config_model extends CI_Model {
     public function check_youtube($pid) {
         $success = false;
         $this->config->select('*')
-                ->from('youtube_live')
+                ->from('youtube_channel')
                 ->where('partner_id', $pid);
         $query = $this->config->get();
         if ($query->num_rows() > 0) {
@@ -1650,60 +1853,71 @@ class Sn_config_model extends CI_Model {
 
     public function create_sn_livestreams($pid, $ks, $name, $desc, $eid, $platforms, $projection) {
         $success = array('success' => false);
+        $vr = array();
+        $vr['vrSettings'] = false;
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $snConfig = $this->buildSnConfig($platforms);
+                $config = array();
+                $snConfig = $this->build_live_sn_config($platforms);
                 $youtube_success = array('platform' => 'youtube', 'success' => false, 'message' => 'Was not asked to create a live stream');
                 $facebook_success = array('platform' => 'facebook', 'success' => false, 'message' => 'Was not asked to create a live stream');
-                $youtube_broadcast_id = null;
                 $youtube_embed = true;
-                $facebook_live_id = null;
+
+                if ($snConfig['smh']) {
+                    $smh_config = $this->create_live_sn_config('smh', true, null);
+                    array_push($config, $smh_config['config']);
+                } else {
+                    $smh_config = $this->create_live_sn_config('smh', false, null);
+                    array_push($config, $smh_config['config']);
+                }
 
                 if ($snConfig['youtube']) {
                     $create_youtube_live_stream = $this->create_youtube_live_stream($pid, $name, $desc, $eid, $snConfig, $projection);
                     if ($create_youtube_live_stream['success']) {
                         $youtube_success['success'] = true;
-                        $youtube_broadcast_id = $create_youtube_live_stream['broadcast_id'];
                         $youtube_embed = $create_youtube_live_stream['youtube_embed'];
+                        $youtube_live_config = $this->create_live_sn_config('youtube_live', true, $create_youtube_live_stream['broadcast_id']);
+                        array_push($config, $youtube_live_config['config']);
                     } else {
                         $youtube_success['success'] = false;
                         $youtube_success['message'] = $create_youtube_live_stream['message'];
+                        $youtube_live_config = $this->create_live_sn_config('youtube_live', false, null);
+                        array_push($config, $youtube_live_config['config']);
                     }
+                } else {
+                    $youtube_live_config = $this->create_live_sn_config('youtube_live', false, null);
+                    array_push($config, $youtube_live_config['config']);
                 }
+
                 if ($snConfig['facebook']) {
                     $create_facebook_live_stream = $this->create_facebook_live_stream($pid, $eid);
                     if ($create_facebook_live_stream['success']) {
                         $facebook_success['success'] = true;
-                        $facebook_live_id = $create_facebook_live_stream['live_id'];
+                        $facebook_live_config = $this->create_live_sn_config('facebook_live', true, $create_facebook_live_stream['live_id']);
+                        array_push($config, $facebook_live_config['config']);
                     } else {
                         $facebook_success['success'] = false;
                         $facebook_success['message'] = $create_facebook_live_stream['message'];
+                        $facebook_live_config = $this->create_live_sn_config('facebook_live', false, null);
+                        array_push($config, $facebook_live_config['config']);
                     }
+                } else {
+                    $facebook_live_config = $this->create_live_sn_config('facebook_live', false, null);
+                    array_push($config, $facebook_live_config['config']);
                 }
-                if ($snConfig['facebook'] || $snConfig['youtube']) {
+
+                $partnerData = $this->update_sn_partnerData($pid, $eid, $config, $vr);
+                if ($partnerData['success']) {
                     $platforms_responses = array();
                     array_push($platforms_responses, $youtube_success);
                     array_push($platforms_responses, $facebook_success);
-                    $update_sn_config = $this->insert_into_sn_config($youtube_broadcast_id, $facebook_live_id, $snConfig['sn_config']);
-                    $partnerData = $this->update_sn_partnerData($pid, $eid, $update_sn_config['sn_config']);
-                    if ($partnerData['success']) {
-                        $platf = $this->getPlatforms(json_decode($partnerData['partnerData']));
-                        $configSettings = $this->buildConfigSettings($platf);
-                        $success = array('success' => true, 'configSettings' => $configSettings, 'youtube_embed_status' => $youtube_embed, 'platforms_responses' => $platforms_responses);
-                    } else {
-                        $success = array('success' => false, 'message' => 'Could not update entry partnerData');
-                    }
+                    $platf = $this->get_live_platforms(json_decode($partnerData['partnerData']));
+                    $configSettings = $this->buildConfigSettings($platf);
+                    $success = array('success' => true, 'configSettings' => $configSettings, 'youtube_embed_status' => $youtube_embed, 'platforms_responses' => $platforms_responses);
                 } else {
-                    $partnerData = $this->update_sn_partnerData($pid, $eid, $snConfig['sn_config']);
-                    if ($partnerData['success']) {
-                        $platf = $this->getPlatforms(json_decode($partnerData['partnerData']));
-                        $configSettings = $this->buildConfigSettings($platf);
-                        $success = array('success' => true, 'configSettings' => $configSettings);
-                    } else {
-                        $success = array('success' => false, 'message' => 'Could not update entry partnerData');
-                    }
+                    $success = array('success' => false, 'message' => 'Could not update entry partnerData');
                 }
             } else {
                 $success = array('success' => false, 'message' => 'Social network service not active');
@@ -1725,8 +1939,8 @@ class Sn_config_model extends CI_Model {
             if ($livestream['success']) {
                 $insert_live_event = $this->insert_youtube_live_event($pid, $eid, $livestream['liveBroadcastId'], $livestream['liveStreamId'], $livestream['streamName'], $livestream['ingestionAddress'], $projection);
                 if ($insert_live_event['success']) {
-                    $update_embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
-                    if ($update_embed_status['success']) {
+                    $add_youtube_emebed_status = $this->add_youtube_emebed_status($pid, $youtube_embed);
+                    if ($add_youtube_emebed_status['success']) {
                         $success = array('success' => true, 'broadcast_id' => $livestream['liveBroadcastId'], 'youtube_embed' => $youtube_embed);
                     } else {
                         $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
@@ -1740,8 +1954,8 @@ class Sn_config_model extends CI_Model {
                 if ($livestream['success']) {
                     $insert_live_event = $this->insert_youtube_live_event($pid, $eid, $livestream['liveBroadcastId'], $livestream['liveStreamId'], $livestream['streamName'], $livestream['ingestionAddress'], $projection);
                     if ($insert_live_event['success']) {
-                        $update_embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
-                        if ($update_embed_status['success']) {
+                        $add_youtube_emebed_status = $this->add_youtube_emebed_status($pid, $youtube_embed);
+                        if ($add_youtube_emebed_status['success']) {
                             $success = array('success' => true, 'broadcast_id' => $livestream['liveBroadcastId'], 'youtube_embed' => $youtube_embed);
                         } else {
                             $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
@@ -1904,7 +2118,7 @@ class Sn_config_model extends CI_Model {
                 }
                 if ($platform['platform'] == 'youtube_live') {
                     if ($platform['status']) {
-                        array_push($platforms_preview_embed_arr, "youtube:1:" . $platform['broadcastId']);
+                        array_push($platforms_preview_embed_arr, "youtube:1:" . $platform['liveId']);
                     } else {
                         array_push($platforms_preview_embed_arr, "youtube:0");
                     }
@@ -1913,75 +2127,6 @@ class Sn_config_model extends CI_Model {
             $platforms_preview_embed = implode(";", $platforms_preview_embed_arr);
         }
         return $platforms_preview_embed;
-    }
-
-    public function insert_into_sn_config($youtube_broadcast_id, $facebook_live_id, $platforms_config) {
-        $new_platforms_config = array();
-        foreach ($platforms_config as $platform) {
-            if ($platform['platform'] == 'facebook_live') {
-                if ($platform['status'] && $facebook_live_id) {
-                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status'], 'liveId' => $facebook_live_id));
-                } else if ($platform['status'] && $platform['liveId'] && !$facebook_live_id) {
-                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status'], 'liveId' => $platform['liveId']));
-                } else if ($platform['status'] && !$platform['liveId'] && !$facebook_live_id) {
-                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => false));
-                } else {
-                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status']));
-                }
-            } else if ($platform['platform'] == 'youtube_live') {
-                if ($platform['status'] && $youtube_broadcast_id) {
-                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status'], 'broadcastId' => $youtube_broadcast_id));
-                } else if ($platform['status'] && $platform['broadcastId'] && !$youtube_broadcast_id) {
-                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status'], 'broadcastId' => $platform['broadcastId']));
-                } else if ($platform['status'] && !$platform['broadcastId'] && !$youtube_broadcast_id) {
-                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => false));
-                } else {
-                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status']));
-                }
-            } else {
-                array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status']));
-            }
-        }
-        $success = array('success' => true, 'sn_config' => $new_platforms_config);
-        return $success;
-    }
-
-    public function set_facebook_config_false($platforms_config) {
-        $new_platforms_config = array();
-        foreach ($platforms_config as $platform) {
-            if ($platform['platform'] == 'facebook_live') {
-                array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => false));
-            } else if ($platform['platform'] == 'youtube_live') {
-                if ($platform['status']) {
-                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status'], 'broadcastId' => $platform['broadcastId']));
-                } else {
-                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status']));
-                }
-            } else {
-                array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status']));
-            }
-        }
-        $success = array('success' => true, 'sn_config' => $new_platforms_config);
-        return $success;
-    }
-
-    public function set_youtube_config_false($platforms_config) {
-        $new_platforms_config = array();
-        foreach ($platforms_config as $platform) {
-            if ($platform['platform'] == 'facebook_live') {
-                if ($platform['status']) {
-                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status'], 'liveId' => $platform['liveId']));
-                } else {
-                    array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status']));
-                }
-            } else if ($platform['platform'] == 'youtube_live') {
-                array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => false));
-            } else {
-                array_push($new_platforms_config, array('platform' => $platform['platform'], 'status' => $platform['status']));
-            }
-        }
-        $success = array('success' => true, 'sn_config' => $new_platforms_config);
-        return $success;
     }
 
     public function insert_youtube_live_event($pid, $eid, $liveBroadcastId, $liveStreamId, $streamName, $ingestionAddress, $projection) {
@@ -2006,12 +2151,15 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function update_sn_partnerData($pid, $eid, $platforms_config) {
+    public function update_sn_partnerData($pid, $eid, $platforms_config, $vr) {
         $success = array('success' => false);
         $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
         if ($partnerData['success']) {
             $temp_partnerData = json_decode($partnerData['partnerData'], true);
             $temp_partnerData['snConfig'] = $platforms_config;
+            if ($vr['vrSettings']) {
+                $temp_partnerData['vrSettings'] = $vr['settings'];
+            }
             $update_partnerData = $this->smportal->update_entry_partnerData($pid, $eid, $temp_partnerData);
             if ($update_partnerData['success']) {
                 $success = array('success' => true, 'partnerData' => $update_partnerData['partnerData']);
@@ -2024,67 +2172,91 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function buildSnConfig($platforms) {
+    public function build_live_sn_config($platforms) {
         $success = array('success' => false);
-        $platforms_config = array();
         $platforms = json_decode($platforms, true);
+        $smh = false;
         $facebook = false;
         $youtube = false;
         $res = '240p';
         foreach ($platforms['platforms'] as $platform) {
             if ($platform['platform'] == 'smh') {
-                array_push($platforms_config, array('platform' => 'smh', 'status' => $platform['status']));
+                if ($platform['status']) {
+                    $smh = true;
+                }
             } else if ($platform['platform'] == 'facebook_live') {
                 if ($platform['status']) {
                     $facebook = true;
                 }
-                array_push($platforms_config, array('platform' => 'facebook_live', 'status' => $platform['status']));
             } else if ($platform['platform'] == 'youtube_live') {
                 if ($platform['status']) {
                     $youtube = true;
                     $res = $platform['config']['res'];
                 }
-                array_push($platforms_config, array('platform' => 'youtube_live', 'status' => $platform['status']));
             }
         }
-        $success = array('success' => true, 'sn_config' => $platforms_config, 'youtube' => $youtube, 'youtube_res' => $res, 'facebook' => $facebook);
+        $success = array('success' => true, 'smh' => $smh, 'youtube' => $youtube, 'youtube_res' => $res, 'facebook' => $facebook);
         return $success;
     }
 
     public function update_sn_livestreams($pid, $ks, $name, $desc, $eid, $platforms, $projection) {
         $success = array('success' => false);
+        $vr = array();
+        $vr['vrSettings'] = false;
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $snConfig = $this->buildSnConfig($platforms);
+                $config = array();
+                $snConfig = $this->build_live_sn_config($platforms);
                 $youtube_success = array('platform' => 'youtube', 'success' => false, 'message' => 'Was not asked to create or update a live stream');
                 $facebook_success = array('platform' => 'facebook', 'success' => false, 'message' => 'Was not asked to create or update a live stream');
-                $youtube_broadcast_id = null;
                 $youtube_embed = true;
-                $facebook_live_id = null;
+
+                if ($snConfig['smh']) {
+                    $smh_config = $this->create_live_sn_config('smh', true, null);
+                    array_push($config, $smh_config['config']);
+                } else {
+                    $smh_config = $this->create_live_sn_config('smh', false, null);
+                    array_push($config, $smh_config['config']);
+                }
 
                 $update_youtube_live_stream = $this->update_youtube_live_stream($pid, $ks, $name, $desc, $eid, $snConfig, $projection);
                 if ($update_youtube_live_stream['success']) {
                     $youtube_success['success'] = true;
-                    $youtube_broadcast_id = $update_youtube_live_stream['broadcast_id'];
                     $youtube_embed = $update_youtube_live_stream['youtube_embed'];
+                    if ($update_youtube_live_stream['broadcast_id']) {
+                        $youtube_live_config = $this->create_live_sn_config('youtube_live', true, $update_youtube_live_stream['broadcast_id']);
+                        array_push($config, $youtube_live_config['config']);
+                    } else {
+                        $youtube_live_config = $this->create_live_sn_config('youtube_live', false, null);
+                        array_push($config, $youtube_live_config['config']);
+                    }
                 } else {
                     $youtube_success['success'] = false;
                     $youtube_success['message'] = $update_youtube_live_stream['message'];
+                    $youtube_live_config = $this->create_live_sn_config('youtube_live', false, null);
+                    array_push($config, $youtube_live_config['config']);
                 }
 
                 $update_facebook_live_stream = $this->update_facebook_live_stream($pid, $eid, $snConfig);
                 if ($update_facebook_live_stream['success']) {
                     $facebook_success['success'] = true;
-                    $facebook_live_id = $update_facebook_live_stream['live_id'];
+                    if ($update_facebook_live_stream['live_id']) {
+                        $facebook_live_config = $this->create_live_sn_config('facebook_live', true, $update_facebook_live_stream['live_id']);
+                        array_push($config, $facebook_live_config['config']);
+                    } else {
+                        $facebook_live_config = $this->create_live_sn_config('facebook_live', false, null);
+                        array_push($config, $facebook_live_config['config']);
+                    }
                 } else {
                     $facebook_success['success'] = false;
                     $facebook_success['message'] = $update_facebook_live_stream['message'];
+                    $facebook_live_config = $this->create_live_sn_config('facebook_live', false, null);
+                    array_push($config, $facebook_live_config['config']);
                 }
 
-                $update_sn_config = $this->insert_into_sn_config($youtube_broadcast_id, $facebook_live_id, $snConfig['sn_config']);
-                $partnerData = $this->update_sn_partnerData($pid, $eid, $update_sn_config['sn_config']);
+                $partnerData = $this->update_sn_partnerData($pid, $eid, $config, $vr);
                 if ($partnerData['success']) {
                     $platforms_responses = array();
                     array_push($platforms_responses, $youtube_success);
@@ -2141,8 +2313,8 @@ class Sn_config_model extends CI_Model {
                     if ($livestream['success']) {
                         $update_live_event = $this->update_youtube_live_event($pid, $eid, $livestream['liveStreamId'], $livestream['streamName'], $livestream['ingestionAddress'], $projection);
                         if ($update_live_event['success']) {
-                            $update_embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
-                            if ($update_embed_status['success']) {
+                            $add_youtube_emebed_status = $this->add_youtube_emebed_status($pid, $youtube_embed);
+                            if ($add_youtube_emebed_status['success']) {
                                 $success = array('success' => true, 'broadcast_id' => $youtube_ids['bid'], 'youtube_embed' => $youtube_embed);
                             } else {
                                 $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
@@ -2159,8 +2331,8 @@ class Sn_config_model extends CI_Model {
                     if ($livestream['success']) {
                         $insert_live_event = $this->insert_youtube_live_event($pid, $eid, $livestream['liveBroadcastId'], $livestream['liveStreamId'], $livestream['streamName'], $livestream['ingestionAddress'], $projection);
                         if ($insert_live_event['success']) {
-                            $update_embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
-                            if ($update_embed_status['success']) {
+                            $add_youtube_emebed_status = $this->add_youtube_emebed_status($pid, $youtube_embed);
+                            if ($add_youtube_emebed_status['success']) {
                                 $success = array('success' => true, 'broadcast_id' => $livestream['liveBroadcastId'], 'youtube_embed' => $youtube_embed);
                             } else {
                                 $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
@@ -2174,8 +2346,8 @@ class Sn_config_model extends CI_Model {
                         if ($livestream['success']) {
                             $insert_live_event = $this->insert_youtube_live_event($pid, $eid, $livestream['liveBroadcastId'], $livestream['liveStreamId'], $livestream['streamName'], $livestream['ingestionAddress'], $projection);
                             if ($insert_live_event['success']) {
-                                $update_embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
-                                if ($update_embed_status['success']) {
+                                $add_youtube_emebed_status = $this->add_youtube_emebed_status($pid, $youtube_embed);
+                                if ($add_youtube_emebed_status['success']) {
                                     $success = array('success' => true, 'broadcast_id' => $livestream['liveBroadcastId'], 'youtube_embed' => $youtube_embed);
                                 } else {
                                     $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
@@ -2301,38 +2473,133 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function get_youtube_embed_status($pid) {
+    public function update_youtube_embed_status($pid, $embed_status) {
         $success = array('success' => false);
-        $this->config->select('*')
-                ->from('youtube_live')
-                ->where('partner_id', $pid);
+        $data = array(
+            'embed' => $embed_status,
+            'updated_at' => date("Y-m-d H:i:s")
+        );
 
-        $query = $this->config->get();
-        $result = $query->result_array();
-        if ($query->num_rows() > 0) {
-            foreach ($result as $res) {
-                $embed_status = ($res['embed']) ? true : false;
-            }
+        $this->config->where('partner_id', $pid);
+        $this->config->update('youtube_channel_settings', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
             $success = array('success' => true, 'embed_status' => $embed_status);
+        } else {
+            $success = array('success' => true, 'embed_status' => $embed_status);
+        }
+        return $success;
+    }
+
+    public function insert_youtube_embed_status($pid, $embed_status) {
+        $success = array('success' => false);
+        $data = array(
+            'partner_id' => $pid,
+            'embed' => $embed_status,
+            'created_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->insert('youtube_channel_settings', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true, 'embed_status' => $embed_status);
+        } else {
+            $success = array('success' => true, 'embed_status' => $embed_status);
+        }
+        return $success;
+    }
+
+    public function init_youtube_channel_settings($pid, $projection) {
+        $success = array('success' => false);
+        $data = array(
+            'partner_id' => $pid,
+            'embed' => false,
+            'auto_upload' => false,
+            'projection' => $projection,
+            'created_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->insert('youtube_channel_settings', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
         } else {
             $success = array('success' => false);
         }
         return $success;
     }
 
-    public function update_youtube_embed_status($pid, $embed_status) {
+    public function update_youtube_channel_settings($pid, $ks, $auto_upload) {
+        $success = array('success' => false);
+        $auto_upload = ($auto_upload == 'true') ? true : false;
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $update_partner_notification = $this->smportal->update_partner_notification($pid, $ks, $auto_upload);
+                if ($update_partner_notification['success']) {
+                    $update_youtube_auto_upload = $this->update_youtube_auto_upload($pid, $auto_upload);
+                    if ($update_youtube_auto_upload['success']) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not update auto upload status');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not update partner notification');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Social network service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+
+        return $success;
+    }
+
+    public function update_youtube_auto_upload($pid, $auto_upload) {
         $success = array('success' => false);
         $data = array(
-            'embed' => $embed_status
+            'auto_upload' => $auto_upload,
+            'updated_at' => date("Y-m-d H:i:s")
         );
 
         $this->config->where('partner_id', $pid);
-        $this->config->update('youtube_live', $data);
+        $this->config->update('youtube_channel_settings', $data);
         $this->config->limit(1);
         if ($this->config->affected_rows() > 0) {
-            $success = array('success' => true, 'embed_status' => $embed_status);
+            $success = array('success' => true);
         } else {
-            $success = array('success' => true, 'embed_status' => $embed_status);
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function check_youtube_channel_settings($pid) {
+        $success = false;
+        $this->config->select('*')
+                ->from('youtube_channel_settings')
+                ->where('partner_id', $pid);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
+        return $success;
+    }
+
+    public function add_youtube_emebed_status($pid, $youtube_embed) {
+        $success = array('success' => false);
+        $check_youtube_channel_settings = $this->check_youtube_channel_settings($pid);
+        if ($check_youtube_channel_settings) {
+            $embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
+        } else {
+            $embed_status = $this->insert_youtube_embed_status($pid, $youtube_embed);
+        }
+        if ($embed_status['success']) {
+            $success = array('success' => true);
         }
         return $success;
     }
@@ -2349,17 +2616,22 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function update_sn_metadata($pid, $ks, $name, $desc, $eid) {
+    public function update_vod_sn_metadata($pid, $ks, $name, $desc, $eid) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $platforms_status = $this->get_entry_platforms_status($pid, $eid);
+                $platforms_status = $this->get_vod_entry_platforms_status($pid, $eid);
                 if ($platforms_status['success']) {
                     if (count($platforms_status['platforms_status'])) {
                         if ($platforms_status['platforms_status']['youtube']) {
-                            $success = $this->update_youtube_metadata($pid, $name, $desc, $eid);
+                            $success = $this->update_youtube_vod_metadata($pid, $name, $desc, $eid);
+                        } else {
+                            $success = array('success' => true, 'message' => 'Social network: nothing to update');
+                        }
+                        if ($platforms_status['platforms_status']['facebook']) {
+                            $success = $this->update_facebook_vod_metadata($pid, $name, $desc, $eid);
                         } else {
                             $success = array('success' => true, 'message' => 'Social network: nothing to update');
                         }
@@ -2379,13 +2651,43 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function update_youtube_metadata($pid, $name, $desc, $eid) {
+    public function update_live_sn_metadata($pid, $ks, $name, $desc, $eid) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $platforms_status = $this->get_live_entry_platforms_status($pid, $eid);
+                if ($platforms_status['success']) {
+                    if (count($platforms_status['platforms_status'])) {
+                        if ($platforms_status['platforms_status']['youtube']) {
+                            $success = $this->update_youtube_live_metadata($pid, $name, $desc, $eid);
+                        } else {
+                            $success = array('success' => true, 'message' => 'Social network: nothing to update');
+                        }
+                    } else {
+                        $success = array('success' => true, 'message' => 'Social network config not present');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not get platforms status');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Social network service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+
+        return $success;
+    }
+
+    public function update_youtube_live_metadata($pid, $name, $desc, $eid) {
         $success = array('success' => false);
         $youtube_ids = $this->get_youtube_event_ids($pid, $eid);
         if ($youtube_ids['success']) {
             $access_token = $this->validate_youtube_token($pid);
             if ($access_token['success']) {
-                $updateMetaData = $this->google_client_api->updateMetaData($access_token['access_token'], $youtube_ids['bid'], $name, $desc);
+                $updateMetaData = $this->google_client_api->updateLiveMetaData($access_token['access_token'], $youtube_ids['bid'], $name, $desc);
                 if ($updateMetaData['success']) {
                     $success = array('success' => true);
                 } else {
@@ -2400,7 +2702,41 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function get_entry_platforms_status($pid, $eid) {
+    public function update_facebook_vod_metadata($pid, $name, $desc, $eid) {
+        $success = array('success' => false);
+        $facebook_video = $this->get_facebook_vod_id($pid, $eid);
+        $access_token = $this->validate_facebook_token($pid);
+        if ($access_token['success']) {
+            $updateMetaData = $this->facebook_client_api->updateVodMetaData($access_token['access_token'], $facebook_video['videoId'], $name, $desc);
+            if ($updateMetaData['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Facebook: Could not update metadata');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Facebook: invalid access token');
+        }
+        return $success;
+    }
+
+    public function update_youtube_vod_metadata($pid, $name, $desc, $eid) {
+        $success = array('success' => false);
+        $youtube_video = $this->get_youtube_vod_id($pid, $eid);
+        $access_token = $this->validate_youtube_token($pid);
+        if ($access_token['success']) {
+            $updateMetaData = $this->google_client_api->updateVodMetaData($access_token['access_token'], $youtube_video['videoId'], $name, $desc);
+            if ($updateMetaData['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'YouTube: Could not update metadata');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'YouTube: invalid access token');
+        }
+        return $success;
+    }
+
+    public function get_live_entry_platforms_status($pid, $eid) {
         $success = array('success' => false);
         $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
         if ($partnerData['success']) {
@@ -2426,13 +2762,202 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function get_vod_entry_platforms_status($pid, $eid) {
+        $success = array('success' => false);
+        $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
+        if ($partnerData['success']) {
+            $temp_partnerData = json_decode($partnerData['partnerData'], true);
+            $platforms_status = array();
+            if (isset($temp_partnerData['snConfig'])) {
+                foreach ($temp_partnerData['snConfig'] as $platform) {
+                    if ($platform['platform'] == 'facebook') {
+                        $platforms_status['facebook'] = $platform['status'];
+                    }
+                    if ($platform['platform'] == 'youtube') {
+                        $platforms_status['youtube'] = $platform['status'];
+                    }
+                }
+            }
+            $success = array('success' => true, 'platforms_status' => $platforms_status);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function upload_queued_video_to_youtube($pid, $eid) {
+        $success = array('success' => false);
+        $has_service = $this->verify_service($pid);
+        if ($has_service) {
+//            $platforms_status = $this->get_live_entry_platforms_status($pid, $eid);
+//            if ($platforms_status['success']) {
+//                if (count($platforms_status['platforms_status'])) {
+//                    if ($platforms_status['platforms_status']['youtube']) {
+            $success = $this->upload_youtube_video($pid, $eid);
+//                    } else {
+//                        $success = array('success' => true, 'message' => 'Social network: nothing to update');
+//                    }
+//                } else {
+//                    $success = array('success' => true, 'message' => 'Social network config not present');
+//                }
+//            } else {
+//                $success = array('success' => false, 'message' => 'Could not get platforms status');
+//            }
+        } else {
+            $success = array('success' => false, 'message' => 'Social network service not active');
+        }
+        return $success;
+    }
+
+    public function upload_youtube_video($pid, $entry_details, $video_path) {
+        $success = array('success' => false);
+        $access_token = $this->validate_youtube_token($pid);
+        if ($access_token['success']) {
+            $upload_video = $this->google_client_api->uploadVideo($access_token['access_token'], $entry_details['name'], $entry_details['desc'], $video_path);
+            if ($upload_video['success']) {
+                $success = array('success' => true, 'videoId' => $upload_video['videoId']);
+            } else {
+                $success = array('success' => false, 'message' => 'YouTube: could not upload video');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'YouTube: invalid access token');
+        }
+        return $success;
+    }
+
+    public function remove_youtube_video($pid, $videoId) {
+        $success = array('success' => false);
+        $access_token = $this->validate_youtube_token($pid);
+        if ($access_token['success']) {
+            $remove_video = $this->google_client_api->removeVideo($access_token['access_token'], $videoId);
+            if ($remove_video['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'YouTube: could not remove video');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'YouTube: invalid access token');
+        }
+        return $success;
+    }
+
+    public function remove_facebook_video($pid, $videoId) {
+        $success = array('success' => false);
+        $access_token = $this->validate_facebook_token($pid);
+        if ($access_token['success']) {
+            $remove_video = $this->facebook_client_api->removeVideo($access_token['access_token'], $videoId);
+            if ($remove_video['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Facebook: could not remove video');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Facebook: invalid access token');
+        }
+        return $success;
+    }
+
+    public function delete_sn_entry($pid, $ks, $eid) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $platforms_status = $this->get_vod_entry_platforms_status($pid, $eid);
+                if ($platforms_status['success']) {
+                    if (count($platforms_status['platforms_status'])) {
+                        if ($platforms_status['platforms_status']['youtube']) {
+                            $success = $this->delete_youtube_vod_entry($pid, $eid);
+                        }
+                        if ($platforms_status['platforms_status']['facebook']) {
+                            $success = $this->delete_facebook_vod_entry($pid, $eid);
+                        }
+                        if (!$platforms_status['platforms_status']['youtube'] && !$platforms_status['platforms_status']['facebook']) {
+                            $success = array('success' => true, 'message' => 'Social network: nothing to update');
+                        }
+                    } else {
+                        $success = array('success' => true, 'message' => 'Social network config not present');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not get platforms status');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Social network service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+
+        return $success;
+    }
+
+    public function delete_facebook_vod_entry($pid, $eid) {
+        $success = array('success' => false);
+        $facebook_video = $this->get_facebook_vod_id($pid, $eid);
+        $remove_facebook_video = $this->remove_facebook_video($pid, $facebook_video['videoId']);
+        if ($remove_facebook_video['success']) {
+            $remove_db_facebook_vod_entry = $this->remove_db_facebook_vod_entry($pid, $eid);
+            if ($remove_db_facebook_vod_entry['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Could not remove Facebook video');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Could not delete Facebook video');
+        }
+        return $success;
+    }
+
+    public function delete_youtube_vod_entry($pid, $eid) {
+        $success = array('success' => false);
+        $youtube_video = $this->get_youtube_vod_id($pid, $eid);
+        $remove_youtube_video = $this->remove_youtube_video($pid, $youtube_video['videoId']);
+        if ($remove_youtube_video['success']) {
+            $remove_db_youtube_vod_entry = $this->remove_db_youtube_vod_entry($pid, $eid);
+            if ($remove_db_youtube_vod_entry['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Could not remove YouTube video');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Could not delete YouTube video');
+        }
+        return $success;
+    }
+
+    public function upload_facebook_video($pid, $entry_details, $video_path) {
+        $success = array('success' => false);
+        $access_token = $this->validate_facebook_token($pid);
+        if ($access_token['success']) {
+            $get_user_settings = $this->get_facebook_publish_settings($pid);
+            if ($get_user_settings['success']) {
+                $get_asset = $this->get_asset($pid, $get_user_settings['userSettings'][0]['publish_to'], $get_user_settings['userSettings'][0]['asset_id'], $access_token['access_token']);
+                if ($get_asset['success']) {
+                    $upload_video = $this->facebook_client_api->uploadVideo($get_asset['asset'], $entry_details['name'], $entry_details['desc'], $get_user_settings['userSettings'][0]['privacy'], $video_path);
+                    if ($upload_video['success']) {
+                        $success = array('success' => true, 'videoId' => $upload_video['videoId']);
+                    } else {
+                        $success = array('success' => false, 'message' => 'Facebook: could not upload video');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not get asset Id');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Could not get Facebook user settings');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Facebook: invalid access token');
+        }
+        return $success;
+    }
+
     public function update_sn_thumbnail($pid, $ks, $eid) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $platforms_status = $this->get_entry_platforms_status($pid, $eid);
+                $platforms_status = $this->get_live_entry_platforms_status($pid, $eid);
                 if ($platforms_status['success']) {
                     if (count($platforms_status['platforms_status'])) {
                         if ($platforms_status['platforms_status']['youtube']) {
@@ -2484,7 +3009,7 @@ class Sn_config_model extends CI_Model {
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $platforms_status = $this->get_entry_platforms_status($pid, $eid);
+                $platforms_status = $this->get_live_entry_platforms_status($pid, $eid);
                 if ($platforms_status['success']) {
                     if (count($platforms_status['platforms_status'])) {
                         if ($platforms_status['platforms_status']['youtube']) {
@@ -2549,34 +3074,44 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function getPlatforms($json) {
+    public function get_live_platforms($json) {
         $result = array();
         $result['platforms'] = array();
         foreach ($json as $key => $value) {
             if ($key == 'snConfig') {
                 $result['snConfig'] = true;
                 foreach ($value as $platforms) {
-                    if ($platforms->platform == "smh") {
-                        $platform = array('platform' => 'smh', 'status' => $platforms->status);
+                    if ($platforms->status) {
+                        if ($platforms->liveId) {
+                            $platform = array('platform' => $platforms->platform, 'status' => $platforms->status, 'liveId' => $platforms->liveId);
+                            array_push($result['platforms'], $platform);
+                        } else {
+                            $platform = array('platform' => $platforms->platform, 'status' => $platforms->status);
+                            array_push($result['platforms'], $platform);
+                        }
+                    } else {
+                        $platform = array('platform' => $platforms->platform, 'status' => $platforms->status);
                         array_push($result['platforms'], $platform);
                     }
-                    if ($platforms->platform == "facebook_live") {
-                        if ($platforms->status) {
-                            $platform = array('platform' => 'facebook_live', 'status' => $platforms->status, 'liveId' => $platforms->liveId);
-                            array_push($result['platforms'], $platform);
-                        } else {
-                            $platform = array('platform' => 'facebook_live', 'status' => $platforms->status);
-                            array_push($result['platforms'], $platform);
-                        }
-                    }
-                    if ($platforms->platform == "youtube_live") {
-                        if ($platforms->status) {
-                            $platform = array('platform' => 'youtube_live', 'status' => $platforms->status, 'broadcastId' => $platforms->broadcastId);
-                            array_push($result['platforms'], $platform);
-                        } else {
-                            $platform = array('platform' => 'youtube_live', 'status' => $platforms->status);
-                            array_push($result['platforms'], $platform);
-                        }
+                }
+            }
+        }
+        return $result;
+    }
+
+    public function get_vod_platforms($json) {
+        $result = array();
+        $result['platforms'] = array();
+        foreach ($json as $key => $value) {
+            if ($key == 'snConfig') {
+                $result['snConfig'] = true;
+                foreach ($value as $platforms) {
+                    if ($platforms->status) {
+                        $platform = array('platform' => $platforms->platform, 'status' => $platforms->status, 'upload_status' => $platforms->upload_status, 'videoId' => $platforms->videoId);
+                        array_push($result['platforms'], $platform);
+                    } else {
+                        $platform = array('platform' => $platforms->platform, 'status' => $platforms->status);
+                        array_push($result['platforms'], $platform);
                     }
                 }
             }
@@ -2597,7 +3132,7 @@ class Sn_config_model extends CI_Model {
                 $youtube_status = $this->get_youtube_status($pid);
                 $facebook_status = $this->get_facebook_status($pid);
                 if ($youtube_status['status'] || $facebook_status['status']) {
-                    $platforms_status = $this->get_entry_platforms_status($pid, $eid);
+                    $platforms_status = $this->get_live_entry_platforms_status($pid, $eid);
                     if ($platforms_status['success']) {
                         if (count($platforms_status['platforms_status'])) {
                             array_push($platforms, array('platform' => 'edgecast', 'status' => $platforms_status['platforms_status']['smh']));
@@ -2854,14 +3389,601 @@ class Sn_config_model extends CI_Model {
 
     public function sn_routine() {
         $success = array('success' => false);
-        $check_youtube_entries = $this->check_youtube_entries();
-        if ($check_youtube_entries['success']) {
+        $run_live_routine = $this->run_live_routine();
+        if ($run_live_routine['success']) {
+            $run_vod_routine = $this->run_vod_routine();
+            if ($run_vod_routine['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => $run_vod_routine['message']);
+            }
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function run_live_routine() {
+        $success = array('success' => false);
+        $check_youtube_live_entries = $this->check_youtube_live_entries();
+        if ($check_youtube_live_entries['success']) {
             $check_facebook_livestreams = $this->check_facebook_livestreams();
             if ($check_facebook_livestreams['success']) {
                 $success = array('success' => true);
             } else {
                 $success = array('success' => false);
             }
+        }
+        return $success;
+    }
+
+    public function run_vod_routine() {
+        $success = array('success' => false);
+        $process_pending_uploads = $this->process_pending_completed_uploads();
+        if ($process_pending_uploads['success']) {
+            $process_upload_queue = $this->process_upload_queue();
+            if ($process_upload_queue['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => $process_upload_queue['message']);
+            }
+        }
+        return $success;
+    }
+
+    public function process_pending_completed_uploads() {
+        date_default_timezone_set('America/Los_Angeles');
+        $success = array('success' => false);
+        $uploads = $this->get_uploads();
+        if ($uploads['success']) {
+            if (count($uploads['pending_entries']) > 0) {
+                foreach ($uploads['pending_entries'] as $pending) {
+                    $entry = $this->smportal->get_entry_details($pending['pid'], $pending['eid']);
+                    if ($entry['status'] == 2) {
+                        $this->update_upload_queue_status($pending['pid'], $pending['eid'], $pending['platform'], 'ready');
+                    }
+                }
+            }
+            if (count($uploads['completed_entries']) > 0) {
+                foreach ($uploads['completed_entries'] as $completed) {
+                    $date = strtotime($completed['created_at']);
+                    $dateOneWeekAgo = strtotime("-1 week");
+                    if ($date <= $dateOneWeekAgo) {
+                        $this->removeCompletedQueuedUploadEntry($completed['pid'], $completed['eid']);
+                    }
+                }
+            }
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true);
+        }
+        return $success;
+    }
+
+    public function removeQueuedPlatformUploadEntry($pid, $eid, $platform) {
+        $success = array('success' => false);
+        $this->config->where('partner_id', $pid);
+        $this->config->where('entryId', $eid);
+        $this->config->where('platform', $platform);
+        $this->config->delete('upload_queue');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function removeCompletedQueuedUploadEntry($pid, $eid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id', $pid);
+        $this->config->where('entryId', $eid);
+        $this->config->delete('upload_queue');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function process_upload_queue() {
+        $success = array('success' => false);
+        $currently_uploading = $this->check_if_uploading();
+        if (!$currently_uploading) {
+            $get_ready_upload = $this->get_ready_upload();
+            if (count($get_ready_upload['ready_upload']) > 0) {
+                $entry_details = $this->smportal->get_entry_details($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid']);
+                $entry_path = $this->smportal->get_entry_path($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid']);
+                if ($get_ready_upload['ready_upload']['platform'] == 'youtube') {
+                    $process_youtube_upload_queue = $this->process_youtube_upload_queue($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid'], $get_ready_upload['ready_upload']['projection'], $entry_details, $entry_path);
+                    if ($process_youtube_upload_queue['success']) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false, 'message' => $process_youtube_upload_queue['message']);
+                    }
+                } else if ($get_ready_upload['ready_upload']['platform'] === 'facebook') {
+                    $process_facebook_upload_queue = $this->process_facebook_upload_queue($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid'], $get_ready_upload['ready_upload']['projection'], $entry_details, $entry_path);
+                    if ($process_facebook_upload_queue['success']) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false, 'message' => $process_facebook_upload_queue['message']);
+                    }
+                }
+            } else {
+                $success = array('success' => true);
+            }
+        } else {
+            $success = array('success' => true);
+        }
+
+        return $success;
+    }
+
+    public function getEntryVrSettings($pid, $eid) {
+        $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
+        $vr_settings = json_decode($partnerData['partnerData']);
+        $result = array();
+        $result['vrSettings'] = false;
+        $result['settings'] = array();
+        foreach ($vr_settings as $key => $value) {
+            if ($key == 'vrSettings') {
+                $result['vrSettings'] = true;
+                foreach ($value as $setting) {
+                    $result['settings']['stereo_mode'] = $setting->stereo_mode;
+                }
+            }
+        }
+        return $result;
+    }
+
+    public function process_facebook_upload_queue($pid, $eid, $projection, $entry_details, $entry_path) {
+        $success = array('success' => false);
+        if ($projection == '360') {
+            $entryVrSettings = $this->getEntryVrSettings($pid, $eid);
+            $stereo_mode = '';
+            if ($entryVrSettings['vrSettings']) {
+                $stereo_mode = $entryVrSettings['settings']['stereo_mode'];
+            } else {
+                $stereo_mode = 'none';
+            }
+            ob_start();
+            passthru('/usr/bin/python2.7 /var/www/vhosts/api/application/libraries/spatial-media/spatialmedia -i --stereo ' . $stereo_mode . ' ' . $entry_path['original_path'] . ' ' . $entry_path['threesixty_tmp_path']);
+            ob_get_clean();
+            $video_path = $entry_path['threesixty_tmp_path'];
+        } else {
+            $video_path = $entry_path['original_path'];
+        }
+        $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'uploading', 'pending');
+        if ($update_facebook_upload_status['success']) {
+            $upload_facebook_video = $this->upload_facebook_video($pid, $entry_details, $video_path);
+            if ($upload_facebook_video['success']) {
+                $insert_entry_to_facebook_vod = $this->insert_entry_to_facebook_vod($pid, $eid, $upload_facebook_video['videoId'], $projection);
+                if ($insert_entry_to_facebook_vod['success']) {
+                    $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'completed', $upload_facebook_video['videoId']);
+                    if ($update_facebook_upload_status['success']) {
+                        if ($projection == '360') {
+                            $res = @unlink($entry_path['threesixty_tmp_path']);
+                            if ($res) {
+                                $success = array('success' => true);
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not delete temp 360 file');
+                            }
+                        } else {
+                            $success = array('success' => true);
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => $update_facebook_upload_status['message']);
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not insert entry into Facebook vod');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Could not upload video to Facebook');
+            }
+        } else {
+            $success = array('success' => false, 'message' => $update_facebook_upload_status['message']);
+        }
+        return $success;
+    }
+
+    public function process_youtube_upload_queue($pid, $eid, $projection, $entry_details, $entry_path) {
+        $success = array('success' => false);
+        if ($projection == '360') {
+            $entryVrSettings = $this->getEntryVrSettings($pid, $eid);
+            $stereo_mode = '';
+            if ($entryVrSettings['vrSettings']) {
+                $stereo_mode = $entryVrSettings['settings']['stereo_mode'];
+            } else {
+                $stereo_mode = 'none';
+            }
+            ob_start();
+            passthru('/usr/bin/python2.7 /var/www/vhosts/api/application/libraries/spatial-media/spatialmedia -i --stereo ' . $stereo_mode . ' ' . $entry_path['original_path'] . ' ' . $entry_path['threesixty_tmp_path']);
+            ob_get_clean();
+            $video_path = $entry_path['threesixty_tmp_path'];
+        } else {
+            $video_path = $entry_path['original_path'];
+        }
+        $update_youtube_upload_status = $this->update_platform_upload_status($pid, $eid, 'youtube', 'uploading', 'pending');
+        if ($update_youtube_upload_status['success']) {
+            $upload_youtube_video = $this->upload_youtube_video($pid, $entry_details, $video_path);
+            if ($upload_youtube_video['success']) {
+                $insert_entry_to_youtube_vod = $this->insert_entry_to_youtube_vod($pid, $eid, $upload_youtube_video['videoId'], $projection);
+                if ($insert_entry_to_youtube_vod['success']) {
+                    $update_youtube_upload_status = $this->update_platform_upload_status($pid, $eid, 'youtube', 'completed', $upload_youtube_video['videoId']);
+                    if ($update_youtube_upload_status['success']) {
+                        if ($projection == '360') {
+                            $res = @unlink($entry_path['threesixty_tmp_path']);
+                            if ($res) {
+                                $success = array('success' => true);
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not delete temp 360 file');
+                            }
+                        } else {
+                            $success = array('success' => true);
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => $update_youtube_upload_status['message']);
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not insert entry into YouTube vod');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Could not upload video to YouTube');
+            }
+        } else {
+            $success = array('success' => false, 'message' => $update_youtube_upload_status['message']);
+        }
+        return $success;
+    }
+
+    public function update_platform_upload_status($pid, $eid, $sn_platform, $upload_status, $videoId) {
+        $config = array();
+        $vr = array();
+        $vr['vrSettings'] = false;
+        $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
+        $vod_platforms = $this->get_vod_platforms(json_decode($partnerData['partnerData']));
+        foreach ($vod_platforms['platforms'] as $platform) {
+            if ($platform['platform'] !== $sn_platform) {
+                if ($platform['status']) {
+                    $platform_config = $this->create_vod_sn_config($platform['platform'], true, $platform['upload_status'], $platform['videoId']);
+                    array_push($config, $platform_config['config']);
+                } else {
+                    $platform_config = $this->create_vod_sn_config($platform['platform'], false, null, null);
+                    array_push($config, $platform_config['config']);
+                }
+            }
+        }
+        $create_config = $this->create_vod_sn_config($sn_platform, true, $upload_status, $videoId);
+        array_push($config, $create_config['config']);
+
+        $partnerData = $this->update_sn_partnerData($pid, $eid, $config, $vr);
+        if ($partnerData['success']) {
+            $update_upload_queue_status = $this->update_upload_queue_status($pid, $eid, $sn_platform, $upload_status);
+            if ($update_upload_queue_status['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Could not update upload status');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Could not update entry partnerData');
+        }
+
+        return $success;
+    }
+
+    public function update_sn_vod_config($pid, $ks, $eid, $snConfig, $projection, $stereo_mode) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $platforms = json_decode($snConfig, true);
+                $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
+                $vod_platforms = $this->get_vod_platforms(json_decode($partnerData['partnerData']));
+                $youtube_status = false;
+                $facebook_status = false;
+                $config = array();
+                $vr = array();
+                $vr['vrSettings'] = false;
+                foreach ($platforms['platforms'] as $platform) {
+                    if ($platform['platform'] == 'facebook') {
+                        if ($platform['status']) {
+                            $facebook_status = true;
+                        }
+                    } else if ($platform['platform'] == 'youtube') {
+                        if ($platform['status']) {
+                            $youtube_status = true;
+                        }
+                    }
+                }
+
+                $facebook_config = $this->process_facebook_vod_config($pid, $eid, $projection, $facebook_status, $vod_platforms);
+                array_push($config, $facebook_config);
+
+                $youtube_config = $this->process_youtube_vod_config($pid, $eid, $projection, $youtube_status, $vod_platforms);
+                array_push($config, $youtube_config);
+
+                if ($stereo_mode != '') {
+                    $vr['vrSettings'] = true;
+                    $vr['settings'] = array();
+                    $settings = array('stereo_mode' => $stereo_mode);
+                    array_push($vr['settings'], $settings);
+                }
+
+                $partnerData = $this->update_sn_partnerData($pid, $eid, $config, $vr);
+                if ($partnerData['success']) {
+                    $success = array('success' => true);
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not update entry partnerData');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Social network service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+
+        return $success;
+    }
+
+    public function process_facebook_vod_config($pid, $eid, $projection, $facebook_status, $vod_platforms) {
+        $config = array();
+        if (count($vod_platforms['platforms']) > 0) {
+            $current_facebook_status = '';
+            $current_facebook_upload_status = '';
+            $current_facebook_videoId = '';
+            foreach ($vod_platforms['platforms'] as $platform) {
+                if ($platform['platform'] == 'facebook') {
+                    $current_facebook_status = $platform['status'];
+                    $current_facebook_upload_status = $platform['upload_status'];
+                    $current_facebook_videoId = $platform['videoId'];
+                }
+            }
+            $facebook_upload_exists = $this->check_if_upload_queue_exists($pid, $eid, 'facebook');
+            $facebook_vod_exists = $this->check_if_facebook_vod_exists($pid, $eid);
+            if ($facebook_status) {
+                if (!$facebook_upload_exists && !$facebook_vod_exists) {
+                    $facebook_config = $this->create_vod_sn_config('facebook', $facebook_status, 'ready', 'pending');
+                    array_push($config, $facebook_config['config']);
+                    $this->insert_video_to_upload_queue($pid, $eid, $projection, 'facebook', 'ready');
+                } else {
+                    $facebook_config = $this->create_vod_sn_config('facebook', $current_facebook_status, $current_facebook_upload_status, $current_facebook_videoId);
+                    array_push($config, $facebook_config['config']);
+                }
+            } else if (!$facebook_status) {
+                $is_uploading = $this->check_if_platform_uploading($eid, 'facebook');
+                if ($is_uploading) {
+                    $facebook_config = $this->create_vod_sn_config('facebook', $current_facebook_status, $current_facebook_upload_status, $current_facebook_videoId);
+                    array_push($config, $facebook_config['config']);
+                } else {
+                    if ($facebook_upload_exists) {
+                        $this->removeQueuedPlatformUploadEntry($pid, $eid, 'facebook');
+                    }
+                    if ($facebook_vod_exists) {
+                        $facebook_video = $this->get_facebook_vod_id($pid, $eid);
+                        $remove_facebook_video = $this->remove_facebook_video($pid, $facebook_video['videoId']);
+                        if ($remove_facebook_video['success']) {
+                            $this->remove_db_facebook_vod_entry($pid, $eid);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not delete Facebook video');
+                        }
+                    }
+                    $facebook_config = $this->create_vod_sn_config('facebook', $facebook_status, null, null);
+                    array_push($config, $facebook_config['config']);
+                }
+            }
+        } else {
+            if ($facebook_status) {
+                $facebook_config = $this->create_vod_sn_config('facebook', $facebook_status, 'ready', 'pending');
+                array_push($config, $facebook_config['config']);
+                $this->insert_video_to_upload_queue($pid, $eid, $projection, 'facebook', 'ready');
+            } else if (!$facebook_status) {
+                $facebook_config = $this->create_vod_sn_config('facebook', $facebook_status, null, null);
+                array_push($config, $facebook_config['config']);
+            }
+        }
+
+        return $config[0];
+    }
+
+    public function process_youtube_vod_config($pid, $eid, $projection, $youtube_status, $vod_platforms) {
+        $config = array();
+        if (count($vod_platforms['platforms']) > 0) {
+            $current_youtube_status = '';
+            $current_youtube_upload_status = '';
+            $current_youtube_videoId = '';
+            foreach ($vod_platforms['platforms'] as $platform) {
+                if ($platform['platform'] == 'youtube') {
+                    $current_youtube_status = $platform['status'];
+                    $current_youtube_upload_status = $platform['upload_status'];
+                    $current_youtube_videoId = $platform['videoId'];
+                }
+            }
+            $youtube_upload_exists = $this->check_if_upload_queue_exists($pid, $eid, 'youtube');
+            $youtube_vod_exists = $this->check_if_youtube_vod_exists($pid, $eid);
+            if ($youtube_status) {
+                if (!$youtube_upload_exists && !$youtube_vod_exists) {
+                    $youtube_config = $this->create_vod_sn_config('youtube', $youtube_status, 'ready', 'pending');
+                    array_push($config, $youtube_config['config']);
+                    $this->insert_video_to_upload_queue($pid, $eid, $projection, 'youtube', 'ready');
+                } else {
+                    $youtube_config = $this->create_vod_sn_config('youtube', $current_youtube_status, $current_youtube_upload_status, $current_youtube_videoId);
+                    array_push($config, $youtube_config['config']);
+                }
+            } else if (!$youtube_status) {
+                $is_uploading = $this->check_if_platform_uploading($eid, 'youtube');
+                if ($is_uploading) {
+                    $youtube_config = $this->create_vod_sn_config('youtube', $current_youtube_status, $current_youtube_upload_status, $current_youtube_videoId);
+                    array_push($config, $youtube_config['config']);
+                } else {
+                    if ($youtube_upload_exists) {
+                        $this->removeQueuedPlatformUploadEntry($pid, $eid, 'youtube');
+                    }
+                    if ($youtube_vod_exists) {
+                        $youtube_video = $this->get_youtube_vod_id($pid, $eid);
+                        $remove_youtube_video = $this->remove_youtube_video($pid, $youtube_video['videoId']);
+                        if ($remove_youtube_video['success']) {
+                            $this->remove_db_youtube_vod_entry($pid, $eid);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not delete YouTube video');
+                        }
+                    }
+                    $youtube_config = $this->create_vod_sn_config('youtube', $youtube_status, null, null);
+                    array_push($config, $youtube_config['config']);
+                }
+            }
+        } else {
+            if ($youtube_status) {
+                $youtube_config = $this->create_vod_sn_config('youtube', $youtube_status, 'ready', 'pending');
+                array_push($config, $youtube_config['config']);
+                $this->insert_video_to_upload_queue($pid, $eid, $projection, 'youtube', 'ready');
+            } else if (!$youtube_status) {
+                $youtube_config = $this->create_vod_sn_config('youtube', $youtube_status, null, null);
+                array_push($config, $youtube_config['config']);
+            }
+        }
+        return $config[0];
+    }
+
+    public function create_vod_sn_config($platform, $status, $upload_status, $video_id) {
+        $config = array();
+        if ($status) {
+            $config = array('platform' => $platform, 'status' => $status, "upload_status" => $upload_status, 'videoId' => $video_id);
+        } else {
+            $config = array('platform' => $platform, 'status' => $status);
+        }
+        $success = array('success' => true, 'config' => $config);
+        return $success;
+    }
+
+    public function create_live_sn_config($platform, $status, $live_id) {
+        $config = array();
+        if ($status && $live_id) {
+            $config = array('platform' => $platform, 'status' => $status, 'liveId' => $live_id);
+        } else if ($status && !$live_id) {
+            $config = array('platform' => $platform, 'status' => $status);
+        } else {
+            $config = array('platform' => $platform, 'status' => $status);
+        }
+        $success = array('success' => true, 'config' => $config);
+        return $success;
+    }
+
+    public function insert_entry_to_youtube_vod($pid, $eid, $vid, $projection) {
+        $success = array('success' => false);
+        $data = array(
+            'partner_id' => $pid,
+            'entryId' => $eid,
+            'videoId' => $vid,
+            'projection' => $projection,
+            'created_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->insert('youtube_vod_entries', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function insert_entry_to_facebook_vod($pid, $eid, $vid, $projection) {
+        $success = array('success' => false);
+        $data = array(
+            'partner_id' => $pid,
+            'entryId' => $eid,
+            'videoId' => $vid,
+            'projection' => $projection,
+            'created_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->insert('facebook_vod_entries', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function update_upload_queue_status($pid, $eid, $platform, $status) {
+        $success = array('success' => false);
+        $data = array(
+            'status' => $status,
+            'updated_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->where('partner_id', $pid);
+        $this->config->where('entryId', $eid);
+        $this->config->where('platform', $platform);
+        $this->config->update('upload_queue', $data);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'notice' => 'no changes were made');
+        }
+        return $success;
+    }
+
+    public function get_ready_upload() {
+        $success = array('success' => false);
+        $ready = array();
+        $this->config->select('*')
+                ->from('upload_queue')
+                ->where('status', 'ready')
+                ->order_by("id", "asc")
+                ->limit(1);
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $pid = $res['partner_id'];
+                $eid = $res['entryId'];
+                $projection = $res['projection'];
+                $platform = $res['platform'];
+            }
+            $ready['pid'] = $pid;
+            $ready['eid'] = $eid;
+            $ready['platform'] = $platform;
+            $ready['projection'] = $projection;
+            $success = array('success' => true, 'ready_upload' => $ready);
+        } else {
+            $success = array('success' => false);
+        }
+
+        return $success;
+    }
+
+    public function get_uploads() {
+        $success = array('success' => false);
+        $pending = array();
+        $completed = array();
+        $this->config->select('*')
+                ->from('upload_queue');
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $pid = $res['partner_id'];
+                $eid = $res['entryId'];
+                $projection = $res['projection'];
+                $platform = $res['platform'];
+                $status = $res['status'];
+                $created_at = $res['created_at'];
+                if ($status == 'pending') {
+                    array_push($pending, array('pid' => $pid, 'eid' => $eid, 'projection' => $projection, 'platform' => $platform));
+                } else if ($status == 'completed') {
+                    array_push($completed, array('pid' => $pid, 'eid' => $eid, 'projection' => $projection, 'platform' => $platform, 'created_at' => $created_at));
+                }
+            }
+            $success = array('success' => true, 'pending_entries' => $pending, 'completed_entries' => $completed);
+        } else {
+            $success = array('success' => false);
         }
         return $success;
     }
@@ -2889,9 +4011,9 @@ class Sn_config_model extends CI_Model {
         foreach ($livestreams as $livestream) {
             $date = strtotime($livestream['date']);
             if ($date <= $dateTwentyThreeHoursAgo) {
-                $get_user_settings = $this->get_facebook_user_settings($livestream['pid']);
+                $get_user_settings = $this->get_facebook_publish_settings($livestream['pid']);
                 if ($get_user_settings['success']) {
-                    $create_new_livestream = $this->create_new_fb_livestream($livestream['pid'], $get_user_settings['userSettings'][0]['stream_to'], $get_user_settings['userSettings'][0]['asset_id'], $get_user_settings['userSettings'][0]['privacy'], $get_user_settings['userSettings'][0]['create_vod'], $get_user_settings['userSettings'][0]['cont_streaming'], $get_user_settings['userSettings'][0]['projection']);
+                    $create_new_livestream = $this->create_new_fb_livestream($livestream['pid'], $get_user_settings['userSettings'][0]['publish_to'], $get_user_settings['userSettings'][0]['asset_id'], $get_user_settings['userSettings'][0]['privacy'], $get_user_settings['userSettings'][0]['create_vod'], $get_user_settings['userSettings'][0]['cont_streaming'], $get_user_settings['userSettings'][0]['projection']);
                     if ($create_new_livestream['success']) {
                         $success = array('success' => true);
                     } else {
@@ -2935,7 +4057,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function check_youtube_entries() {
+    public function check_youtube_live_entries() {
         $success = array('success' => false);
         $entries = $this->get_youtube_entries();
         if ($entries['success']) {
@@ -3039,7 +4161,6 @@ class Sn_config_model extends CI_Model {
     public function get_youtube_entries() {
         $success = array('success' => false);
         $ready = array();
-        $testing = array();
         $complete = array();
         $this->config->select('*')
                 ->from('youtube_live_entries');
@@ -3051,11 +4172,11 @@ class Sn_config_model extends CI_Model {
                 $pid = $res['partner_id'];
                 $eid = $res['entryId'];
                 $status = $res['status'];
-            }
-            if ($status == 'ready') {
-                array_push($ready, array('pid' => $pid, 'eid' => $eid, 'status' => $status));
-            } else if ($status == 'complete') {
-                array_push($complete, array('pid' => $pid, 'eid' => $eid, 'status' => $status));
+                if ($status == 'ready') {
+                    array_push($ready, array('pid' => $pid, 'eid' => $eid, 'status' => $status));
+                } else if ($status == 'complete') {
+                    array_push($complete, array('pid' => $pid, 'eid' => $eid, 'status' => $status));
+                }
             }
             $success = array('success' => true, 'ready_entries' => $ready, 'complete_entries' => $complete);
         } else {
@@ -3117,9 +4238,9 @@ class Sn_config_model extends CI_Model {
                 }
             }
             if ($is_facebook_live) {
-                $get_user_settings = $this->get_facebook_user_settings($pid);
+                $get_user_settings = $this->get_facebook_publish_settings($pid);
                 if ($get_user_settings['success']) {
-                    $create_new_livestream = $this->create_new_fb_livestream($pid, $get_user_settings['userSettings'][0]['stream_to'], $get_user_settings['userSettings'][0]['asset_id'], $get_user_settings['userSettings'][0]['privacy'], $get_user_settings['userSettings'][0]['create_vod'], $get_user_settings['userSettings'][0]['cont_streaming'], $get_user_settings['userSettings'][0]['projection']);
+                    $create_new_livestream = $this->create_new_fb_livestream($pid, $get_user_settings['userSettings'][0]['publish_to'], $get_user_settings['userSettings'][0]['asset_id'], $get_user_settings['userSettings'][0]['privacy'], $get_user_settings['userSettings'][0]['create_vod'], $get_user_settings['userSettings'][0]['cont_streaming'], $get_user_settings['userSettings'][0]['projection']);
                     if ($create_new_livestream['success']) {
                         $success = array('success' => true);
                     } else {
@@ -3136,10 +4257,10 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function get_facebook_user_settings($pid) {
+    public function get_facebook_publish_settings($pid) {
         $success = array('success' => false);
         $this->config->select('*')
-                ->from('facebook_user_settings')
+                ->from('facebook_publish_settings')
                 ->where('partner_id', $pid);
 
         $query = $this->config->get();
@@ -3147,14 +4268,15 @@ class Sn_config_model extends CI_Model {
         if ($query->num_rows() > 0) {
             $userSettings = array();
             foreach ($result as $res) {
-                $stream_to = $res['stream_to'];
+                $publish_to = $res['publish_to'];
                 $asset_id = $res['asset_Id'];
                 $privacy = $res['privacy'];
                 $create_vod = ($res['create_vod']) ? 'true' : 'false';
                 $cont_streaming = ($res['cont_streaming']) ? 'true' : 'false';
+                $auto_upload = ($res['auto_upload']) ? true : false;
                 $projection = $res['projection'];
             }
-            array_push($userSettings, array('asset_id' => $asset_id, 'stream_to' => $stream_to, 'privacy' => $privacy, 'create_vod' => $create_vod, 'cont_streaming' => $cont_streaming, 'projection' => $projection));
+            array_push($userSettings, array('asset_id' => $asset_id, 'publish_to' => $publish_to, 'privacy' => $privacy, 'create_vod' => $create_vod, 'cont_streaming' => $cont_streaming, 'auto_upload' => $auto_upload, 'projection' => $projection));
             $success = array('success' => true, 'userSettings' => $userSettings);
         } else {
             $success = array('success' => false);
@@ -3162,11 +4284,11 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function create_new_fb_livestream($pid, $stream_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
+    public function create_new_fb_livestream($pid, $publish_to, $asset_id, $privacy, $create_vod, $cont_streaming, $projection) {
         $success = array('success' => false);
         $access_token = $this->validate_facebook_token($pid);
         if ($access_token['success']) {
-            $get_asset = $this->get_asset($pid, $stream_to, $asset_id, $access_token['access_token']);
+            $get_asset = $this->get_asset($pid, $publish_to, $asset_id, $access_token['access_token']);
             if ($get_asset['success']) {
                 $livestream = $this->facebook_client_api->createLiveStream($get_asset['asset'], $privacy, $create_vod, $cont_streaming, $projection);
                 if ($livestream['success']) {
@@ -3206,23 +4328,16 @@ class Sn_config_model extends CI_Model {
                         if ($createNewBroadCast['success']) {
                             $updateBid = $this->update_youtube_live_event_bid($pid, $eid, $createNewBroadCast['liveBroadcastId']);
                             if ($updateBid['success']) {
-                                $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
-                                if ($partnerData['success']) {
-                                    $platforms = $this->getPlatforms(json_decode($partnerData['partnerData']));
-                                    $updated_config = $this->insert_into_sn_config($createNewBroadCast['liveBroadcastId'], null, $platforms['platforms']);
-                                    $partnerData = $this->update_sn_partnerData($pid, $eid, $updated_config['sn_config']);
-                                    if ($partnerData['success']) {
-                                        $update_embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
-                                        if ($update_embed_status['success']) {
-                                            $success = array('success' => true);
-                                        } else {
-                                            $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
-                                        }
+                                $update_sn_live_config = $this->update_sn_live_config($pid, $eid, 'youtube_live', true, $createNewBroadCast['liveBroadcastId']);
+                                if ($update_sn_live_config['success']) {
+                                    $add_youtube_emebed_status = $this->add_youtube_emebed_status($pid, $youtube_embed);
+                                    if ($add_youtube_emebed_status['success']) {
+                                        $success = array('success' => true);
                                     } else {
-                                        $success = array('success' => false, 'message' => 'Could not update entry partnerData');
+                                        $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
                                     }
                                 } else {
-                                    $success = array('success' => false, 'message' => 'Could not get partnerData');
+                                    $success = array('success' => false, 'message' => 'Could not update live configuration');
                                 }
                             } else {
                                 $success = array('success' => false, 'message' => 'Could not update liveBroadcastId');
@@ -3233,23 +4348,16 @@ class Sn_config_model extends CI_Model {
                             if ($createNewBroadCast['success']) {
                                 $updateBid = $this->update_youtube_live_event_bid($pid, $eid, $createNewBroadCast['liveBroadcastId']);
                                 if ($updateBid['success']) {
-                                    $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
-                                    if ($partnerData['success']) {
-                                        $platforms = $this->getPlatforms(json_decode($partnerData['partnerData']));
-                                        $updated_config = $this->insert_into_sn_config($createNewBroadCast['liveBroadcastId'], null, $platforms['platforms']);
-                                        $partnerData = $this->update_sn_partnerData($pid, $eid, $updated_config['sn_config']);
-                                        if ($partnerData['success']) {
-                                            $update_embed_status = $this->update_youtube_embed_status($pid, $youtube_embed);
-                                            if ($update_embed_status['success']) {
-                                                $success = array('success' => true);
-                                            } else {
-                                                $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
-                                            }
+                                    $update_sn_live_config = $this->update_sn_live_config($pid, $eid, 'youtube_live', true, $createNewBroadCast['liveBroadcastId']);
+                                    if ($update_sn_live_config['success']) {
+                                        $add_youtube_emebed_status = $this->add_youtube_emebed_status($pid, $youtube_embed);
+                                        if ($add_youtube_emebed_status['success']) {
+                                            $success = array('success' => true);
                                         } else {
-                                            $success = array('success' => false, 'message' => 'Could not update entry partnerData');
+                                            $success = array('success' => false, 'message' => 'Could not update YouTube embed status');
                                         }
                                     } else {
-                                        $success = array('success' => false, 'message' => 'Could not get partnerData');
+                                        $success = array('success' => false, 'message' => 'Could not update live configuration');
                                     }
                                 } else {
                                     $success = array('success' => false, 'message' => 'Could not update liveBroadcastId');
@@ -3262,18 +4370,11 @@ class Sn_config_model extends CI_Model {
                             if ($removeLiveStream['success']) {
                                 $removeLiveEvent = $this->removeLiveEvent($pid, $eid);
                                 if ($removeLiveEvent['success']) {
-                                    $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
-                                    if ($partnerData['success']) {
-                                        $platforms = $this->getPlatforms(json_decode($partnerData['partnerData']));
-                                        $update_sn_config = $this->set_youtube_config_false($platforms['platforms']);
-                                        $partnerData = $this->update_sn_partnerData($pid, $eid, $update_sn_config['sn_config']);
-                                        if ($partnerData['success']) {
-                                            $success = array('success' => true);
-                                        } else {
-                                            $success = array('success' => false, 'message' => 'Could not update entry partnerData');
-                                        }
+                                    $update_sn_live_config = $this->update_sn_live_config($pid, $eid, 'youtube_live', false, null);
+                                    if ($update_sn_live_config['success']) {
+                                        $success = array('success' => true);
                                     } else {
-                                        $success = array('success' => false, 'message' => 'Could not get entry partnerData');
+                                        $success = array('success' => false, 'message' => 'Could not update live configuration');
                                     }
                                 } else {
                                     $success = array('success' => false, 'message' => 'Could not remove live event');
@@ -3305,6 +4406,74 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function update_sn_live_config($pid, $eid, $sn_platform, $sn_status, $liveId) {
+        $config = array();
+        $vr = array();
+        $vr['vrSettings'] = false;
+        $partnerData = $this->smportal->get_entry_partnerData($pid, $eid);
+        $live_platforms = $this->get_live_platforms(json_decode($partnerData['partnerData']));
+        foreach ($live_platforms['platforms'] as $platform) {
+            if ($platform['platform'] !== $sn_platform) {
+                if ($platform['status']) {
+                    if ($platform['liveId']) {
+                        $platform_config = $this->create_live_sn_config($platform['platform'], true, $platform['liveId']);
+                        array_push($config, $platform_config['config']);
+                    } else {
+                        $platform_config = $this->create_live_sn_config($platform['platform'], true, null);
+                        array_push($config, $platform_config['config']);
+                    }
+                } else {
+                    $platform_config = $this->create_vod_sn_config($platform['platform'], false, null);
+                    array_push($config, $platform_config['config']);
+                }
+            }
+        }
+        $create_config = $this->create_live_sn_config($sn_platform, $sn_status, $liveId);
+        array_push($config, $create_config['config']);
+
+        $partnerData = $this->update_sn_partnerData($pid, $eid, $config, $vr);
+        if ($partnerData['success']) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false, 'message' => 'Could not update entry partnerData');
+        }
+
+        return $success;
+    }
+
+    public function resync_yt_account($pid, $ks) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $access_token = $this->validate_youtube_token($pid);
+                if ($access_token['success']) {
+                    $channel = $this->retrieve_youtube_channel_details($pid, $access_token['access_token']);
+                    if ($channel['success']) {
+                        $update_youtube_channel_details = $this->update_youtube_channel_details($pid, $channel['channel_details']['channel_title'], $channel['channel_details']['channel_thumb']);
+                        if ($update_youtube_channel_details['success']) {
+                            $channel_details = array('channel_name' => $channel['channel_details']['channel_title'], 'channel_thumbnail' => $channel['channel_details']['channel_thumb']);
+                            $success = array('success' => true, 'channel_details' => $channel_details);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not insert channel details');
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not get channel details');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'YouTube: invalid access token');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Social network service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+
+        return $success;
+    }
+
     public function resync_fb_account($pid, $ks) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
@@ -3313,25 +4482,25 @@ class Sn_config_model extends CI_Model {
             if ($has_service) {
                 $access_token = $this->validate_facebook_token($pid);
                 $found_settings = false;
-                $stream_to = 0;
+                $publish_to = 0;
                 if ($access_token['success']) {
-                    $get_fb_settings = $this->get_fb_settings($pid);
-                    if ($get_fb_settings['success']) {
+                    $get_fb_publish_settings = $this->get_fb_publish_settings($pid);
+                    if ($get_fb_publish_settings['success']) {
                         $found_settings = true;
                     }
                     if ($found_settings) {
-                        $stream_to = $get_fb_settings['settings'][0]['stream_to'];
-                        $asset_id = $get_fb_settings['settings'][0]['asset_id'];
+                        $publish_to = $get_fb_publish_settings['settings'][0]['publish_to'];
+                        $asset_id = $get_fb_publish_settings['settings'][0]['asset_id'];
                         $page_found = false;
                         $group_found = false;
                         $event_found = false;
-                        if ($stream_to == 2) {
+                        if ($publish_to == 2) {
                             $get_fb_page = $this->get_fb_page($pid, $asset_id);
                             $page_id = $get_fb_page['page_id'];
-                        } else if ($stream_to == 3) {
+                        } else if ($publish_to == 3) {
                             $get_fb_group = $this->get_fb_group($pid, $asset_id);
                             $group_id = $get_fb_group['group_id'];
-                        } else if ($stream_to == 4) {
+                        } else if ($publish_to == 4) {
                             $get_fb_event = $this->get_fb_event($pid, $asset_id);
                             $event_id = $get_fb_event['event_id'];
                         }
@@ -3340,7 +4509,8 @@ class Sn_config_model extends CI_Model {
                     $get_user_details = $this->facebook_client_api->get_user_details($access_token['access_token']);
                     $user_name = $get_user_details['user_name'];
                     $user_id = $get_user_details['user_id'];
-                    $user = array('user_id' => $user_id, 'user_name' => $user_name, 'access_token' => $access_token['access_token']);
+                    $account_pic = $this->facebook_client_api->get_account_pic($access_token['access_token'], $user_id);
+                    $user = array('user_id' => $user_id, 'user_name' => $user_name, 'user_thumbnail' => $account_pic['user_pic'], 'access_token' => $access_token['access_token']);
                     $update_facebook_profile = $this->update_facebook_profile($pid, $user);
 
                     $get_pages_details = $this->facebook_client_api->get_pages_details($access_token['access_token'], $user_id);
@@ -3355,7 +4525,7 @@ class Sn_config_model extends CI_Model {
                     } else {
                         $insert_facebook_pages = $this->insert_facebook_pages($pid, $pages);
                     }
-                    if ($stream_to == 2) {
+                    if ($publish_to == 2) {
                         if (count($pages) > 0) {
                             foreach ($pages as $page) {
                                 if ($page_id == $page['page_id']) {
@@ -3365,7 +4535,7 @@ class Sn_config_model extends CI_Model {
                             if ($page_found) {
                                 $get_fb_page_asset_id = $this->get_fb_page_asset_id($pid, $page_id);
                                 $new_page_asset_id = $get_fb_page_asset_id['id'];
-                                $this->update_fb_settings_asset_id($pid, $new_page_asset_id);
+                                $this->update_fb_publish_settings_asset_id($pid, $new_page_asset_id);
                             }
                         }
                     }
@@ -3382,7 +4552,7 @@ class Sn_config_model extends CI_Model {
                     } else {
                         $insert_facebook_groups = $this->insert_facebook_groups($pid, $groups);
                     }
-                    if ($stream_to == 3) {
+                    if ($publish_to == 3) {
                         if (count($groups) > 0) {
                             foreach ($groups as $group) {
                                 if ($group_id == $group['group_id']) {
@@ -3392,7 +4562,7 @@ class Sn_config_model extends CI_Model {
                             if ($group_found) {
                                 $get_fb_group_asset_id = $this->get_fb_group_asset_id($pid, $group_id);
                                 $new_group_asset_id = $get_fb_group_asset_id['id'];
-                                $this->update_fb_settings_asset_id($pid, $new_group_asset_id);
+                                $this->update_fb_publish_settings_asset_id($pid, $new_group_asset_id);
                             }
                         }
                     }
@@ -3409,7 +4579,7 @@ class Sn_config_model extends CI_Model {
                     } else {
                         $insert_facebook_events = $this->insert_facebook_events($pid, $events);
                     }
-                    if ($stream_to == 4) {
+                    if ($publish_to == 4) {
                         if (count($events) > 0) {
                             foreach ($events as $event) {
                                 if ($event_id == $event['event_id']) {
@@ -3419,18 +4589,19 @@ class Sn_config_model extends CI_Model {
                             if ($event_found) {
                                 $get_fb_event_asset_id = $this->get_fb_event_asset_id($pid, $event_id);
                                 $new_event_asset_id = $get_fb_event_asset_id['id'];
-                                $this->update_fb_settings_asset_id($pid, $new_event_asset_id);
+                                $this->update_fb_publish_settings_asset_id($pid, $new_event_asset_id);
                             }
                         }
                     }
 
-                    if (($stream_to == 2 || $stream_to == 3 || $stream_to == 4) && (!$page_found && !$group_found && !$event_found)) {
-                        $remove_fb_settings = $this->remove_fb_settings($pid);
-                        if ($remove_fb_settings['success']) {
+                    if (($publish_to == 2 || $publish_to == 3 || $publish_to == 4) && (!$page_found && !$group_found && !$event_found)) {
+                        $profile_details = array('user_name' => $user_name, 'user_thumbnail' => $account_pic['user_pic']);
+                        $remove_fb_publish_settings = $this->remove_fb_publish_settings($pid);
+                        if ($remove_fb_publish_settings['success']) {
                             $remove_livestream = $this->remove_fb_livestream($pid);
                             if ($remove_livestream['success']) {
                                 $livestream_settings = $this->get_fb_ls_settings($pid);
-                                $success = array('success' => true, 'stream_to' => $livestream_settings['stream_to'], 'settings' => $livestream_settings['settings']);
+                                $success = array('success' => true, 'publish_to' => $livestream_settings['publish_to'], 'settings' => $livestream_settings['settings'], 'profile_details' => $profile_details);
                             } else {
                                 $success = array('success' => false, 'message' => 'Could not remove facebook user livestream');
                             }
@@ -3438,8 +4609,9 @@ class Sn_config_model extends CI_Model {
                             $success = array('success' => false);
                         }
                     } else {
+                        $profile_details = array('user_name' => $user_name, 'user_thumbnail' => $account_pic['user_pic']);
                         $livestream_settings = $this->get_fb_ls_settings($pid);
-                        $success = array('success' => true, 'stream_to' => $livestream_settings['stream_to'], 'settings' => $livestream_settings['settings']);
+                        $success = array('success' => true, 'publish_to' => $livestream_settings['publish_to'], 'settings' => $livestream_settings['settings'], 'profile_details' => $profile_details);
                     }
                 } else {
                     $success = array('success' => false, 'message' => 'Facebook: invalid access token');
@@ -3449,6 +4621,248 @@ class Sn_config_model extends CI_Model {
             }
         } else {
             $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+        return $success;
+    }
+
+    public function add_to_upload_queue($pid, $eid) {
+        $vr = array();
+        $vr['vrSettings'] = false;
+        $has_service = $this->verify_service($pid);
+        if ($has_service) {
+            $config = array();
+            $get_auto_upload_statuses = $this->get_auto_upload_statuses($pid);
+
+            $youtube_to_upload_queue = $this->add_youtube_to_upload_queue($pid, $eid, $get_auto_upload_statuses);
+            array_push($config, $youtube_to_upload_queue);
+
+            $facebook_to_upload_queue = $this->add_facebook_to_upload_queue($pid, $eid, $get_auto_upload_statuses);
+            array_push($config, $facebook_to_upload_queue);
+
+            $partnerData = $this->update_sn_partnerData($pid, $eid, $config, $vr);
+            if ($partnerData['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Could not update entry partnerData');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Social network service not active');
+        }
+        return $success;
+    }
+
+    public function add_youtube_to_upload_queue($pid, $eid, $youtube_upload_status) {
+        $config = array();
+        $youtube_status = (isset($youtube_upload_status['auto_upload']['youtube'])) ? true : false;
+        if ($youtube_status) {
+            $youtube_auto_upload_status = $youtube_upload_status['auto_upload']['youtube'];
+            if ($youtube_auto_upload_status) {
+                $insert_video_to_upload_queue = $this->insert_video_to_upload_queue($pid, $eid, $youtube_upload_status['auto_upload']['youtube_projection'], 'youtube', 'pending');
+                if ($insert_video_to_upload_queue['success']) {
+                    $youtube_config = $this->create_vod_sn_config('youtube', true, 'pending', 'pending');
+                    array_push($config, $youtube_config['config']);
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not insert into upload queue');
+                }
+            } else {
+                $youtube_config = $this->create_vod_sn_config('youtube', false, null, null);
+                array_push($config, $youtube_config['config']);
+            }
+        } else {
+            $youtube_config = $this->create_vod_sn_config('youtube', false, null, null);
+            array_push($config, $youtube_config['config']);
+        }
+        return $config[0];
+    }
+
+    public function add_facebook_to_upload_queue($pid, $eid, $facebook_upload_status) {
+        $config = array();
+        $facebook_status = (isset($facebook_upload_status['auto_upload']['facebook'])) ? true : false;
+        if ($facebook_status) {
+            $facebook_auto_upload_status = $facebook_upload_status['auto_upload']['facebook'];
+            if ($facebook_auto_upload_status) {
+                $insert_video_to_upload_queue = $this->insert_video_to_upload_queue($pid, $eid, $facebook_upload_status['auto_upload']['facebook_projection'], 'facebook', 'pending');
+                if ($insert_video_to_upload_queue['success']) {
+                    $facebook_config = $this->create_vod_sn_config('facebook', true, 'pending', 'pending');
+                    array_push($config, $facebook_config['config']);
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not insert into upload queue');
+                }
+            } else {
+                $facebook_config = $this->create_vod_sn_config('facebook', false, null, null);
+                array_push($config, $facebook_config['config']);
+            }
+        } else {
+            $facebook_config = $this->create_vod_sn_config('facebook', false, null, null);
+            array_push($config, $facebook_config['config']);
+        }
+        return $config[0];
+    }
+
+    public function get_auto_upload_statuses($pid) {
+        $success = array('success' => false);
+        $statuses = array();
+        $youtube_status = $this->get_youtube_status($pid);
+        $facebook_status = $this->get_facebook_status($pid);
+        if ($youtube_status['status']) {
+            $youtube = $this->get_yt_settings($pid);
+            if ($youtube['success']) {
+                $statuses['youtube'] = $youtube['auto_upload'];
+                $statuses['youtube_projection'] = $youtube['projection'];
+            }
+        }
+        if ($facebook_status['status']) {
+            $facebook = $this->get_facebook_publish_settings($pid);
+            if ($facebook['success']) {
+                $statuses['facebook'] = $facebook['userSettings'][0]['auto_upload'];
+                $statuses['facebook_projection'] = $facebook['userSettings'][0]['projection'];
+            }
+        }
+        $success = array('success' => true, 'auto_upload' => $statuses);
+
+        return $success;
+    }
+
+    public function insert_video_to_upload_queue($pid, $eid, $projection, $platform, $status) {
+        $success = array('success' => false);
+        $data = array(
+            'partner_id' => $pid,
+            'entryId' => $eid,
+            'projection' => $projection,
+            'platform' => $platform,
+            'status' => $status,
+            'created_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->insert('upload_queue', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function check_if_upload_queue_exists($pid, $eid, $platform) {
+        $success = false;
+        $this->config->select('*')
+                ->from('upload_queue')
+                ->where('partner_id', $pid)
+                ->where('entryId', $eid)
+                ->where('platform', $platform);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
+        return $success;
+    }
+
+    public function check_if_platform_uploading($eid, $platform) {
+        $success = false;
+        $this->config->select('*')
+                ->from('upload_queue')
+                ->where('status', 'uploading')
+                ->where('entryId', $eid)
+                ->where('platform', $platform);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
+        return $success;
+    }
+
+    public function check_if_uploading() {
+        $success = false;
+        $this->config->select('*')
+                ->from('upload_queue')
+                ->where('status', 'uploading');
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
+        return $success;
+    }
+
+    public function check_if_youtube_vod_exists($pid, $eid) {
+        $success = false;
+        $this->config->select('*')
+                ->from('youtube_vod_entries')
+                ->where('partner_id', $pid)
+                ->where('entryId', $eid);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
+        return $success;
+    }
+
+    public function get_youtube_vod_id($pid, $eid) {
+        $success = array('success' => false);
+        $videoId = '';
+        $this->config->select('*')
+                ->from('youtube_vod_entries')
+                ->where('partner_id', $pid)
+                ->where('entryId', $eid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $videoId = $res['videoId'];
+            }
+            $success = array('success' => true, 'videoId' => $videoId);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function check_if_facebook_vod_exists($pid, $eid) {
+        $success = false;
+        $this->config->select('*')
+                ->from('facebook_vod_entries')
+                ->where('partner_id', $pid)
+                ->where('entryId', $eid);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
+        return $success;
+    }
+
+    public function get_facebook_vod_id($pid, $eid) {
+        $success = array('success' => false);
+        $videoId = '';
+        $this->config->select('*')
+                ->from('facebook_vod_entries')
+                ->where('partner_id', $pid)
+                ->where('entryId', $eid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $videoId = $res['videoId'];
+            }
+            $success = array('success' => true, 'videoId' => $videoId);
+        } else {
+            $success = array('success' => false);
         }
         return $success;
     }
