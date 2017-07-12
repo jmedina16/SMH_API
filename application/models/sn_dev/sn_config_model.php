@@ -8,7 +8,7 @@ class Sn_config_model extends CI_Model {
 
     public function __construct() {
 // Open the correct DB connection
-        $this->config = $this->load->database('sn', TRUE);
+        $this->config = $this->load->database('sn_dev', TRUE);
         $this->_ci = & get_instance();
         $this->_ci->load->library("curl");
         $this->load->library('SMPortal');
@@ -3755,6 +3755,7 @@ class Sn_config_model extends CI_Model {
                 }
             } else if (!$facebook_status) {
                 $is_uploading = $this->check_if_platform_uploading($eid, 'facebook');
+                syslog(LOG_NOTICE, "SMH DEBUG : process_facebook_vod_config: " . print_r($is_uploading, true));
                 if ($is_uploading) {
                     $facebook_config = $this->create_vod_sn_config('facebook', $current_facebook_status, $current_facebook_upload_status, $current_facebook_videoId);
                     array_push($config, $facebook_config['config']);
