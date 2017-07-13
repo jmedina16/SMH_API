@@ -3885,7 +3885,7 @@ class Sn_config_model extends CI_Model {
             'partner_id' => $pid,
             'entryId' => $eid,
             'videoId' => $vid,
-            'projection' => 'test',
+            'projection' => $projection,
             'created_at' => date("Y-m-d H:i:s")
         );
         
