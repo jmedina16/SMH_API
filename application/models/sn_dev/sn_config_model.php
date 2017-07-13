@@ -3885,9 +3885,11 @@ class Sn_config_model extends CI_Model {
             'partner_id' => $pid,
             'entryId' => $eid,
             'videoId' => $vid,
-            'projection' => $projection,
+            'projection' => 'test',
             'created_at' => date("Y-m-d H:i:s")
         );
+        
+        syslog(LOG_NOTICE, "SMH DEBUG : insert_entry_to_youtube_vod: " . print_r($data, true));
 
         $this->config->insert('youtube_vod_entries', $data);
         $this->config->limit(1);
