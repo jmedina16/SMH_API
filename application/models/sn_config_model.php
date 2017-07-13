@@ -3558,6 +3558,8 @@ class Sn_config_model extends CI_Model {
         if ($update_facebook_upload_status['success']) {
             $upload_facebook_video = $this->upload_facebook_video($pid, $entry_details, $video_path);
             if ($upload_facebook_video['success']) {
+                $this->config = $this->load->database('sn', TRUE);
+                $this->config->reconnect();
                 $insert_entry_to_facebook_vod = $this->insert_entry_to_facebook_vod($pid, $eid, $upload_facebook_video['videoId'], $projection);
                 if ($insert_entry_to_facebook_vod['success']) {
                     $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'completed', $upload_facebook_video['videoId']);
@@ -3608,6 +3610,8 @@ class Sn_config_model extends CI_Model {
         if ($update_youtube_upload_status['success']) {
             $upload_youtube_video = $this->upload_youtube_video($pid, $entry_details, $video_path);
             if ($upload_youtube_video['success']) {
+                $this->config = $this->load->database('sn', TRUE);
+                $this->config->reconnect();
                 $insert_entry_to_youtube_vod = $this->insert_entry_to_youtube_vod($pid, $eid, $upload_youtube_video['videoId'], $projection);
                 if ($insert_entry_to_youtube_vod['success']) {
                     $update_youtube_upload_status = $this->update_platform_upload_status($pid, $eid, 'youtube', 'completed', $upload_youtube_video['videoId']);
@@ -3879,7 +3883,6 @@ class Sn_config_model extends CI_Model {
             'projection' => $projection,
             'created_at' => date("Y-m-d H:i:s")
         );
-
         $this->config->insert('youtube_vod_entries', $data);
         $this->config->limit(1);
         if ($this->config->affected_rows() > 0) {

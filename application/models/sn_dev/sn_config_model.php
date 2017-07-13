@@ -3558,6 +3558,8 @@ class Sn_config_model extends CI_Model {
         if ($update_facebook_upload_status['success']) {
             $upload_facebook_video = $this->upload_facebook_video($pid, $entry_details, $video_path);
             if ($upload_facebook_video['success']) {
+                $this->config = $this->load->database('sn_dev', TRUE);
+                $this->config->reconnect();
                 $insert_entry_to_facebook_vod = $this->insert_entry_to_facebook_vod($pid, $eid, $upload_facebook_video['videoId'], $projection);
                 if ($insert_entry_to_facebook_vod['success']) {
                     $update_facebook_upload_status = $this->update_platform_upload_status($pid, $eid, 'facebook', 'completed', $upload_facebook_video['videoId']);
@@ -3607,14 +3609,10 @@ class Sn_config_model extends CI_Model {
         $update_youtube_upload_status = $this->update_platform_upload_status($pid, $eid, 'youtube', 'uploading', 'pending');
         if ($update_youtube_upload_status['success']) {
             $upload_youtube_video = $this->upload_youtube_video($pid, $entry_details, $video_path);
-            syslog(LOG_NOTICE, "SMH DEBUG : process_youtube_upload_queue1: " . print_r($upload_youtube_video, true));
             if ($upload_youtube_video['success']) {
-                syslog(LOG_NOTICE, "SMH DEBUG : param1: " . $pid);
-                syslog(LOG_NOTICE, "SMH DEBUG : param2: " . $eid);
-                syslog(LOG_NOTICE, "SMH DEBUG : param3: " . $upload_youtube_video['videoId']);
-                syslog(LOG_NOTICE, "SMH DEBUG : param4: " . $projection);
+                $this->config = $this->load->database('sn_dev', TRUE);
+                $this->config->reconnect();
                 $insert_entry_to_youtube_vod = $this->insert_entry_to_youtube_vod($pid, $eid, $upload_youtube_video['videoId'], $projection);
-                syslog(LOG_NOTICE, "SMH DEBUG : process_youtube_upload_queue2: " . print_r($insert_entry_to_youtube_vod, true));
                 if ($insert_entry_to_youtube_vod['success']) {
                     $update_youtube_upload_status = $this->update_platform_upload_status($pid, $eid, 'youtube', 'completed', $upload_youtube_video['videoId']);
                     if ($update_youtube_upload_status['success']) {
@@ -3704,8 +3702,6 @@ class Sn_config_model extends CI_Model {
                     }
                 }
 
-                syslog(LOG_NOTICE, "SMH DEBUG : update_sn_vod_config: " . print_r($vod_platforms, true));
-
                 $facebook_config = $this->process_facebook_vod_config($pid, $eid, $projection, $facebook_status, $vod_platforms);
                 array_push($config, $facebook_config);
 
@@ -3761,7 +3757,6 @@ class Sn_config_model extends CI_Model {
                 }
             } else if (!$facebook_status) {
                 $is_uploading = $this->check_if_platform_uploading($eid, 'facebook');
-                syslog(LOG_NOTICE, "SMH DEBUG : process_facebook_vod_config: " . print_r($is_uploading, true));
                 if ($is_uploading) {
                     $facebook_config = $this->create_vod_sn_config('facebook', $current_facebook_status, $current_facebook_upload_status, $current_facebook_videoId);
                     array_push($config, $facebook_config['config']);
@@ -3888,16 +3883,8 @@ class Sn_config_model extends CI_Model {
             'projection' => $projection,
             'created_at' => date("Y-m-d H:i:s")
         );
-        
-        syslog(LOG_NOTICE, "SMH DEBUG : insert_entry_to_youtube_vod1: " . print_r($data, true));
-
-        $test = $this->config->insert('youtube_vod_entries', $data);
-        syslog(LOG_NOTICE, "SMH DEBUG : insert_entry_to_youtube_vod: TEST: " . print_r($test, true));
-        //$this->config->limit(1);
-        $last = $this->config->last_query();
-        syslog(LOG_NOTICE, "SMH DEBUG : insert_entry_to_youtube_vod2: " . print_r($last, true));
-        $error = $this->config->_error_message();
-        syslog(LOG_NOTICE, "SMH DEBUG : insert_entry_to_youtube_vod3: " . print_r($error, true));
+        $this->config->insert('youtube_vod_entries', $data);
+        $this->config->limit(1);
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
         } else {
