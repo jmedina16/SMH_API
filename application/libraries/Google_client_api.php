@@ -888,6 +888,7 @@ class Google_client_api {
                     }
                     fclose($handle);
                     $client->setDefer(false);
+                    syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo: " . print_r($status, true));
                     if ($status['status']['uploadStatus'] == 'uploaded') {
                         $success = array('success' => true, 'videoId' => $status->id);
                     } else {
