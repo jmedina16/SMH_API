@@ -3889,10 +3889,14 @@ class Sn_config_model extends CI_Model {
             'created_at' => date("Y-m-d H:i:s")
         );
         
-        syslog(LOG_NOTICE, "SMH DEBUG : insert_entry_to_youtube_vod: " . print_r($data, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : insert_entry_to_youtube_vod1: " . print_r($data, true));
 
         $this->config->insert('youtube_vod_entries', $data);
         $this->config->limit(1);
+        $last = $this->config->last_query();
+        syslog(LOG_NOTICE, "SMH DEBUG : insert_entry_to_youtube_vod2: " . print_r($last, true));
+        $error = $this->config->error();
+        syslog(LOG_NOTICE, "SMH DEBUG : insert_entry_to_youtube_vod3: " . print_r($error, true));
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
         } else {
