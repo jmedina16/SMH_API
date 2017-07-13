@@ -3607,8 +3607,14 @@ class Sn_config_model extends CI_Model {
         $update_youtube_upload_status = $this->update_platform_upload_status($pid, $eid, 'youtube', 'uploading', 'pending');
         if ($update_youtube_upload_status['success']) {
             $upload_youtube_video = $this->upload_youtube_video($pid, $entry_details, $video_path);
+            syslog(LOG_NOTICE, "SMH DEBUG : process_youtube_upload_queue1: " . print_r($upload_youtube_video, true));
             if ($upload_youtube_video['success']) {
+                syslog(LOG_NOTICE, "SMH DEBUG : param1: " . $pid);
+                syslog(LOG_NOTICE, "SMH DEBUG : param2: " . $eid);
+                syslog(LOG_NOTICE, "SMH DEBUG : param3: " . $upload_youtube_video['videoId']);
+                syslog(LOG_NOTICE, "SMH DEBUG : param4: " . $projection);
                 $insert_entry_to_youtube_vod = $this->insert_entry_to_youtube_vod($pid, $eid, $upload_youtube_video['videoId'], $projection);
+                syslog(LOG_NOTICE, "SMH DEBUG : process_youtube_upload_queue2: " . print_r($insert_entry_to_youtube_vod, true));
                 if ($insert_entry_to_youtube_vod['success']) {
                     $update_youtube_upload_status = $this->update_platform_upload_status($pid, $eid, 'youtube', 'completed', $upload_youtube_video['videoId']);
                     if ($update_youtube_upload_status['success']) {
