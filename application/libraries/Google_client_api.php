@@ -769,27 +769,34 @@ class Google_client_api {
 
             $youtube = new Google_Service_YouTube($client);
             if ($client->getAccessToken()) {
-                try {
-                    $broadcastsResponse = $youtube->liveBroadcasts->listLiveBroadcasts('snippet,contentDetails,status', array(
-                        'mine' => 'false',
-                        'maxResults' => 50
-                    ));
+                $broadcastsResponse = $youtube->channels->listChannels('snippet,contentDetails,status', array(
+                    'mine' => 'false',
+                    'maxResults' => 50
+                ));
 
-                    if (count($broadcastsResponse['items']) >= 0) {
-                        $success = array('success' => true);
-                    } else {
-                        $success = array('success' => false);
-                    }
-                    return $success;
-                } catch (Google_Service_Exception $e) {
-                    syslog(LOG_NOTICE, "SMH DEBUG : A service error occurred: code: " . $e->getMessage());
-                    $success = array('success' => false);
-                    return $success;
-                } catch (Google_Exception $e) {
-                    syslog(LOG_NOTICE, "SMH DEBUG : An client error occurred: code: " . $e->getMessage());
-                    $success = array('success' => false);
-                    return $success;
-                }
+                syslog(LOG_NOTICE, "SMH DEBUG : is_ls_enabled: " . print_r($broadcastsResponse, true));
+
+//                try {
+//                    $broadcastsResponse = $youtube->liveBroadcasts->listLiveBroadcasts('snippet,contentDetails,status', array(
+//                        'mine' => 'false',
+//                        'maxResults' => 50
+//                    ));
+//
+//                    if (count($broadcastsResponse['items']) >= 0) {
+//                        $success = array('success' => true);
+//                    } else {
+//                        $success = array('success' => false);
+//                    }
+//                    return $success;
+//                } catch (Google_Service_Exception $e) {
+//                    syslog(LOG_NOTICE, "SMH DEBUG : A service error occurred: code: " . $e->getMessage());
+//                    $success = array('success' => false);
+//                    return $success;
+//                } catch (Google_Exception $e) {
+//                    syslog(LOG_NOTICE, "SMH DEBUG : An client error occurred: code: " . $e->getMessage());
+//                    $success = array('success' => false);
+//                    return $success;
+//                }
             }
         } catch (Google_Service_Exception $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage());
@@ -814,14 +821,16 @@ class Google_client_api {
             $youtube = new Google_Service_YouTube($client);
             if ($client->getAccessToken()) {
                 try {
-                    $channelResponse = $youtube->channels->listChannels('snippet', array(
+                    $channelResponse = $youtube->channels->listChannels('id,snippet,status', array(
                         'mine' => 'false'
                     ));
 
                     if (count($channelResponse['items']) >= 0) {
                         $title = $channelResponse['items'][0]['snippet']['title'];
                         $thumbnail = $channelResponse['items'][0]['snippet']['thumbnails']['high']['url'];
-                        $success = array('success' => true, 'channel_title' => $title, 'channel_thumb' => $thumbnail);
+                        $channel_id = $channelResponse['items'][0]['id'];
+                        $is_verified = $channelResponse['items'][0]['status']['longUploadsStatus'];
+                        $success = array('success' => true, 'channel_title' => $title, 'channel_thumb' => $thumbnail, 'channel_id' => $channel_id, 'is_verified' => $is_verified);
                     } else {
                         $success = array('success' => false);
                     }
