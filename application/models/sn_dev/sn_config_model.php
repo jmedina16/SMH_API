@@ -535,7 +535,7 @@ class Sn_config_model extends CI_Model {
         $success = array('success' => false);
         $account_details = $this->google_client_api->get_account_details($access_token);
         if ($account_details['success']) {
-            $channel_details = array('channel_title' => $account_details['channel_title'], 'channel_thumb' => $account_details['channel_thumb']);
+            $channel_details = array('channel_title' => $account_details['channel_title'], 'channel_thumb' => $account_details['channel_thumb'], 'channel_id' => $account_details['channel_id'], 'is_verified' => $account_details['is_verified']);
             $success = array('success' => true, 'channel_details' => $channel_details);
         } else {
             $success = array('success' => false);
@@ -1730,7 +1730,7 @@ class Sn_config_model extends CI_Model {
                 if ($result['success']) {
                     $channel = $this->retrieve_youtube_channel_details($pid, $tokens['access_token']);
                     if ($channel['success']) {
-                        $update_youtube_channel_details = $this->update_youtube_channel_details($pid, $channel['channel_details']['channel_title'], $channel['channel_details']['channel_thumb']);
+                        $update_youtube_channel_details = $this->update_youtube_channel_details($pid, $channel['channel_details']['channel_title'], $channel['channel_details']['channel_thumb'], $channel['channel_details']['channel_id'], $channel['channel_details']['is_verified']);
                         if ($update_youtube_channel_details['success']) {
                             $init_youtube_channel_settings = $this->init_youtube_channel_settings($pid, $projection);
                             if ($init_youtube_channel_settings['success']) {
@@ -1803,11 +1803,13 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function update_youtube_channel_details($pid, $name, $thumbnail) {
+    public function update_youtube_channel_details($pid, $name, $thumbnail, $id, $is_verified) {
         $success = array('success' => false);
         $data = array(
             'name' => $this->config->escape_str($name),
-            'thumbnail' => $this->config->escape_str($thumbnail)
+            'thumbnail' => $this->config->escape_str($thumbnail),
+            'channel_id' => $this->smcipher->encrypt($id),
+            'is_verified' => $is_verified
         );
 
         $this->config->where('partner_id', $pid);
@@ -4454,7 +4456,7 @@ class Sn_config_model extends CI_Model {
                 if ($access_token['success']) {
                     $channel = $this->retrieve_youtube_channel_details($pid, $access_token['access_token']);
                     if ($channel['success']) {
-                        $update_youtube_channel_details = $this->update_youtube_channel_details($pid, $channel['channel_details']['channel_title'], $channel['channel_details']['channel_thumb']);
+                        $update_youtube_channel_details = $this->update_youtube_channel_details($pid, $channel['channel_details']['channel_title'], $channel['channel_details']['channel_thumb'], $channel['channel_details']['channel_id'], $channel['channel_details']['is_verified']);
                         if ($update_youtube_channel_details['success']) {
                             $channel_details = array('channel_name' => $channel['channel_details']['channel_title'], 'channel_thumbnail' => $channel['channel_details']['channel_thumb']);
                             $success = array('success' => true, 'channel_details' => $channel_details);
