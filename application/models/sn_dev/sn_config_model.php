@@ -431,18 +431,35 @@ class Sn_config_model extends CI_Model {
         $youtube_auth = $this->validate_youtube_token($pid);
         $auth = ($youtube_auth['success']) ? true : false;
         if ($auth) {
-            $is_ls_enabled = $this->is_youtube_ls_enabled($pid, $youtube_auth['access_token']);
             $channel_details = $this->get_youtube_channel_details($pid);
-            $ls_enabled = ($is_ls_enabled['success']) ? true : false;
             $settings = $this->get_yt_settings($pid);
             $details = ($channel_details['success']) ? $channel_details['channel_details'] : null;
             $embed_status = ($settings['success']) ? $settings['embed_status'] : false;
             $auto_upload = ($settings['success']) ? $settings['auto_upload'] : false;
-            $youtube = array('platform' => 'youtube_live', 'authorized' => $auth, 'ls_enabled' => $ls_enabled, 'embed_status' => $embed_status, 'auto_upload' => $auto_upload, 'channel_details' => $details);
+            $is_verified = $this->get_youtube_verification_status($pid, $youtube_auth['access_token'], $channel_details['channel_details']['is_verified']);
+            $youtube = array('platform' => 'youtube_live', 'authorized' => $auth, 'is_verified' => $is_verified, 'embed_status' => $embed_status, 'auto_upload' => $auto_upload, 'channel_details' => $details);
         } else {
-            $youtube = array('platform' => 'youtube_live', 'authorized' => $auth, 'ls_enabled' => false, 'embed_status' => false, 'auto_upload' => null, 'channel_details' => null, 'redirect_url' => $this->google_client_api->getRedirectURL($pid, $ks, $projection));
+            $youtube = array('platform' => 'youtube_live', 'authorized' => $auth, 'is_verified' => false, 'embed_status' => false, 'auto_upload' => null, 'channel_details' => null, 'redirect_url' => $this->google_client_api->getRedirectURL($pid, $ks, $projection));
         }
         return $youtube;
+    }
+
+    public function get_youtube_verification_status($pid, $access_token, $current_status) {
+        if ($current_status == 'allowed') {
+            $is_verified = true;
+        } else {
+            $update_youtube_verification = $this->update_youtube_verification($pid, $access_token);
+            if ($update_youtube_verification['success']) {
+                if ($update_youtube_verification['is_verified'] == 'allowed') {
+                    $is_verified = true;
+                } else {
+                    $is_verified = false;
+                }
+            } else {
+                $is_verified = false;
+            }
+        }
+        return $is_verified;
     }
 
     public function get_yt_settings($pid) {
@@ -520,13 +537,35 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function is_youtube_ls_enabled($pid, $access_token) {
+    public function update_youtube_verification($pid, $access_token) {
         $success = array('success' => false);
-        $is_enabled = $this->google_client_api->is_ls_enabled($access_token);
-        if ($is_enabled['success']) {
-            $success = array('success' => true);
+        $verification = $this->google_client_api->get_verification($access_token);
+        if ($verification['success']) {
+            $update_youtube_channel_verification = $this->update_youtube_channel_verification($pid, $verification['is_verified']);
+            if ($update_youtube_channel_verification['success']) {
+                $success = array('success' => true, 'is_verified' => $verification['is_verified']);
+            } else {
+                $success = array('success' => false);
+            }
         } else {
             $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function update_youtube_channel_verification($pid, $is_verified) {
+        $success = array('success' => false);
+        $data = array(
+            'is_verified' => $is_verified
+        );
+
+        $this->config->where('partner_id', $pid);
+        $this->config->update('youtube_channel', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'notice' => 'no changes were made');
         }
         return $success;
     }
@@ -556,8 +595,9 @@ class Sn_config_model extends CI_Model {
             foreach ($result as $res) {
                 $name = $res['name'];
                 $thumbnail = $res['thumbnail'];
+                $is_verified = $res['is_verified'];
             }
-            $channel_details = array('channel_title' => $name, 'channel_thumb' => $thumbnail);
+            $channel_details = array('channel_title' => $name, 'channel_thumb' => $thumbnail, 'is_verified' => $is_verified);
             $success = array('success' => true, 'channel_details' => $channel_details);
         } else {
             $success = array('success' => false);
