@@ -756,7 +756,7 @@ class Google_client_api {
         }
     }
 
-    public function is_ls_enabled($access_token) {
+    public function get_verification($access_token) {
         $success = array('success' => false);
         try {
             $client = new Google_Client();
@@ -769,34 +769,27 @@ class Google_client_api {
 
             $youtube = new Google_Service_YouTube($client);
             if ($client->getAccessToken()) {
-                $broadcastsResponse = $youtube->channels->listChannels('snippet,contentDetails,status', array(
-                    'mine' => 'false',
-                    'maxResults' => 50
-                ));
+                try {
+                    $channelResponse = $youtube->channels->listChannels('id,snippet,status', array(
+                        'mine' => 'false'
+                    ));
 
-                syslog(LOG_NOTICE, "SMH DEBUG : is_ls_enabled: " . print_r($broadcastsResponse, true));
-
-//                try {
-//                    $broadcastsResponse = $youtube->liveBroadcasts->listLiveBroadcasts('snippet,contentDetails,status', array(
-//                        'mine' => 'false',
-//                        'maxResults' => 50
-//                    ));
-//
-//                    if (count($broadcastsResponse['items']) >= 0) {
-//                        $success = array('success' => true);
-//                    } else {
-//                        $success = array('success' => false);
-//                    }
-//                    return $success;
-//                } catch (Google_Service_Exception $e) {
-//                    syslog(LOG_NOTICE, "SMH DEBUG : A service error occurred: code: " . $e->getMessage());
-//                    $success = array('success' => false);
-//                    return $success;
-//                } catch (Google_Exception $e) {
-//                    syslog(LOG_NOTICE, "SMH DEBUG : An client error occurred: code: " . $e->getMessage());
-//                    $success = array('success' => false);
-//                    return $success;
-//                }
+                    if (count($channelResponse['items']) >= 0) {
+                        $is_verified = $channelResponse['items'][0]['status']['longUploadsStatus'];
+                        $success = array('success' => true, 'is_verified' => $is_verified);
+                    } else {
+                        $success = array('success' => false);
+                    }
+                    return $success;
+                } catch (Google_Service_Exception $e) {
+                    syslog(LOG_NOTICE, "SMH DEBUG : A service error occurred: code: " . $e->getMessage());
+                    $success = array('success' => false);
+                    return $success;
+                } catch (Google_Exception $e) {
+                    syslog(LOG_NOTICE, "SMH DEBUG : An client error occurred: code: " . $e->getMessage());
+                    $success = array('success' => false);
+                    return $success;
+                }
             }
         } catch (Google_Service_Exception $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage());
