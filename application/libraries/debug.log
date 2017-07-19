@@ -3881,3 +3881,11 @@ Stack trace:
 #3 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('1471081808:0 D:...', 'I-72796G1VEAR9', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Jorge', 'Medina', 'jmedina616@gmai...', '853NLG6TBL9TC', 'US', 'Pending', '5CS36555CX68476...', 'instant', '03:31:49 Jul 13...')
 #4 [internal function]: in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 1191
 [14-Jul-2017 15:17:49 America/Los_Angeles] PHP Fatal error:  Call to undefined method Google_Service_YouTube_Resource_Channels::list() in /var/www/vhosts/api/application/libraries/Google_client_api.php on line 772
+[19-Jul-2017 04:43:43 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Entry id "" not found' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(457): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(228): KalturaBaseEntryService->get('', NULL)
+#2 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2693): SMPortal->get_entry_details('10012', '')
+#3 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('10012', NULL, NULL, NULL, NULL, 'Active', 'Pending')
+#4 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('vpinBl9VANmX1f2...', 'I-2S75BNCUA6VF', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Test', 'User', 'user2@smh.com', 'Z2NPJYZKK2RSY', 'US', 'Pending', '8WE99402HS17172...', 'instant', '04:06:37 Jul 19...')
+#5 [internal  in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
