@@ -4311,13 +4311,13 @@ class Ppv_orders_model extends CI_Model {
 
             $img = '';
             if ($type == 's') {
-                $img = '<img src = "' . $protocol . '://mediaplatform.streamingmediahosting.com/p/' . $pid . '/thumbnail/entry_id/' . $kentry . '/width/169" width="169px" />';
+                $img = '<img src = "' . $protocol . '://images.streamingmediahosting.com/p/' . $pid . '/thumbnail/entry_id/' . $kentry . '/width/169" width="169px" />';
             } else if ($type == 'p') {
                 $entry_id = $this->smportal->get_thumb($pid, $kentry);
-                $img = '<img src = "' . $protocol . '://mediaplatform.streamingmediahosting.com/p/' . $pid . '/thumbnail/entry_id/' . $entry_id . '/width/169" width="169px" />';
+                $img = '<img src = "' . $protocol . '://images.streamingmediahosting.com/p/' . $pid . '/thumbnail/entry_id/' . $entry_id . '/width/169" width="169px" />';
             } else if ($type == 'cl' || $type == 'cr' || $type == 'ct' || $type == 'cb') {
                 $entry = $this->smportal->get_cat_thumb($pid, $kentry);
-                $img = '<img src = "' . $protocol . '://mediaplatform.streamingmediahosting.com/p/' . $pid . '/thumbnail/entry_id/' . $entry . '/width/169" width="169px" />';
+                $img = '<img src = "' . $protocol . '://images.streamingmediahosting.com/p/' . $pid . '/thumbnail/entry_id/' . $entry . '/width/169" width="169px" />';
             }
 
             if ($active_gw == 1) {
