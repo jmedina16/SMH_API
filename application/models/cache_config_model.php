@@ -19,8 +19,8 @@ class Cache_config_model extends CI_Model {
         if ($valid['success']) {
             $asset_list_one = array('metadata', 'ac', 'thumbnail', 'caption', 'player');
             if (in_array($asset, $asset_list_one)) {
-                $purge_assets_one = $this->purge_assets_one($pid);
-                if ($purge_assets_one['success']) {
+                $purge_assets_one = json_decode($this->purge_assets_one($pid));
+                if (isset($purge_assets_one->Id)) {
                     $success = array('success' => true);
                 } else {
                     $success = array('success' => false, 'message' => 'Could not purge assests one');
@@ -37,7 +37,7 @@ class Cache_config_model extends CI_Model {
 
     public function purge_assets_one($pid) {
         $fields = array(
-            'MediaPath' => 'http:\/\/apps.streamingmediahosting.com\/p\/' . $pid . '\/html5\/html5lib\/*',
+            'MediaPath' => 'http://apps.streamingmediahosting.com/p/' . $pid . '/html5/html5lib/*',
             'MediaType' => 3
         );
         $field_string = json_encode($fields);
@@ -55,7 +55,6 @@ class Cache_config_model extends CI_Model {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         $output = curl_exec($ch);
         curl_close($ch);
-        syslog(LOG_NOTICE, "SMH DEBUG : purge_assets_one " . print_r($output, true));
         return $output;
     }
 
