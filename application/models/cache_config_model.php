@@ -17,7 +17,7 @@ class Cache_config_model extends CI_Model {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
-            $asset_list_one = array('metadata', 'ac', 'thumbnail', 'caption', 'player');
+            $asset_list_one = array('metadata', 'ac', 'thumbnail', 'caption', 'player', 'playlist', 'delete');
             if (in_array($asset, $asset_list_one)) {
                 $purge_assets_one = json_decode($this->purge_assets_one($pid));
                 if (isset($purge_assets_one->Id)) {
