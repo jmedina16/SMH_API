@@ -411,7 +411,7 @@ class SMPortal {
         $sess = $this->impersonate($pid);
         $content_list = $this->get_playlist_content($sess, $pid, $entry_id);
         $content = explode(",", $content_list);
-        $img = str_replace("mediaplatform.streamingmediahosting.com", "images.streamingmediahosting.com", $content[0]);
+        $img = str_replace("mediaplatform.streamingmediahosting.com", "images.mediaplatform.streamingmediahosting.com", $content[0]);
         return $img;
     }
 
