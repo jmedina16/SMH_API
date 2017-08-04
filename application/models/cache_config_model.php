@@ -19,11 +19,23 @@ class Cache_config_model extends CI_Model {
         if ($valid['success']) {
             $asset_list_one = array('metadata', 'ac', 'thumbnail', 'caption', 'player', 'playlist', 'delete');
             if (in_array($asset, $asset_list_one)) {
-                $purge_assets_one = json_decode($this->purge_assets_one($pid));
-                if (isset($purge_assets_one->Id)) {
-                    $success = array('success' => true);
+                $cdn = json_decode($this->getCDN($pid), true);
+                if ($cdn[0]['edgecast']) {
+                    $purge_ec = json_decode($this->purge_ec($pid));
+                    if (isset($purge_ec->Id)) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not purge edgecast');
+                    }
+                } else if ($cdn[0]['highwinds']) {
+                    $purge_hw = json_decode($this->purge_hw($pid));
+                    if (isset($purge_hw->id)) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not purge highwinds');
+                    }
                 } else {
-                    $success = array('success' => false, 'message' => 'Could not purge assests one');
+                    $success = array('success' => true, 'message' => 'No CDN to purged');
                 }
             } else {
                 $success = array('success' => true, 'message' => 'Nothing purged');
@@ -35,7 +47,7 @@ class Cache_config_model extends CI_Model {
         return $success;
     }
 
-    public function purge_assets_one($pid) {
+    public function purge_ec($pid) {
         $fields = array(
             'MediaPath' => 'http://apps.streamingmediahosting.com/p/' . $pid . '/html5/html5lib/*',
             'MediaType' => 3
@@ -53,6 +65,42 @@ class Cache_config_model extends CI_Model {
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
         curl_setopt($ch, CURLOPT_POSTFIELDS, $field_string);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $output = curl_exec($ch);
+        curl_close($ch);
+        return $output;
+    }
+
+    public function purge_hw($pid) {
+        $urls = [];
+        array_push($urls, [
+            "url" => '//cds.n7x4e9i6.hwcdn.net/p/' . $pid . '/html5/html5lib/',
+            "recursive" => true
+        ]);
+        $fields = array(
+            'list' => $urls
+        );
+        $field_string = json_encode($fields);
+
+        //open connection
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "https://striketracker.highwinds.com/api/v1/accounts/j6f8b4i9/purge");
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Authorization: Bearer bae9191b36925ea607149b142233be5eac4f6b16804d9c35124d656747b983d4',
+            'Content-Type: application/json',
+            'Accept: application/json'
+        ));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $field_string);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $output = curl_exec($ch);
+        curl_close($ch);
+        return $output;
+    }
+
+    public function getCDN($pid) {
+        $url = 'http://apps.mediaplatform.streamingmediahosting.com/apps/scripts/getCDN.php?action=get_cdn&pid=' . $pid;
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         $output = curl_exec($ch);
         curl_close($ch);
         return $output;
