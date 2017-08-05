@@ -49,7 +49,7 @@ class Cache_config_model extends CI_Model {
 
     public function purge_ec($pid) {
         $fields = array(
-            'MediaPath' => 'http://apps.streamingmediahosting.com/p/' . $pid . '/html5/html5lib/*',
+            'MediaPath' => 'http://ecapps.streamingmediahosting.com/p/' . $pid . '/html5/html5lib/*',
             'MediaType' => 3
         );
         $field_string = json_encode($fields);
@@ -97,7 +97,7 @@ class Cache_config_model extends CI_Model {
     }
 
     public function getCDN($pid) {
-        $url = 'http://apps.mediaplatform.streamingmediahosting.com/apps/scripts/getCDN.php?action=get_cdn&pid=' . $pid;
+        $url = 'http://ecapps.streamingmediahosting.com/apps/scripts/getCDN.php?action=get_cdn&pid=' . $pid;
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
