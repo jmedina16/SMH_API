@@ -85,9 +85,8 @@ class Cache_config_model extends CI_Model {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, "https://striketracker.highwinds.com/api/v1/accounts/j6f8b4i9/purge");
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'Authorization: Bearer bae9191b36925ea607149b142233be5eac4f6b16804d9c35124d656747b983d4',
-            'Content-Type: application/json',
-            'Accept: application/json'
+            'Authorization: Bearer 3ebdad9faa4565ad0da321fbe5d480eb6670730e387e4e79d961dbdb69b31ecc',
+            'Content-Type: application/json'
         ));
         curl_setopt($ch, CURLOPT_POSTFIELDS, $field_string);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
