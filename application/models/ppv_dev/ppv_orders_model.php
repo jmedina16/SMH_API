@@ -488,11 +488,11 @@ class Ppv_orders_model extends CI_Model {
                 $actions = 'None';
                 if ($subs['profile_status'] == 0) {
                     $status = 'Pending';
-                    $actions = '<button type="button" onclick="ppv_obj.delete_sub(' . $subs['sub_id'] . ');" class="btn btn-default"><span class="text">Cancel</span></button>';
+                    $actions = '<button type="button" onclick="ppv_obj.delete_sub(' . $subs['sub_id'] . ',' . pid . ');" class="btn btn-default"><span class="text">Cancel</span></button>';
                 } else if ($subs['profile_status'] == 1) {
                     $status = 'Active';
                     $suspend = '';
-                    $actions = '<button type="button" onclick="ppv_obj.cancel_sub(' . $subs['sub_id'] . ');" class="btn btn-default"><span class="text">Cancel</span></button>';
+                    $actions = '<button type="button" onclick="ppv_obj.cancel_sub(' . $subs['sub_id'] . ',' . pid . ');" class="btn btn-default"><span class="text">Cancel</span></button>';
                 } else if ($subs['profile_status'] == 2) {
                     $status = 'Suspended';
                 } else if ($subs['profile_status'] == 3) {
