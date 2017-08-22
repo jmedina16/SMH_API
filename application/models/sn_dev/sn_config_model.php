@@ -106,7 +106,8 @@ class Sn_config_model extends CI_Model {
                 $platforms = array();
                 $facebook = $this->facebook_platform($valid['pid'], $ks);
                 $youtube = $this->youtube_platform($valid['pid'], $ks, $projection);
-                array_push($platforms, $facebook, $youtube);
+                $twitch = $this->twitch_platform($valid['pid'], $ks);
+                array_push($platforms, $facebook, $youtube, $twitch);
                 $success = array('success' => true, 'platforms' => $platforms);
             } else {
                 $success = array('success' => false, 'message' => 'Social network service not active');
@@ -116,6 +117,12 @@ class Sn_config_model extends CI_Model {
         }
 
         return $success;
+    }
+
+    public function twitch_platform($pid, $ks) {
+        $auth = false;
+        $twitch = array('platform' => 'twitch', 'authorized' => $auth, 'user_details' => null, 'publish_to' => null, 'settings' => null, 'redirect_url' => null);
+        return $twitch;
     }
 
     public function facebook_platform($pid, $ks) {
