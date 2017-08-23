@@ -15,6 +15,7 @@ class Sn_config_model extends CI_Model {
         $this->load->library('SMCipher');
         $this->load->library('google_client_api');
         $this->load->library('facebook_client_api');
+        $this->load->library('twitch_client_api');
     }
 
     public function update_sn_config($pid, $platform, $status) {
@@ -121,7 +122,7 @@ class Sn_config_model extends CI_Model {
 
     public function twitch_platform($pid, $ks) {
         $auth = false;
-        $twitch = array('platform' => 'twitch', 'authorized' => $auth, 'user_details' => null, 'publish_to' => null, 'settings' => null, 'redirect_url' => null);
+        $twitch = array('platform' => 'twitch', 'authorized' => $auth, 'user_details' => null, 'publish_to' => null, 'settings' => null, 'redirect_url' => $this->twitch_client_api->getRedirectURL($pid, $ks));
         return $twitch;
     }
 
