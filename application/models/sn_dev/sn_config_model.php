@@ -126,6 +126,39 @@ class Sn_config_model extends CI_Model {
         return $twitch;
     }
 
+    public function validate_twitch_token($pid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('twitch_channel')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            $token = array();
+            foreach ($result as $res) {
+                $token['access_token'] = $this->smcipher->decrypt($res['access_token']);
+                $token['refresh_token'] = $this->smcipher->decrypt($res['refresh_token']);
+                $token['expires_in'] = $res['expires_in'];
+            }
+            $tokens_valid = $this->twitch_client_api->checkAuthToken($token);
+            if ($tokens_valid['success'] && ($tokens_valid['message'] == 'valid_access_token')) {
+                $success = array('success' => true, 'access_token' => $tokens_valid['access_token']);
+            }
+            if ($tokens_valid['success'] && ($tokens_valid['message'] == 'new_access_token')) {
+                $access_token = $this->update_twitch_tokens($pid, $tokens_valid['access_token']);
+                if ($access_token['success']) {
+                    $success = array('success' => true, 'access_token' => $tokens_valid['access_token']);
+                } else {
+                    $success = array('success' => false);
+                }
+            }
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
     public function facebook_platform($pid, $ks) {
         $facebook_auth = $this->validate_facebook_token($pid);
         $auth = ($facebook_auth['success']) ? true : false;
@@ -807,6 +840,79 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => true);
         } else {
             $success = array('success' => true, 'message' => 'Nothing removed');
+        }
+        return $success;
+    }
+
+    public function store_twitch_authorization($pid, $ks, $code) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $tokens = $this->twitch_client_api->getTokens($code);
+                if ($this->check_twitch($valid['pid'])) {
+                    $result = $this->update_twitch_tokens($valid['pid'], $tokens);
+                } else {
+                    $result = $this->insert_twitch_tokens($valid['pid'], $tokens);
+                }
+                if ($result['success']) {
+                    $update_status = $this->update_sn_config($pid, 'twitch', 1);
+                    if ($update_status['success']) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false);
+                    }
+                } else {
+                    $success = array('success' => false);
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Social network service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+
+        return $success;
+    }
+
+    public function insert_twitch_tokens($pid, $tokens) {
+        $success = array('success' => false);
+        $data = array(
+            'partner_id' => $pid,
+            //'access_token' => $this->smcipher->encrypt($tokens['access_token']),
+            //'refresh_token' => $this->smcipher->encrypt($tokens['refresh_token']),
+            'access_token' => $tokens['access_token'],
+            'refresh_token' => $tokens['refresh_token'],
+            'expires_in' => $tokens['expires_in'],
+            'created_at' => date("Y-m-d H:i:s")
+        );
+        $this->config->insert('twitch_channel', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function update_twitch_tokens($pid, $tokens) {
+        $success = array('success' => false);
+        $data = array(
+            'access_token' => $this->smcipher->encrypt($tokens['access_token']),
+            'refresh_token' => $this->smcipher->encrypt($tokens['refresh_token']),
+            'expires_in' => $tokens['expires_in'],
+            'updated_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->where('partner_id', $pid);
+        $this->config->update('twitch_channel', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'notice' => 'no changes were made');
         }
         return $success;
     }
@@ -1962,6 +2068,21 @@ class Sn_config_model extends CI_Model {
         $success = false;
         $this->config->select('*')
                 ->from('facebook_user_profile')
+                ->where('partner_id', $pid);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
+        return $success;
+    }
+
+    public function check_twitch($pid) {
+        $success = false;
+        $this->config->select('*')
+                ->from('twitch_channel')
                 ->where('partner_id', $pid);
         $query = $this->config->get();
         if ($query->num_rows() > 0) {
