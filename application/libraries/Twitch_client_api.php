@@ -53,15 +53,16 @@ class Twitch_client_api {
     }
 
     public function checkAuthToken($token) {
-        $url = 'https://api.twitch.tv/kraken/user';
+        $success = array('success' => false);
+        $url = 'https://api.twitch.tv/kraken';
         $data = array();
-        $response = $this->curlGet($url, $data, $token['access_token']);
+        $response = $this->curlValidateGet($url, $data, $token['access_token']);
         if (isset($response['error'])) {
             if ($response['status'] == 401) {
                 $new_access_token = $this->refreshToken($token);
                 $success = array('success' => true, 'message' => 'new_access_token', 'access_token' => $new_access_token['new_token']);
             }
-        } else {
+        } else if ($response['token']['valid']) {
             $success = array('success' => true, 'message' => 'valid_access_token', 'access_token' => $token['access_token']);
         }
         return $success;
@@ -76,6 +77,23 @@ class Twitch_client_api {
             $response = $this->curlPost($url, $data);
             $new_token = array('access_token' => $response['access_token'], 'refresh_token' => $response['refresh_token']);
             $success = array('success' => true, 'new_token' => $new_token);
+            return $success;
+        } catch (Exception $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage());
+            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+        }
+    }
+
+    public function removeAuth($access_token) {
+        $success = array('success' => false);
+        try {
+            $tokens = array();
+            $url = 'https://api.twitch.tv/kraken/oauth2/revoke';
+            $data = array('client_id' => $this->OAUTH2_CLIENT_ID, 'token' => $access_token);
+            $response = $this->curlPost($url, $data);
+            if ($response['status'] === 'ok') {
+                $success = array('success' => true);
+            }
             return $success;
         } catch (Exception $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage());
@@ -102,6 +120,21 @@ class Twitch_client_api {
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
             'Accept: application/vnd.twitchtv.v5+json',
             'Client-ID: ' . $this->OAUTH2_CLIENT_ID,
+            'Authorization: OAuth ' . $access_token
+        ));
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        return json_decode($response, true);
+    }
+
+    public function curlValidateGet($url, $data, $access_token) {
+        $final_url = $url . '?' . http_build_query($data);
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $final_url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Accept: application/vnd.twitchtv.v5+json',
             'Authorization: OAuth ' . $access_token
         ));
         $response = curl_exec($ch);
