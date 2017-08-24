@@ -994,6 +994,63 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function remove_twitch_authorization($pid, $ks) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $this->config->select('*')
+                        ->from('twitch_channel')
+                        ->where('partner_id', $valid['pid']);
+
+                $query = $this->config->get();
+                $result = $query->result_array();
+                if ($query->num_rows() > 0) {
+                    foreach ($result as $res) {
+                        $access_token = $this->smcipher->decrypt($res['access_token']);
+                    }
+                    $removeAuth = $this->twitch_client_api->removeAuth($access_token);
+                    if ($removeAuth['success']) {
+                        $remove_channel = $this->remove_twitch_channel($pid);
+                        if ($remove_channel['success']) {
+                            $update_status = $this->update_sn_config($pid, 'twitch', 0);
+                            if ($update_status['success']) {
+                                $success = array('success' => true);
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not update platform status');
+                            }
+                        } else {
+                            $success = array('success' => false, 'message' => $remove_channel['message']);
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => $removeAuth['message']);
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Twitch access token not found');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Social network service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+
+        return $success;
+    }
+
+    public function remove_twitch_channel($pid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id = "' . $pid . '"');
+        $this->config->delete('twitch_channel');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false, 'message' => 'Could not remove Twitch channel');
+        }
+        return $success;
+    }
+
     public function store_facebook_authorization($pid, $ks, $code) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
