@@ -28,11 +28,11 @@ class Twitch_client_api {
             $tokens = array();
             $url = 'https://api.twitch.tv/kraken/oauth2/token';
             $data = array('client_id' => $this->OAUTH2_CLIENT_ID, 'client_secret' => $this->OAUTH2_CLIENT_SECRET, 'code' => $code, 'grant_type' => 'authorization_code', 'redirect_uri' => $this->REDIRECT_URI);
-            $token_response = $this->curlPost($url, $data);
-            syslog(LOG_NOTICE, "SMH DEBUG : getTokens " . print_r($token_response,true));
-            $tokens['access_token'] = $token_response->access_token;
-            $tokens['refresh_token'] = $token_response->refresh_token;
-            $tokens['expires_in'] = $token_response->expires_in;
+            $token_response = json_decode($this->curlPost($url, $data), true);
+            syslog(LOG_NOTICE, "SMH DEBUG : getTokens " . print_r($token_response, true));
+            syslog(LOG_NOTICE, "SMH DEBUG : access_token " . print_r($token_response['access_token'], true));
+            $tokens['access_token'] = $token_response['access_token'];
+            $tokens['refresh_token'] = $token_response['refresh_token'];
             return $tokens;
         } catch (Exception $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage());
