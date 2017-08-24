@@ -41,11 +41,41 @@ class Twitch_client_api {
     public function get_account_details($access_token) {
         $success = array('success' => false);
         try {
-            $tokens = array();
             $url = 'https://api.twitch.tv/kraken/user';
             $data = array();
             $response = $this->curlGet($url, $data, $access_token);
             $success = array('success' => true, 'channel_name' => $response['display_name'], 'channel_logo' => $response['logo'], 'channel_id' => $response['_id']);
+            return $success;
+        } catch (Exception $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage());
+            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+        }
+    }
+
+    public function checkAuthToken($token) {
+        $url = 'https://api.twitch.tv/kraken/user';
+        $data = array();
+        $response = $this->curlGet($url, $data, $token['access_token']);
+        if (isset($response['error'])) {
+            if ($response['status'] == 401) {
+                $new_access_token = $this->refreshToken($token);
+                $success = array('success' => true, 'message' => 'new_access_token', 'access_token' => $new_access_token['new_token']);
+            }
+        } else {
+            $success = array('success' => true, 'message' => 'valid_access_token', 'access_token' => $token['access_token']);
+        }
+        return $success;
+    }
+
+    public function refreshToken($token) {
+        $success = array('success' => false);
+        try {
+            $url = 'https://api.twitch.tv/kraken/oauth2/token';
+            $scope = 'channel_editor+channel_read+channel_stream+collections_edit+user_read';
+            $data = array('client_id' => $this->OAUTH2_CLIENT_ID, 'client_secret' => $this->OAUTH2_CLIENT_SECRET, 'grant_type' => 'refresh_token', 'refresh_token' => $token['refresh_token'], 'scope' => $scope);
+            $response = $this->curlPost($url, $data);
+            $new_token = array('access_token' => $response['access_token'], 'refresh_token' => $response['refresh_token']);
+            $success = array('success' => true, 'new_token' => $new_token);
             return $success;
         } catch (Exception $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage());
