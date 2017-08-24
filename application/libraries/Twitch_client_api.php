@@ -62,14 +62,9 @@ class Twitch_client_api {
             $ingest_url = 'https://api.twitch.tv/kraken/ingests';
             $ingest_response = $this->curlGet($ingest_url, $data, $access_token);
 
-            $ingest_west = array();
-            foreach ($ingest_response['ingests'] as $ingest) {
-                if (strpos($ingest['name'], 'US West') !== false) {
-                    array_push($ingest_west, array('id' => $ingest['_id'], 'url_template' => $ingest['url_template'], 'availability' => $ingest['availability'], 'name' => $ingest['name']));
-                }
-            }
-
-            syslog(LOG_NOTICE, "SMH DEBUG : ingest_response " . print_r($ingest_west, true));
+            $ingest_west = $this->filter_available_west_ingests($ingest_response['ingests']);
+            $available_ingest = $this->get_available_ingest($ingest_west);
+            syslog(LOG_NOTICE, "SMH DEBUG : ingest_response " . print_r($available_ingest, true));
 
             $success = array('success' => true, 'stream_key' => $channel_response['stream_key']);
             return $success;
@@ -77,6 +72,68 @@ class Twitch_client_api {
             syslog(LOG_NOTICE, "SMH DEBUG : Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage());
             syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
         }
+    }
+
+    public function get_available_ingest($ingest_west) {
+        $found_ingest = false;
+        $available_ingest = array();
+        if ($this->multi_array_search('US West: Los Angeles, CA', $ingest_west) && !$found_ingest) {
+            foreach ($ingest_west as $ingest) {
+                if (strpos($ingest['name'], 'US West: Los Angeles, CA') !== false) {
+                    array_push($available_ingest, array('id' => $ingest['id'], 'url_template' => $ingest['url_template'], 'availability' => $ingest['availability'], 'name' => $ingest['name']));
+                }
+            }
+            $found_ingest = true;
+        }
+        if ($this->multi_array_search('US West: San Jose,CA', $ingest_west) && !$found_ingest) {
+            foreach ($ingest_west as $ingest) {
+                if (strpos($ingest['name'], 'US West: San Jose,CA') !== false) {
+                    array_push($available_ingest, array('id' => $ingest['id'], 'url_template' => $ingest['url_template'], 'availability' => $ingest['availability'], 'name' => $ingest['name']));
+                }
+            }
+            $found_ingest = true;
+        }
+        if ($this->multi_array_search('US West: San Francisco, CA', $ingest_west) && !$found_ingest) {
+            foreach ($ingest_west as $ingest) {
+                if (strpos($ingest['name'], 'US West: San Francisco, CA') !== false) {
+                    array_push($available_ingest, array('id' => $ingest['id'], 'url_template' => $ingest['url_template'], 'availability' => $ingest['availability'], 'name' => $ingest['name']));
+                }
+            }
+            $found_ingest = true;
+        }
+
+        return $available_ingest;
+    }
+
+    public function multi_array_search($search_for, $search_in) {
+        foreach ($search_in as $element) {
+            if (($element === $search_for)) {
+                return true;
+            } elseif (is_array($element)) {
+                $result = $this->multi_array_search($search_for, $element);
+                if ($result == true)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    public function filter_available_west_ingests($ingest_locations) {
+        $ingest_west = array();
+        foreach ($ingest_locations as $ingest) {
+            if (strpos($ingest['name'], 'US West') !== false) {
+                if ($ingest['availability'] && (strpos($ingest['name'], 'Los Angeles') !== false)) {
+                    array_push($ingest_west, array('id' => $ingest['_id'], 'url_template' => $ingest['url_template'], 'availability' => $ingest['availability'], 'name' => $ingest['name']));
+                }
+                if ($ingest['availability'] && (strpos($ingest['name'], 'San Jose') !== false)) {
+                    array_push($ingest_west, array('id' => $ingest['_id'], 'url_template' => $ingest['url_template'], 'availability' => $ingest['availability'], 'name' => $ingest['name']));
+                }
+                if ($ingest['availability'] && (strpos($ingest['name'], 'San Francisco') !== false)) {
+                    array_push($ingest_west, array('id' => $ingest['_id'], 'url_template' => $ingest['url_template'], 'availability' => $ingest['availability'], 'name' => $ingest['name']));
+                }
+            }
+        }
+        return $ingest_west;
     }
 
     public function checkAuthToken($token) {
