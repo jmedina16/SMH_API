@@ -28,12 +28,25 @@ class Twitch_client_api {
             $tokens = array();
             $url = 'https://api.twitch.tv/kraken/oauth2/token';
             $data = array('client_id' => $this->OAUTH2_CLIENT_ID, 'client_secret' => $this->OAUTH2_CLIENT_SECRET, 'code' => $code, 'grant_type' => 'authorization_code', 'redirect_uri' => $this->REDIRECT_URI);
-            $token_response = json_decode($this->curlPost($url, $data), true);
-            syslog(LOG_NOTICE, "SMH DEBUG : getTokens " . print_r($token_response, true));
-            syslog(LOG_NOTICE, "SMH DEBUG : access_token " . print_r($token_response['access_token'], true));
+            $token_response = $this->curlPost($url, $data);
             $tokens['access_token'] = $token_response['access_token'];
             $tokens['refresh_token'] = $token_response['refresh_token'];
             return $tokens;
+        } catch (Exception $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage());
+            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+        }
+    }
+
+    public function get_account_details($access_token) {
+        $success = array('success' => false);
+        try {
+            $tokens = array();
+            $url = 'https://api.twitch.tv/kraken/user';
+            $data = array();
+            $response = $this->curlGet($url, $data, $access_token);
+            $success = array('success' => true, 'channel_name' => $response['display_name'], 'channel_logo' => $response['logo'], 'channel_id' => $response['_id']);
+            return $success;
         } catch (Exception $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage());
             syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
@@ -48,7 +61,23 @@ class Twitch_client_api {
         $response = curl_exec($ch);
         curl_close($ch);
 
-        return $response;
+        return json_decode($response, true);
+    }
+
+    public function curlGet($url, $data, $access_token) {
+        $final_url = $url . '?' . http_build_query($data);
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $final_url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Accept: application/vnd.twitchtv.v5+json',
+            'Client-ID: ' . $this->OAUTH2_CLIENT_ID,
+            'Authorization: OAuth ' . $access_token
+        ));
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        return json_decode($response, true);
     }
 
 }
