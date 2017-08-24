@@ -55,13 +55,22 @@ class Sn_config_model extends CI_Model {
             $data = array(
                 'partner_id' => $pid,
                 'facebook_live' => $status,
-                'youtube_live' => 0
+                'youtube_live' => 0,
+                'twitch' => 0
             );
         } else if ($platform == 'youtube') {
             $data = array(
                 'partner_id' => $pid,
                 'facebook_live' => 0,
                 'youtube_live' => $status,
+                'twitch' => 0
+            );
+        } else if ($platform == 'twitch') {
+            $data = array(
+                'partner_id' => $pid,
+                'facebook_live' => 0,
+                'youtube_live' => 0,
+                'twitch' => $status
             );
         }
 
@@ -84,6 +93,10 @@ class Sn_config_model extends CI_Model {
         } else if ($platform == 'youtube') {
             $data = array(
                 'youtube_live' => $status,
+            );
+        } else if ($platform == 'twitch') {
+            $data = array(
+                'twitch' => $status,
             );
         }
 
@@ -121,9 +134,37 @@ class Sn_config_model extends CI_Model {
     }
 
     public function twitch_platform($pid, $ks) {
-        $auth = false;
-        $twitch = array('platform' => 'twitch', 'authorized' => $auth, 'user_details' => null, 'publish_to' => null, 'settings' => null, 'redirect_url' => $this->twitch_client_api->getRedirectURL($pid, $ks));
+        $twitch_auth = $this->validate_twitch_token($pid);
+        $auth = ($twitch_auth['success']) ? true : false;
+        if ($auth) {
+            $channel_details = $this->get_twch_channel_details($pid);
+            $details = ($channel_details['success']) ? $channel_details['channel_details'] : null;
+            $twitch = array('platform' => 'twitch', 'authorized' => $auth, 'channel_details' => $details, 'settings' => null);
+        } else {
+            $twitch = array('platform' => 'twitch', 'authorized' => $auth, 'channel_details' => null, 'settings' => null, 'redirect_url' => $this->twitch_client_api->getRedirectURL($pid, $ks));
+        }
         return $twitch;
+    }
+
+    public function get_twch_channel_details($pid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('twitch_channel')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $name = $res['name'];
+                $logo = $res['logo'];
+            }
+            $user_details = array('channel_name' => $name, 'channel_logo' => $logo);
+            $success = array('success' => true, 'channel_details' => $user_details);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
     }
 
     public function validate_twitch_token($pid) {
@@ -139,14 +180,13 @@ class Sn_config_model extends CI_Model {
             foreach ($result as $res) {
                 $token['access_token'] = $this->smcipher->decrypt($res['access_token']);
                 $token['refresh_token'] = $this->smcipher->decrypt($res['refresh_token']);
-                $token['expires_in'] = $res['expires_in'];
             }
             $tokens_valid = $this->twitch_client_api->checkAuthToken($token);
             if ($tokens_valid['success'] && ($tokens_valid['message'] == 'valid_access_token')) {
                 $success = array('success' => true, 'access_token' => $tokens_valid['access_token']);
             }
             if ($tokens_valid['success'] && ($tokens_valid['message'] == 'new_access_token')) {
-                $access_token = $this->update_twitch_tokens($pid, $tokens_valid['access_token']);
+                $access_token = $this->update_twitch_tokens($pid, $tokens_valid);
                 if ($access_token['success']) {
                     $success = array('success' => true, 'access_token' => $tokens_valid['access_token']);
                 } else {
@@ -890,10 +930,8 @@ class Sn_config_model extends CI_Model {
         $success = array('success' => false);
         $data = array(
             'partner_id' => $pid,
-            //'access_token' => $this->smcipher->encrypt($tokens['access_token']),
-            //'refresh_token' => $this->smcipher->encrypt($tokens['refresh_token']),
-            'access_token' => $tokens['access_token'],
-            'refresh_token' => $tokens['refresh_token'],
+            'access_token' => $this->smcipher->encrypt($tokens['access_token']),
+            'refresh_token' => $this->smcipher->encrypt($tokens['refresh_token']),
             'created_at' => date("Y-m-d H:i:s")
         );
         $this->config->insert('twitch_channel', $data);
