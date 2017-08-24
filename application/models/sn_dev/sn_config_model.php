@@ -851,6 +851,7 @@ class Sn_config_model extends CI_Model {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
                 $tokens = $this->twitch_client_api->getTokens($code);
+                syslog(LOG_NOTICE, "SMH DEBUG : store_twitch_authorization " . print_r($tokens,true));
                 if ($this->check_twitch($valid['pid'])) {
                     $result = $this->update_twitch_tokens($valid['pid'], $tokens);
                 } else {
@@ -884,7 +885,6 @@ class Sn_config_model extends CI_Model {
             //'refresh_token' => $this->smcipher->encrypt($tokens['refresh_token']),
             'access_token' => $tokens['access_token'],
             'refresh_token' => $tokens['refresh_token'],
-            'expires_in' => $tokens['expires_in'],
             'created_at' => date("Y-m-d H:i:s")
         );
         $this->config->insert('twitch_channel', $data);
@@ -902,7 +902,6 @@ class Sn_config_model extends CI_Model {
         $data = array(
             'access_token' => $this->smcipher->encrypt($tokens['access_token']),
             'refresh_token' => $this->smcipher->encrypt($tokens['refresh_token']),
-            'expires_in' => $tokens['expires_in'],
             'updated_at' => date("Y-m-d H:i:s")
         );
 
