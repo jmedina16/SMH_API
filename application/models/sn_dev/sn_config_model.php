@@ -851,18 +851,27 @@ class Sn_config_model extends CI_Model {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
                 $tokens = $this->twitch_client_api->getTokens($code);
-                syslog(LOG_NOTICE, "SMH DEBUG : store_twitch_authorization " . print_r($tokens,true));
                 if ($this->check_twitch($valid['pid'])) {
                     $result = $this->update_twitch_tokens($valid['pid'], $tokens);
                 } else {
                     $result = $this->insert_twitch_tokens($valid['pid'], $tokens);
                 }
                 if ($result['success']) {
-                    $update_status = $this->update_sn_config($pid, 'twitch', 1);
-                    if ($update_status['success']) {
-                        $success = array('success' => true);
+                    $channel = $this->retrieve_twitch_channel_details($pid, $tokens['access_token']);
+                    if ($channel['success']) {
+                        $update_twitch_channel_details = $this->update_twitch_channel_details($pid, $channel['channel_details']['channel_name'], $channel['channel_details']['channel_id'], $channel['channel_details']['channel_logo']);
+                        if ($update_twitch_channel_details['success']) {
+                            $update_status = $this->update_sn_config($pid, 'twitch', 1);
+                            if ($update_status['success']) {
+                                $success = array('success' => true);
+                            } else {
+                                $success = array('success' => false);
+                            }
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not insert channel details');
+                        }
                     } else {
-                        $success = array('success' => false);
+                        $success = array('success' => false, 'message' => 'Could not get channel details');
                     }
                 } else {
                     $success = array('success' => false);
@@ -903,6 +912,37 @@ class Sn_config_model extends CI_Model {
             'access_token' => $this->smcipher->encrypt($tokens['access_token']),
             'refresh_token' => $this->smcipher->encrypt($tokens['refresh_token']),
             'updated_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->where('partner_id', $pid);
+        $this->config->update('twitch_channel', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'notice' => 'no changes were made');
+        }
+        return $success;
+    }
+
+    public function retrieve_twitch_channel_details($pid, $access_token) {
+        $success = array('success' => false);
+        $account_details = $this->twitch_client_api->get_account_details($access_token);
+        if ($account_details['success']) {
+            $channel_details = array('channel_name' => $account_details['channel_name'], 'channel_logo' => $account_details['channel_logo'], 'channel_id' => $account_details['channel_id']);
+            $success = array('success' => true, 'channel_details' => $channel_details);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function update_twitch_channel_details($pid, $name, $id, $logo) {
+        $success = array('success' => false);
+        $data = array(
+            'name' => $this->config->escape_str($name),
+            'channel_id' => $this->smcipher->encrypt($id),
+            'logo' => $logo,
         );
 
         $this->config->where('partner_id', $pid);
