@@ -52,6 +52,33 @@ class Twitch_client_api {
         }
     }
 
+    public function get_channel_details($access_token) {
+        $success = array('success' => false);
+        try {
+            $channel_url = 'https://api.twitch.tv/kraken/channel';
+            $data = array();
+            $channel_response = $this->curlGet($channel_url, $data, $access_token);
+
+            $ingest_url = 'https://api.twitch.tv/kraken/ingests';
+            $ingest_response = $this->curlGet($ingest_url, $data, $access_token);
+
+            $ingest_west = array();
+            foreach ($ingest_response['ingests'] as $ingest) {
+                if (strpos($ingest['name'], 'US West') !== false) {
+                    array_push($ingest_west, array('id' => $ingest['_id'], 'url_template' => $ingest['url_template'], 'availability' => $ingest['availability'], 'name' => $ingest['name']));
+                }
+            }
+
+            syslog(LOG_NOTICE, "SMH DEBUG : ingest_response " . print_r($ingest_west, true));
+
+            $success = array('success' => true, 'stream_key' => $channel_response['stream_key']);
+            return $success;
+        } catch (Exception $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage());
+            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+        }
+    }
+
     public function checkAuthToken($token) {
         $success = array('success' => false);
         $url = 'https://api.twitch.tv/kraken';
