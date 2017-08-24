@@ -137,6 +137,7 @@ class Sn_config_model extends CI_Model {
         $twitch_auth = $this->validate_twitch_token($pid);
         $auth = ($twitch_auth['success']) ? true : false;
         if ($auth) {
+            $channel_stream = $this->twitch_client_api->get_channel_details($twitch_auth['access_token']);
             $channel_details = $this->get_twch_channel_details($pid);
             $details = ($channel_details['success']) ? $channel_details['channel_details'] : null;
             $twitch = array('platform' => 'twitch', 'authorized' => $auth, 'channel_details' => $details, 'settings' => null);
