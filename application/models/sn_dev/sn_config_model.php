@@ -508,6 +508,25 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function get_twitch_status($pid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('platform_status')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $status = $res['twitch'];
+            }
+            $success = array('success' => true, 'status' => $status);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
     public function youtube_platform($pid, $ks, $projection) {
         $youtube_auth = $this->validate_youtube_token($pid);
         $auth = ($youtube_auth['success']) ? true : false;
@@ -2638,7 +2657,7 @@ class Sn_config_model extends CI_Model {
         if ($query->num_rows() > 0) {
             foreach ($result as $res) {
                 $id = $res['id'];
-                $live_id = $this->smcipher->decrypt($res['channel_name']);
+                $live_id = $res['channel_name'];
             }
             $success = array('success' => true, 'id' => $id, 'live_id' => $live_id);
         } else {
@@ -3352,6 +3371,9 @@ class Sn_config_model extends CI_Model {
                     if ($platform['platform'] == 'youtube_live') {
                         $platforms_status['youtube'] = $platform['status'];
                     }
+                    if ($platform['platform'] == 'twitch') {
+                        $platforms_status['twitch'] = $platform['status'];
+                    }
                 }
             }
             $success = array('success' => true, 'platforms_status' => $platforms_status);
@@ -3730,7 +3752,8 @@ class Sn_config_model extends CI_Model {
                 array_push($multiBitrate_status, $multiBitrate['multiBitrate']);
                 $youtube_status = $this->get_youtube_status($pid);
                 $facebook_status = $this->get_facebook_status($pid);
-                if ($youtube_status['status'] || $facebook_status['status']) {
+                $twitch_status = $this->get_twitch_status($pid);
+                if ($youtube_status['status'] || $facebook_status['status'] || $twitch_status['status']) {
                     $platforms_status = $this->get_live_entry_platforms_status($pid, $eid);
                     if ($platforms_status['success']) {
                         if (count($platforms_status['platforms_status'])) {
@@ -3750,11 +3773,19 @@ class Sn_config_model extends CI_Model {
                                 $success = array('success' => false, 'message' => 'Could not build YouTube Ingestion');
                             }
 
+                            $build_twch_ingestion = $this->build_twch_ingestion($pid, $eid, $twitch_status, $platforms_status);
+                            if ($build_twch_ingestion['success']) {
+                                array_push($platforms, $build_twch_ingestion['twch_platform']);
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not build Twitch Ingestion');
+                            }
+
                             $success = array('success' => true, 'platforms' => $platforms, 'multiBitrate' => $multiBitrate_status);
                         } else {
                             array_push($platforms, array('platform' => 'edgecast', 'status' => true));
                             array_push($platforms, array('platform' => 'facebook', 'status' => false));
                             array_push($platforms, array('platform' => 'youtube', 'status' => false));
+                            array_push($platforms, array('platform' => 'twitch', 'status' => false));
                             $success = array('success' => true, 'platforms' => $platforms, 'multiBitrate' => $multiBitrate_status);
                         }
                     } else {
@@ -3764,6 +3795,7 @@ class Sn_config_model extends CI_Model {
                     array_push($platforms, array('platform' => 'edgecast', 'status' => true));
                     array_push($platforms, array('platform' => 'facebook', 'status' => false));
                     array_push($platforms, array('platform' => 'youtube', 'status' => false));
+                    array_push($platforms, array('platform' => 'twitch', 'status' => false));
                     $success = array('success' => true, 'platforms' => $platforms, 'multiBitrate' => $multiBitrate_status);
                 }
             } else {
@@ -3773,6 +3805,72 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
         }
         header('Content-type: application/json');
+        return $success;
+    }
+
+    public function build_twch_ingestion($pid, $eid, $twitch_status, $platforms_status) {
+        $success = array('success' => false);
+        $twch_platform = array();
+        if ($twitch_status['status']) {
+            if ($platforms_status['platforms_status']['twitch']) {
+                $ingestionSettings = $this->get_twitch_ingestion_settings($pid);
+                if ($ingestionSettings['success']) {
+                    $update_twitch_ls_status = $this->update_twitch_ls_status($pid, 'live');
+                    if ($update_twitch_ls_status['success']) {
+                        array_push($twch_platform, array('platform' => 'twitch', 'status' => $platforms_status['platforms_status']['twitch'], 'ingestionSettings' => $ingestionSettings['ingestionSettings']));
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not update twitch live stream status');
+                    }
+                } else {
+                    array_push($twch_platform, array('platform' => 'twitch', 'status' => false));
+                }
+            } else {
+                array_push($twch_platform, array('platform' => 'twitch', 'status' => false));
+            }
+        } else {
+            array_push($twch_platform, array('platform' => 'twitch', 'status' => false));
+        }
+        $success = array('success' => true, 'twch_platform' => $twch_platform[0]);
+        return $success;
+    }
+
+    public function get_twitch_ingestion_settings($pid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('twitch_channel_streams')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            $ingestionSettings = array();
+            foreach ($result as $res) {
+                $streamName = $this->smcipher->decrypt($res['streamName']);
+                $ingestionAddress = $this->smcipher->decrypt($res['ingestionAddress']);
+            }
+            array_push($ingestionSettings, array('streamName' => $streamName, 'ingestionAddress' => $ingestionAddress));
+            $success = array('success' => true, 'ingestionSettings' => $ingestionSettings);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function update_twitch_ls_status($pid, $status) {
+        $success = array('success' => false);
+        $data = array(
+            'status' => $status,
+            'updated_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->where('partner_id', $pid);
+        $this->config->update('twitch_channel_streams', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'notice' => 'no changes were made');
+        }
         return $success;
     }
 
