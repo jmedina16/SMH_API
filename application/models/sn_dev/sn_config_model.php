@@ -137,10 +137,6 @@ class Sn_config_model extends CI_Model {
         $twitch_auth = $this->validate_twitch_token($pid);
         $auth = ($twitch_auth['success']) ? true : false;
         if ($auth) {
-            $channel_stream = $this->twitch_client_api->get_channel_details($twitch_auth['access_token']);
-            syslog(LOG_NOTICE, "SMH DEBUG : ingest_response " . print_r($channel_stream, true));
-            $test = $this->finalize_address_url($channel_stream['channel_stream']['ingestAddress']);
-            syslog(LOG_NOTICE, "SMH DEBUG : ingestAddress " . print_r($test, true));
             $channel_details = $this->get_twch_channel_details($pid);
             $details = ($channel_details['success']) ? $channel_details['channel_details'] : null;
             $twitch = array('platform' => 'twitch', 'authorized' => $auth, 'channel_details' => $details, 'settings' => null);
@@ -905,11 +901,21 @@ class Sn_config_model extends CI_Model {
                     if ($channel['success']) {
                         $update_twitch_channel_details = $this->update_twitch_channel_details($pid, $channel['channel_details']['channel_name'], $channel['channel_details']['channel_id'], $channel['channel_details']['channel_logo']);
                         if ($update_twitch_channel_details['success']) {
-                            $update_status = $this->update_sn_config($pid, 'twitch', 1);
-                            if ($update_status['success']) {
-                                $success = array('success' => true);
+                            $channel_stream = $this->twitch_client_api->get_channel_details($tokens['access_token']);
+                            if ($channel_stream['success']) {
+                                $twch_channel_stream = $this->insert_twch_channel_stream($pid, $channel_stream['channel_stream']['ingestId'], $channel_stream['channel_stream']['streamName'], $channel_stream['channel_stream']['ingestAddress']);
+                                if ($twch_channel_stream['success']) {
+                                    $update_status = $this->update_sn_config($pid, 'twitch', 1);
+                                    if ($update_status['success']) {
+                                        $success = array('success' => true);
+                                    } else {
+                                        $success = array('success' => false);
+                                    }
+                                } else {
+                                    $success = array('success' => false, 'message' => 'Could not insert Twitch channel details');
+                                }
                             } else {
-                                $success = array('success' => false);
+                                $success = array('success' => false, 'message' => 'Could not get Twitch channel details');
                             }
                         } else {
                             $success = array('success' => false, 'message' => 'Could not insert channel details');
@@ -927,6 +933,27 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
         }
 
+        return $success;
+    }
+
+    public function insert_twch_channel_stream($pid, $ingestId, $streamName, $address) {
+        $success = array('success' => false);
+        $data = array(
+            'partner_id' => $pid,
+            'ingestId' => $ingestId,
+            'streamName' => $this->smcipher->encrypt($streamName),
+            'ingestionAddress' => $this->smcipher->encrypt($this->finalize_address_url($address)),
+            'status' => 'ready',
+            'created_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->insert('twitch_channel_streams', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
         return $success;
     }
 
@@ -1018,11 +1045,16 @@ class Sn_config_model extends CI_Model {
                     if ($removeAuth['success']) {
                         $remove_channel = $this->remove_twitch_channel($pid);
                         if ($remove_channel['success']) {
-                            $update_status = $this->update_sn_config($pid, 'twitch', 0);
-                            if ($update_status['success']) {
-                                $success = array('success' => true);
+                            $remove_twitch_channel_stream = $this->remove_twitch_channel_stream($pid);
+                            if ($remove_twitch_channel_stream['success']) {
+                                $update_status = $this->update_sn_config($pid, 'twitch', 0);
+                                if ($update_status['success']) {
+                                    $success = array('success' => true);
+                                } else {
+                                    $success = array('success' => false, 'message' => 'Could not update platform status');
+                                }
                             } else {
-                                $success = array('success' => false, 'message' => 'Could not update platform status');
+                                $success = array('success' => false, 'message' => $remove_twitch_channel_stream['message']);
                             }
                         } else {
                             $success = array('success' => false, 'message' => $remove_channel['message']);
@@ -1052,6 +1084,37 @@ class Sn_config_model extends CI_Model {
         } else {
             $success = array('success' => false, 'message' => 'Could not remove Twitch channel');
         }
+        return $success;
+    }
+
+    public function remove_twitch_channel_stream($pid) {
+        $success = array('success' => false);
+        if ($this->check_twch_channel_stream($pid)) {
+            $this->config->where('partner_id = "' . $pid . '"');
+            $this->config->delete('twitch_channel_streams');
+            if ($this->config->affected_rows() > 0) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Could not remove Twitch channel stream');
+            }
+        } else {
+            $success = array('success' => true);
+        }
+        return $success;
+    }
+
+    public function check_twch_channel_stream($pid) {
+        $success = false;
+        $this->config->select('*')
+                ->from('twitch_channel_streams')
+                ->where('partner_id', $pid);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
         return $success;
     }
 
