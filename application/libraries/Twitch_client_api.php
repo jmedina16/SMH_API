@@ -58,15 +58,9 @@ class Twitch_client_api {
             $channel_url = 'https://api.twitch.tv/kraken/channel';
             $data = array();
             $channel_response = $this->curlGet($channel_url, $data, $access_token);
-
-            $ingest_url = 'https://api.twitch.tv/kraken/ingests';
-            $ingest_response = $this->curlGet($ingest_url, $data, $access_token);
-
-            $ingest_west = $this->filter_available_west_ingests($ingest_response['ingests']);
-            $available_ingest = $this->get_available_ingest($ingest_west);
-            syslog(LOG_NOTICE, "SMH DEBUG : ingest_response " . print_r($available_ingest, true));
-
-            $success = array('success' => true, 'stream_key' => $channel_response['stream_key']);
+            $available_ingest = $this->get_available_ingest($access_token);
+            $channel_stream = array('ingestId' => $available_ingest[0]['id'], 'streamName' => $channel_response['stream_key'], 'ingestAddress' => $available_ingest[0]['url_template']);
+            $success = array('success' => true, 'channel_stream' => $channel_stream);
             return $success;
         } catch (Exception $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage());
@@ -74,9 +68,13 @@ class Twitch_client_api {
         }
     }
 
-    public function get_available_ingest($ingest_west) {
+    public function get_available_ingest($access_token) {
+        $ingest_url = 'https://api.twitch.tv/kraken/ingests';
+        $data = array();
         $found_ingest = false;
         $available_ingest = array();
+        $ingest_response = $this->curlGet($ingest_url, $data, $access_token);
+        $ingest_west = $this->filter_available_west_ingests($ingest_response['ingests']);
         if ($this->multi_array_search('US West: Los Angeles, CA', $ingest_west) && !$found_ingest) {
             foreach ($ingest_west as $ingest) {
                 if (strpos($ingest['name'], 'US West: Los Angeles, CA') !== false) {
