@@ -59,7 +59,8 @@ class Twitch_client_api {
             $data = array();
             $channel_response = $this->curlGet($channel_url, $data, $access_token);
             $available_ingest = $this->get_available_ingest($access_token);
-            $channel_stream = array('ingestId' => $available_ingest[0]['id'], 'streamName' => $channel_response['stream_key'], 'ingestAddress' => $available_ingest[0]['url_template']);
+            $ingestAddress = str_replace("{stream_key}", "", $available_ingest[0]['url_template']);
+            $channel_stream = array('ingestId' => $available_ingest[0]['id'], 'streamName' => $channel_response['stream_key'], 'ingestAddress' => $ingestAddress);
             $success = array('success' => true, 'channel_stream' => $channel_stream);
             return $success;
         } catch (Exception $e) {
