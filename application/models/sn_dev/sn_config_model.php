@@ -139,6 +139,8 @@ class Sn_config_model extends CI_Model {
         if ($auth) {
             $channel_stream = $this->twitch_client_api->get_channel_details($twitch_auth['access_token']);
             syslog(LOG_NOTICE, "SMH DEBUG : ingest_response " . print_r($channel_stream, true));
+            $test = $this->finalize_address_url($channel_stream['channel_stream']['ingestAddress']);
+            syslog(LOG_NOTICE, "SMH DEBUG : ingestAddress " . print_r($test, true));
             $channel_details = $this->get_twch_channel_details($pid);
             $details = ($channel_details['success']) ? $channel_details['channel_details'] : null;
             $twitch = array('platform' => 'twitch', 'authorized' => $auth, 'channel_details' => $details, 'settings' => null);
