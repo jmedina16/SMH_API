@@ -2378,6 +2378,7 @@ class Sn_config_model extends CI_Model {
                 $snConfig = $this->build_live_sn_config($platforms);
                 $youtube_success = array('platform' => 'youtube', 'success' => false, 'message' => 'Was not asked to create a live stream');
                 $facebook_success = array('platform' => 'facebook', 'success' => false, 'message' => 'Was not asked to create a live stream');
+                $twitch_success = array('platform' => 'twitch', 'success' => false, 'message' => 'Was not asked to create a live stream');
                 $youtube_embed = true;
 
                 if ($snConfig['smh']) {
@@ -2423,11 +2424,29 @@ class Sn_config_model extends CI_Model {
                     array_push($config, $facebook_live_config['config']);
                 }
 
+                if ($snConfig['twitch']) {
+                    $create_twitch_channel_stream = $this->create_twitch_channel_stream($pid, $eid);
+                    if ($create_twitch_channel_stream['success']) {
+                        $twitch_success['success'] = true;
+                        $twitch_live_config = $this->create_live_sn_config('twitch', true, $create_twitch_channel_stream['live_id']);
+                        array_push($config, $twitch_live_config['config']);
+                    } else {
+                        $twitch_success['success'] = false;
+                        $twitch_success['message'] = $create_twitch_channel_stream['message'];
+                        $twitch_live_config = $this->create_live_sn_config('twitch', false, null);
+                        array_push($config, $twitch_live_config['config']);
+                    }
+                } else {
+                    $twitch_live_config = $this->create_live_sn_config('twitch', false, null);
+                    array_push($config, $twitch_live_config['config']);
+                }
+
                 $partnerData = $this->update_sn_partnerData($pid, $eid, $config, $vr);
                 if ($partnerData['success']) {
                     $platforms_responses = array();
                     array_push($platforms_responses, $youtube_success);
                     array_push($platforms_responses, $facebook_success);
+                    array_push($platforms_responses, $twitch_success);
                     $platf = $this->get_live_platforms(json_decode($partnerData['partnerData']));
                     $configSettings = $this->buildConfigSettings($platf);
                     $success = array('success' => true, 'configSettings' => $configSettings, 'youtube_embed_status' => $youtube_embed, 'platforms_responses' => $platforms_responses);
@@ -2441,6 +2460,23 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
         }
 
+        return $success;
+    }
+
+    public function create_twitch_channel_stream($pid, $eid) {
+        $success = array('success' => false);
+        $access_token = $this->validate_twitch_token($pid);
+        if ($access_token['success']) {
+            $livestream_ids = $this->get_twch_channel_stream($pid);
+            $add_live_entry = $this->add_twch_channel_entry($pid, $eid, $livestream_ids['id']);
+            if ($add_live_entry['success']) {
+                $success = array('success' => true, 'live_id' => $livestream_ids['live_id']);
+            } else {
+                $success = array('success' => false, 'message' => 'Could not insert Twitch Channel Entry');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Twitch: invalid access token');
+        }
         return $success;
     }
 
