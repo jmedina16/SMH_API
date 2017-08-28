@@ -3726,7 +3726,10 @@ class Sn_config_model extends CI_Model {
                         if ($platforms_status['platforms_status']['facebook']) {
                             $success = $this->delete_facebook_livestream($pid, $eid);
                         }
-                        if (!$platforms_status['platforms_status']['youtube'] && !$platforms_status['platforms_status']['facebook']) {
+                        if ($platforms_status['platforms_status']['twitch']) {
+                            $success = $this->remove_twch_channel_entry($pid, $eid);
+                        }
+                        if (!$platforms_status['platforms_status']['youtube'] && !$platforms_status['platforms_status']['facebook'] && !$platforms_status['platforms_status']['twitch']) {
                             $success = array('success' => true, 'message' => 'Social network: nothing to update');
                         }
                     } else {
