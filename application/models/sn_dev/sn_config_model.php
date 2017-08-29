@@ -977,6 +977,28 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function update_twch_channel_stream($pid, $ingestId, $channelName, $streamName, $address) {
+        $success = array('success' => false);
+        $data = array(
+            'channel_name' => $channelName,
+            'ingestId' => $ingestId,
+            'streamName' => $this->smcipher->encrypt($streamName),
+            'ingestionAddress' => $this->smcipher->encrypt($this->finalize_address_url($address)),
+            'status' => 'ready',
+            'updated_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->where('partner_id', $pid);
+        $this->config->update('twitch_channel_streams', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
     public function insert_twitch_tokens($pid, $tokens) {
         $success = array('success' => false);
         $data = array(
@@ -1032,6 +1054,7 @@ class Sn_config_model extends CI_Model {
             'name' => $this->config->escape_str($name),
             'channel_id' => $this->smcipher->encrypt($id),
             'logo' => $logo,
+            'updated_at' => date("Y-m-d H:i:s")
         );
 
         $this->config->where('partner_id', $pid);
@@ -5250,6 +5273,45 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => true);
         } else {
             $success = array('success' => false, 'message' => 'Could not update entry partnerData');
+        }
+
+        return $success;
+    }
+
+    public function resync_twch_account($pid, $ks) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $access_token = $this->validate_twitch_token($pid);
+                if ($access_token['success']) {
+                    $channel = $this->retrieve_twitch_channel_details($pid, $access_token['access_token']);
+                    if ($channel['success']) {
+                        $update_twitch_channel_details = $this->update_twitch_channel_details($pid, $channel['channel_details']['channel_name'], $channel['channel_details']['channel_id'], $channel['channel_details']['channel_logo']);
+                        if ($update_twitch_channel_details['success']) {
+                            $channel_stream = $this->twitch_client_api->get_channel_details($access_token['access_token']);
+                            $update_twch_channel_stream = $this->update_twch_channel_stream($pid, $channel_stream['channel_stream']['ingestId'], $channel_stream['channel_stream']['channelName'], $channel_stream['channel_stream']['streamName'], $channel_stream['channel_stream']['ingestAddress']);
+                            if ($update_twch_channel_stream['success']) {
+                                $channel_details = array('channel_name' => $channel['channel_details']['channel_name'], 'channel_logo' => $channel['channel_details']['channel_logo']);
+                                $success = array('success' => true, 'channel_details' => $channel_details);
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not update channel stream');
+                            }
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not insert channel details');
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not get channel details');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Twitch: invalid access token');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Social network service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
         }
 
         return $success;
