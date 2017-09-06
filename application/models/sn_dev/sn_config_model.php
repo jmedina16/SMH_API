@@ -945,11 +945,16 @@ class Sn_config_model extends CI_Model {
                             if ($channel_stream['success']) {
                                 $twch_channel_stream = $this->insert_twch_channel_stream($pid, $channel_stream['channel_stream']['ingestId'], $channel_stream['channel_stream']['channelName'], $channel_stream['channel_stream']['streamName'], $channel_stream['channel_stream']['ingestAddress']);
                                 if ($twch_channel_stream['success']) {
-                                    $update_status = $this->update_sn_config($pid, 'twitch', 1);
-                                    if ($update_status['success']) {
-                                        $success = array('success' => true);
+                                    $update_partner_notification = $this->smportal->update_partner_notification($pid, $ks);
+                                    if ($update_partner_notification['success']) {
+                                        $update_status = $this->update_sn_config($pid, 'twitch', 1);
+                                        if ($update_status['success']) {
+                                            $success = array('success' => true);
+                                        } else {
+                                            $success = array('success' => false);
+                                        }
                                     } else {
-                                        $success = array('success' => false);
+                                        $success = array('success' => false, 'message' => 'Could not update partner notification');
                                     }
                                 } else {
                                     $success = array('success' => false, 'message' => 'Could not insert Twitch channel details');
@@ -1225,11 +1230,16 @@ class Sn_config_model extends CI_Model {
                     $result = $this->insert_facebook_tokens($valid['pid'], $tokens);
                 }
                 if ($result['success']) {
-                    $update_status = $this->update_sn_config($pid, 'facebook', 1);
-                    if ($update_status['success']) {
-                        $success = array('success' => true);
+                    $update_partner_notification = $this->smportal->update_partner_notification($pid, $ks);
+                    if ($update_partner_notification['success']) {
+                        $update_status = $this->update_sn_config($pid, 'facebook', 1);
+                        if ($update_status['success']) {
+                            $success = array('success' => true);
+                        } else {
+                            $success = array('success' => false);
+                        }
                     } else {
-                        $success = array('success' => false);
+                        $success = array('success' => false, 'message' => 'Could not update partner notification');
                     }
                 } else {
                     $success = array('success' => false);
@@ -2275,11 +2285,16 @@ class Sn_config_model extends CI_Model {
                         if ($update_youtube_channel_details['success']) {
                             $init_youtube_channel_settings = $this->init_youtube_channel_settings($pid, $projection);
                             if ($init_youtube_channel_settings['success']) {
-                                $update_status = $this->update_sn_config($pid, 'youtube', 1);
-                                if ($update_status['success']) {
-                                    $success = array('success' => true);
+                                $update_partner_notification = $this->smportal->update_partner_notification($pid, $ks);
+                                if ($update_partner_notification['success']) {
+                                    $update_status = $this->update_sn_config($pid, 'youtube', 1);
+                                    if ($update_status['success']) {
+                                        $success = array('success' => true);
+                                    } else {
+                                        $success = array('success' => false);
+                                    }
                                 } else {
-                                    $success = array('success' => false);
+                                    $success = array('success' => false, 'message' => 'Could not update partner notification');
                                 }
                             } else {
                                 $success = array('success' => false, 'message' => 'Could not init channel settings');
@@ -3285,16 +3300,11 @@ class Sn_config_model extends CI_Model {
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $update_partner_notification = $this->smportal->update_partner_notification($pid, $ks, $auto_upload);
-                if ($update_partner_notification['success']) {
-                    $update_youtube_auto_upload = $this->update_youtube_auto_upload($pid, $auto_upload);
-                    if ($update_youtube_auto_upload['success']) {
-                        $success = array('success' => true);
-                    } else {
-                        $success = array('success' => false, 'message' => 'Could not update auto upload status');
-                    }
+                $update_youtube_auto_upload = $this->update_youtube_auto_upload($pid, $auto_upload);
+                if ($update_youtube_auto_upload['success']) {
+                    $success = array('success' => true);
                 } else {
-                    $success = array('success' => false, 'message' => 'Could not update partner notification');
+                    $success = array('success' => false, 'message' => 'Could not update auto upload status');
                 }
             } else {
                 $success = array('success' => false, 'message' => 'Social network service not active');
