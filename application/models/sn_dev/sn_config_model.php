@@ -137,9 +137,10 @@ class Sn_config_model extends CI_Model {
         $twitch_auth = $this->validate_twitch_token($pid);
         $auth = ($twitch_auth['success']) ? true : false;
         if ($auth) {
+            $settings = $this->get_twch_settings($pid);
             $channel_details = $this->get_twch_channel_details($pid);
             $details = ($channel_details['success']) ? $channel_details['channel_details'] : null;
-            $twitch = array('platform' => 'twitch', 'authorized' => $auth, 'channel_details' => $details, 'settings' => null);
+            $twitch = array('platform' => 'twitch', 'authorized' => $auth, 'channel_details' => $details, 'settings' => $settings['settings']);
         } else {
             $twitch = array('platform' => 'twitch', 'authorized' => $auth, 'channel_details' => null, 'settings' => null, 'redirect_url' => $this->twitch_client_api->getRedirectURL($pid, $ks));
         }
@@ -607,6 +608,26 @@ class Sn_config_model extends CI_Model {
                 $projection = $res['projection'];
             }
             $success = array('success' => true, 'embed_status' => $embed_status, 'auto_upload' => $auto_upload, 'projection' => $projection);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function get_twch_settings($pid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('twitch_channel_settings')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $auto_upload = ($res['auto_upload']) ? true : false;
+            }
+            $settings = array('auto_upload' => $auto_upload);
+            $success = array('success' => true, 'settings' => $settings);
         } else {
             $success = array('success' => false);
         }
