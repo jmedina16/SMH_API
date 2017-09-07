@@ -3652,6 +3652,22 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function upload_twitch_video($pid, $entry_details, $video_path) {
+        $success = array('success' => false);
+        $access_token = $this->validate_twitch_token($pid);
+        if ($access_token['success']) {
+            $upload_video = $this->twitch_client_api->uploadVideo($access_token['access_token'], $entry_details['name'], $entry_details['desc'], $video_path);
+            if ($upload_video['success']) {
+                $success = array('success' => true, 'videoId' => $upload_video['videoId']);
+            } else {
+                $success = array('success' => false, 'message' => 'Twitch: could not upload video');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Twitch: invalid access token');
+        }
+        return $success;
+    }
+
     public function upload_youtube_video($pid, $entry_details, $video_path) {
         $success = array('success' => false);
         $access_token = $this->validate_youtube_token($pid);
@@ -4431,6 +4447,13 @@ class Sn_config_model extends CI_Model {
                     } else {
                         $success = array('success' => false, 'message' => $process_facebook_upload_queue['message']);
                     }
+                } else if ($get_ready_upload['ready_upload']['platform'] === 'twitch') {
+                    $process_twitch_upload_queue = $this->process_twitch_upload_queue($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid'], $get_ready_upload['ready_upload']['projection'], $entry_details, $entry_path);
+                    if ($process_twitch_upload_queue['success']) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false, 'message' => $process_twitch_upload_queue['message']);
+                    }
                 }
             } else {
                 $success = array('success' => true);
@@ -4559,6 +4582,35 @@ class Sn_config_model extends CI_Model {
             }
         } else {
             $success = array('success' => false, 'message' => $update_youtube_upload_status['message']);
+        }
+        return $success;
+    }
+
+    public function process_twitch_upload_queue($pid, $eid, $projection, $entry_details, $entry_path) {
+        $success = array('success' => false);
+        $video_path = $entry_path['original_path'];
+        $update_twitch_upload_status = $this->update_platform_upload_status($pid, $eid, 'twitch', 'uploading', 'pending');
+        if ($update_twitch_upload_status['success']) {
+            $upload_twitch_video = $this->upload_twitch_video($pid, $entry_details, $video_path);
+            if ($upload_twitch_video['success']) {
+                $this->config = $this->load->database('sn_dev', TRUE);
+                $this->config->reconnect();
+                $insert_entry_to_twitch_vod = $this->insert_entry_to_twitch_vod($pid, $eid, $upload_twitch_video['videoId']);
+                if ($insert_entry_to_twitch_vod['success']) {
+                    $update_twitch_upload_status = $this->update_platform_upload_status($pid, $eid, 'twitch', 'completed', $upload_twitch_video['videoId']);
+                    if ($update_twitch_upload_status['success']) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false, 'message' => $update_twitch_upload_status['message']);
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not insert entry into YouTube vod');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Could not upload video to YouTube');
+            }
+        } else {
+            $success = array('success' => false, 'message' => $update_twitch_upload_status['message']);
         }
         return $success;
     }
@@ -4793,6 +4845,24 @@ class Sn_config_model extends CI_Model {
             $config = array('platform' => $platform, 'status' => $status);
         }
         $success = array('success' => true, 'config' => $config);
+        return $success;
+    }
+
+    public function insert_entry_to_twitch_vod($pid, $eid, $vid) {
+        $success = array('success' => false);
+        $data = array(
+            'partner_id' => $pid,
+            'entryId' => $eid,
+            'videoId' => $vid,
+            'created_at' => date("Y-m-d H:i:s")
+        );
+        $this->config->insert('twitch_vod_entries', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
         return $success;
     }
 
