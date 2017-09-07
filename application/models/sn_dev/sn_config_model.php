@@ -945,16 +945,21 @@ class Sn_config_model extends CI_Model {
                             if ($channel_stream['success']) {
                                 $twch_channel_stream = $this->insert_twch_channel_stream($pid, $channel_stream['channel_stream']['ingestId'], $channel_stream['channel_stream']['channelName'], $channel_stream['channel_stream']['streamName'], $channel_stream['channel_stream']['ingestAddress']);
                                 if ($twch_channel_stream['success']) {
-                                    $update_partner_notification = $this->smportal->update_partner_notification($pid, $ks);
-                                    if ($update_partner_notification['success']) {
-                                        $update_status = $this->update_sn_config($pid, 'twitch', 1);
-                                        if ($update_status['success']) {
-                                            $success = array('success' => true);
+                                    $init_twitch_channel_settings = $this->init_twitch_channel_settings($pid);
+                                    if ($init_twitch_channel_settings['success']) {
+                                        $update_partner_notification = $this->smportal->update_partner_notification($pid, $ks);
+                                        if ($update_partner_notification['success']) {
+                                            $update_status = $this->update_sn_config($pid, 'twitch', 1);
+                                            if ($update_status['success']) {
+                                                $success = array('success' => true);
+                                            } else {
+                                                $success = array('success' => false);
+                                            }
                                         } else {
-                                            $success = array('success' => false);
+                                            $success = array('success' => false, 'message' => 'Could not update partner notification');
                                         }
                                     } else {
-                                        $success = array('success' => false, 'message' => 'Could not update partner notification');
+                                        $success = array('success' => false, 'message' => 'Could not init channel settings');
                                     }
                                 } else {
                                     $success = array('success' => false, 'message' => 'Could not insert Twitch channel details');
@@ -1118,11 +1123,16 @@ class Sn_config_model extends CI_Model {
                             if ($remove_twitch_channel_stream['success']) {
                                 $remove_live_entries = $this->remove_twch_channel_entries($pid);
                                 if ($remove_live_entries['success']) {
-                                    $update_status = $this->update_sn_config($pid, 'twitch', 0);
-                                    if ($update_status['success']) {
-                                        $success = array('success' => true);
+                                    $remove_twitch_channel_settings = $this->remove_twitch_channel_settings($pid);
+                                    if ($remove_twitch_channel_settings['success']) {
+                                        $update_status = $this->update_sn_config($pid, 'twitch', 0);
+                                        if ($update_status['success']) {
+                                            $success = array('success' => true);
+                                        } else {
+                                            $success = array('success' => false, 'message' => 'Could not update platform status');
+                                        }
                                     } else {
-                                        $success = array('success' => false, 'message' => 'Could not update platform status');
+                                        $success = array('success' => false, 'message' => 'Could not remove twitch channel settings');
                                     }
                                 } else {
                                     $success = array('success' => false, 'message' => 'Could not remove twitch channel entries');
@@ -1198,6 +1208,18 @@ class Sn_config_model extends CI_Model {
             }
         } else {
             $success = array('success' => true);
+        }
+        return $success;
+    }
+
+    public function remove_twitch_channel_settings($pid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id = "' . $pid . '"');
+        $this->config->delete('twitch_channel_settings');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'message' => 'Nothing removed');
         }
         return $success;
     }
@@ -3284,6 +3306,65 @@ class Sn_config_model extends CI_Model {
         );
 
         $this->config->insert('youtube_channel_settings', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function init_twitch_channel_settings($pid) {
+        $success = array('success' => false);
+        $data = array(
+            'partner_id' => $pid,
+            'auto_upload' => false,
+            'created_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->insert('twitch_channel_settings', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function update_twitch_channel_settings($pid, $ks, $auto_upload) {
+        $success = array('success' => false);
+        $auto_upload = ($auto_upload == 'true') ? true : false;
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $update_twitch_auto_upload = $this->update_twitch_auto_upload($pid, $auto_upload);
+                if ($update_twitch_auto_upload['success']) {
+                    $success = array('success' => true);
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not update auto upload status');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Social network service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+
+        return $success;
+    }
+
+    public function update_twitch_auto_upload($pid, $auto_upload) {
+        $success = array('success' => false);
+        $data = array(
+            'auto_upload' => $auto_upload,
+            'updated_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->where('partner_id', $pid);
+        $this->config->update('twitch_channel_settings', $data);
         $this->config->limit(1);
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
@@ -5546,6 +5627,9 @@ class Sn_config_model extends CI_Model {
             $facebook_to_upload_queue = $this->add_facebook_to_upload_queue($pid, $eid, $get_auto_upload_statuses);
             array_push($config, $facebook_to_upload_queue);
 
+            $twitch_to_upload_queue = $this->add_twitch_to_upload_queue($pid, $eid, $get_auto_upload_statuses);
+            array_push($config, $twitch_to_upload_queue);
+
             $partnerData = $this->update_sn_partnerData($pid, $eid, $config, $vr);
             if ($partnerData['success']) {
                 $success = array('success' => true);
@@ -5556,6 +5640,30 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => false, 'message' => 'Social network service not active');
         }
         return $success;
+    }
+
+    public function add_twitch_to_upload_queue($pid, $eid, $twitch_upload_status) {
+        $config = array();
+        $twitch_status = (isset($twitch_upload_status['auto_upload']['twitch'])) ? true : false;
+        if ($twitch_status) {
+            $twitch_auto_upload_status = $twitch_upload_status['auto_upload']['twitch'];
+            if ($twitch_auto_upload_status) {
+                $insert_video_to_upload_queue = $this->insert_video_to_upload_queue($pid, $eid, 'rectangular', 'twitch', 'pending');
+                if ($insert_video_to_upload_queue['success']) {
+                    $twitch_config = $this->create_vod_sn_config('twitch', true, 'pending', 'pending');
+                    array_push($config, $twitch_config['config']);
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not insert into upload queue');
+                }
+            } else {
+                $twitch_config = $this->create_vod_sn_config('twitch', false, null, null);
+                array_push($config, $twitch_config['config']);
+            }
+        } else {
+            $twitch_config = $this->create_vod_sn_config('twitch', false, null, null);
+            array_push($config, $twitch_config['config']);
+        }
+        return $config[0];
     }
 
     public function add_youtube_to_upload_queue($pid, $eid, $youtube_upload_status) {
@@ -5611,6 +5719,7 @@ class Sn_config_model extends CI_Model {
         $statuses = array();
         $youtube_status = $this->get_youtube_status($pid);
         $facebook_status = $this->get_facebook_status($pid);
+        $twitch_status = $this->get_twitch_status($pid);
         if ($youtube_status['status']) {
             $youtube = $this->get_yt_settings($pid);
             if ($youtube['success']) {
@@ -5623,6 +5732,12 @@ class Sn_config_model extends CI_Model {
             if ($facebook['success']) {
                 $statuses['facebook'] = $facebook['userSettings'][0]['auto_upload'];
                 $statuses['facebook_projection'] = $facebook['userSettings'][0]['projection'];
+            }
+        }
+        if ($twitch_status['status']) {
+            $twitch = $this->get_twch_settings($pid);
+            if ($twitch['success']) {
+                $statuses['twitch'] = $twitch['settings']['auto_upload'];
             }
         }
         $success = array('success' => true, 'auto_upload' => $statuses);
