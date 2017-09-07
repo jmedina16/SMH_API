@@ -183,6 +183,10 @@ class Twitch_client_api {
             syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
         }
     }
+    
+    public function uploadVideo($access_token, $name, $desc, $videoPath){
+        
+    }
 
     public function curlPost($url, $data) {
         $ch = curl_init();
