@@ -157,10 +157,11 @@ class Sn_config_model extends CI_Model {
         $result = $query->result_array();
         if ($query->num_rows() > 0) {
             foreach ($result as $res) {
+                $id = $this->smcipher->decrypt($res['channel_id']);
                 $name = $res['name'];
                 $logo = $res['logo'];
             }
-            $user_details = array('channel_name' => $name, 'channel_logo' => $logo);
+            $user_details = array('channel_id' => $id, 'channel_name' => $name, 'channel_logo' => $logo);
             $success = array('success' => true, 'channel_details' => $user_details);
         } else {
             $success = array('success' => false);
@@ -3656,7 +3657,8 @@ class Sn_config_model extends CI_Model {
         $success = array('success' => false);
         $access_token = $this->validate_twitch_token($pid);
         if ($access_token['success']) {
-            $upload_video = $this->twitch_client_api->uploadVideo($access_token['access_token'], $entry_details['name'], $entry_details['desc'], $video_path);
+            $channel_details = $this->get_twch_channel_details($pid);
+            $upload_video = $this->twitch_client_api->uploadVideo($access_token['access_token'], $channel_details['channel_details']['channel_id'], $entry_details['name'], $video_path);
             if ($upload_video['success']) {
                 $success = array('success' => true, 'videoId' => $upload_video['videoId']);
             } else {
@@ -4604,10 +4606,10 @@ class Sn_config_model extends CI_Model {
                         $success = array('success' => false, 'message' => $update_twitch_upload_status['message']);
                     }
                 } else {
-                    $success = array('success' => false, 'message' => 'Could not insert entry into YouTube vod');
+                    $success = array('success' => false, 'message' => 'Could not insert entry into Twitch vod');
                 }
             } else {
-                $success = array('success' => false, 'message' => 'Could not upload video to YouTube');
+                $success = array('success' => false, 'message' => 'Could not upload video to Twitch');
             }
         } else {
             $success = array('success' => false, 'message' => $update_twitch_upload_status['message']);
