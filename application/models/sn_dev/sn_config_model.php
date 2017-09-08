@@ -4450,7 +4450,7 @@ class Sn_config_model extends CI_Model {
                         $success = array('success' => false, 'message' => $process_facebook_upload_queue['message']);
                     }
                 } else if ($get_ready_upload['ready_upload']['platform'] === 'twitch') {
-                    $process_twitch_upload_queue = $this->process_twitch_upload_queue($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid'], $get_ready_upload['ready_upload']['projection'], $entry_details, $entry_path);
+                    $process_twitch_upload_queue = $this->process_twitch_upload_queue($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid'], $entry_details, $entry_path);
                     if ($process_twitch_upload_queue['success']) {
                         $success = array('success' => true);
                     } else {
@@ -4588,7 +4588,7 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function process_twitch_upload_queue($pid, $eid, $projection, $entry_details, $entry_path) {
+    public function process_twitch_upload_queue($pid, $eid, $entry_details, $entry_path) {
         $success = array('success' => false);
         $video_path = $entry_path['original_path'];
         $update_twitch_upload_status = $this->update_platform_upload_status($pid, $eid, 'twitch', 'uploading', 'pending');
