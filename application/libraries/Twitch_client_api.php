@@ -269,18 +269,24 @@ class Twitch_client_api {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        //curl_setopt($ch, CURLOPT_BINARYTRANSFER, true);
+        curl_setopt($ch, CURLOPT_BINARYTRANSFER, true);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
         curl_setopt($ch, CURLOPT_INFILE, $chunk);
         curl_setopt($ch, CURLOPT_INFILESIZE, strlen($chunk));
+        curl_setopt($ch, CURLOPT_UPLOAD, true);
+        curl_setopt($ch, CURLOPT_VERBOSE, true); 
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'Accept: application/vnd.twitchtv.v5+json',
-            'Client-ID: ' . $this->OAUTH2_CLIENT_ID,
+            'Accept: */*',
+            'Content-Type: text/plain',
+            //'Accept: application/vnd.twitchtv.v5+json',
+            //'Client-ID: ' . $this->OAUTH2_CLIENT_ID,
             'Content-Length: ' . strlen($chunk),
-            'Authorization: OAuth ' . $access_token
+            //'Authorization: OAuth ' . $access_token
         ));
         $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        syslog(LOG_NOTICE, "SMH DEBUG : curlPutAuth: http_code: " . $http_code);
         curl_close($ch);
 
         return json_decode($response, true);
