@@ -198,8 +198,13 @@ class Twitch_client_api {
 
         syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo:  videoPath: " . print_r($videoPath, true));
 
-        $chunkSizeBytes = 1 * 1024 * 1024;
+        $chunkSizeBytes = 10 * 1024 * 1024;
         $handle = fopen($videoPath, "rb");
+
+//        $handle = fopen("php://temp", "rb");
+//        fputs($handle, $videoPath);
+        rewind($handle);
+
         syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo:  fopen: " . print_r($handle, true));
         syslog(LOG_NOTICE, "SMH DEBUG : curlPutAuth: handle: fileSize: " . filesize($videoPath));
         $index = 0;
@@ -210,6 +215,7 @@ class Twitch_client_api {
             $index++;
             $data = array('part' => $index, 'upload_token' => $uploadToken);
             $uploadUrl = 'https://uploads.twitch.tv/upload/' . $videoId . '?part=' . $index . '&upload_token=' . $uploadToken;
+
             $r = $this->curlPutAuth($access_token, $uploadUrl, $chunk, $data);
             syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo:  upload: " . print_r($r, true));
         }
@@ -217,7 +223,7 @@ class Twitch_client_api {
 
         $data = array('upload_token' => $uploadToken);
         $uploadUrl = 'https://uploads.twitch.tv/upload/' . $videoId . '/complete?upload_token=' . $uploadToken;
-        $completeUploadResponse = $this->curlPostTwitch($uploadUrl, $data);
+        $completeUploadResponse = $this->curlPostAuth($access_token, $uploadUrl, $data);
         syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo:  completeUploadResponse: " . print_r($completeUploadResponse, true));
     }
 
@@ -271,22 +277,22 @@ class Twitch_client_api {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_BINARYTRANSFER, true);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-        curl_setopt($ch, CURLOPT_INFILE, $chunk);
-        curl_setopt($ch, CURLOPT_INFILESIZE, strlen($chunk));
-        curl_setopt($ch, CURLOPT_UPLOAD, true);
-        curl_setopt($ch, CURLOPT_VERBOSE, true); 
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $chunk);
+//        curl_setopt($ch, CURLOPT_INFILE, $chunk);
+//        curl_setopt($ch, CURLOPT_INFILESIZE, strlen($chunk));
+        //curl_setopt($ch, CURLOPT_UPLOAD, true);
+       // curl_setopt($ch, CURLOPT_VERBOSE, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'Accept: */*',
-            'Content-Type: text/plain',
-            //'Accept: application/vnd.twitchtv.v5+json',
-            //'Client-ID: ' . $this->OAUTH2_CLIENT_ID,
-            'Content-Length: ' . strlen($chunk),
+            //'Accept: */*',
+            //'Content-Type: application/binary',
+            'Accept: application/vnd.twitchtv.v5+json',
+            'Client-ID: ' . $this->OAUTH2_CLIENT_ID,
+            'Content-Length: ' . strlen($chunk)
             //'Authorization: OAuth ' . $access_token
         ));
         $response = curl_exec($ch);
-        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        syslog(LOG_NOTICE, "SMH DEBUG : curlPutAuth: http_code: " . $http_code);
+        $http_code = curl_getinfo($ch);
+        syslog(LOG_NOTICE, "SMH DEBUG : curlPutAuth: http_code: " . print_r($http_code, true));
         curl_close($ch);
 
         return json_decode($response, true);
