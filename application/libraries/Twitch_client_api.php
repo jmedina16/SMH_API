@@ -184,9 +184,9 @@ class Twitch_client_api {
         }
     }
 
-    public function uploadVideo($access_token, $channel_id, $name, $videoPath) {
+    public function uploadVideo($access_token, $channel_id, $name, $desc, $videoPath) {
         $url = 'https://api.twitch.tv/kraken/videos';
-        $data = array('channel_id' => $channel_id, 'title' => $name);
+        $data = array('channel_id' => $channel_id, 'title' => $name, 'description' => $desc);
         syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo:  createVideoResponse Data: " . print_r($data, true));
         $createVideoResponse = $this->curlPostAuth($access_token, $url, $data);
         syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo:  createVideoResponse: " . print_r($createVideoResponse, true));
@@ -195,11 +195,12 @@ class Twitch_client_api {
 
         syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo:  videoId: " . print_r($videoId, true));
         syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo:  uploadToken: " . print_r($uploadToken, true));
-        
+
         syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo:  videoPath: " . print_r($videoPath, true));
 
         $chunkSizeBytes = 10 * 1024 * 1024;
         $handle = fopen($videoPath, "rb");
+        syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo:  fopen: " . print_r($handle, true));
         $index = 0;
         $chunk = false;
         while (!feof($handle)) {
@@ -262,6 +263,8 @@ class Twitch_client_api {
     }
 
     public function curlPutAuth($access_token, $url, $chunk, $data) {
+        syslog(LOG_NOTICE, "SMH DEBUG : curlPutAuth: chunk: " . print_r($chunk, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : curlPutAuth: chunkSize: " . filesize($chunk));
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
