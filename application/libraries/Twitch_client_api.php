@@ -198,27 +198,27 @@ class Twitch_client_api {
 
         syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo:  videoPath: " . print_r($videoPath, true));
 
-//        $chunkSizeBytes = 1 * 1024 * 1024;
-//        $handle = fopen($videoPath, "rb");
-//        syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo:  fopen: " . print_r($handle, true));
-//        syslog(LOG_NOTICE, "SMH DEBUG : curlPutAuth: handle: fileSize: " . filesize($videoPath));
-//        $index = 0;
-//        $chunk = false;
-//        while (!feof($handle)) {
-//            $chunk = fread($handle, $chunkSizeBytes);
-//            syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo:  chunk: " . print_r($chunk, true));
-//            $index++;
-//            $data = array('part' => $index, 'upload_token' => $uploadToken);
-//            $uploadUrl = 'https://uploads.twitch.tv/upload/' . $videoId . '?part=' . $index . '&upload_token=' . $uploadToken;
-//            $r = $this->curlPutAuth($access_token, $uploadUrl, $chunk, $data);
-//            syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo:  upload: " . print_r($r, true));
-//        }
-//        fclose($handle);
-//
-//        $data = array('upload_token' => $uploadToken);
-//        $uploadUrl = 'https://uploads.twitch.tv/upload/' . $videoId . '/complete?upload_token=' . $uploadToken;
-//        $completeUploadResponse = $this->curlPostTwitch($uploadUrl, $data);
-//        syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo:  completeUploadResponse: " . print_r($completeUploadResponse, true));
+        $chunkSizeBytes = 1 * 1024 * 1024;
+        $handle = fopen($videoPath, "rb");
+        syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo:  fopen: " . print_r($handle, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : curlPutAuth: handle: fileSize: " . filesize($videoPath));
+        $index = 0;
+        $chunk = false;
+        while (!feof($handle)) {
+            $chunk = fread($handle, $chunkSizeBytes);
+            syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo:  chunk: " . print_r($chunk, true));
+            $index++;
+            $data = array('part' => $index, 'upload_token' => $uploadToken);
+            $uploadUrl = 'https://uploads.twitch.tv/upload/' . $videoId . '?part=' . $index . '&upload_token=' . $uploadToken;
+            $r = $this->curlPutAuth($access_token, $uploadUrl, $chunk, $data);
+            syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo:  upload: " . print_r($r, true));
+        }
+        fclose($handle);
+
+        $data = array('upload_token' => $uploadToken);
+        $uploadUrl = 'https://uploads.twitch.tv/upload/' . $videoId . '/complete?upload_token=' . $uploadToken;
+        $completeUploadResponse = $this->curlPostTwitch($uploadUrl, $data);
+        syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo:  completeUploadResponse: " . print_r($completeUploadResponse, true));
     }
 
     public function curlPost($url, $data) {
