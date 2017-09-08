@@ -3658,7 +3658,7 @@ class Sn_config_model extends CI_Model {
         $access_token = $this->validate_twitch_token($pid);
         if ($access_token['success']) {
             $channel_details = $this->get_twch_channel_details($pid);
-            $upload_video = $this->twitch_client_api->uploadVideo($access_token['access_token'], $channel_details['channel_details']['channel_id'], $entry_details['name'], $video_path);
+            $upload_video = $this->twitch_client_api->uploadVideo($access_token['access_token'], $channel_details['channel_details']['channel_id'], $entry_details['name'], $entry_details['desc'], $video_path);
             if ($upload_video['success']) {
                 $success = array('success' => true, 'videoId' => $upload_video['videoId']);
             } else {
