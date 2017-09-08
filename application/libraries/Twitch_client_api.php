@@ -198,9 +198,10 @@ class Twitch_client_api {
 
         syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo:  videoPath: " . print_r($videoPath, true));
 
-        $chunkSizeBytes = 10 * 1024 * 1024;
+        $chunkSizeBytes = 1 * 1024 * 1024;
         $handle = fopen($videoPath, "rb");
         syslog(LOG_NOTICE, "SMH DEBUG : uploadVideo:  fopen: " . print_r($handle, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : curlPutAuth: handle: fileSize: " . filesize($videoPath));
         $index = 0;
         $chunk = false;
         while (!feof($handle)) {
@@ -264,7 +265,7 @@ class Twitch_client_api {
 
     public function curlPutAuth($access_token, $url, $chunk, $data) {
         syslog(LOG_NOTICE, "SMH DEBUG : curlPutAuth: chunk: " . print_r($chunk, true));
-        syslog(LOG_NOTICE, "SMH DEBUG : curlPutAuth: chunkSize: " . filesize($chunk));
+        syslog(LOG_NOTICE, "SMH DEBUG : curlPutAuth: chunkSize: " . strlen($chunk));
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -272,11 +273,11 @@ class Twitch_client_api {
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
         //curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
         curl_setopt($ch, CURLOPT_INFILE, $chunk);
-        curl_setopt($ch, CURLOPT_INFILESIZE, filesize($chunk));
+        curl_setopt($ch, CURLOPT_INFILESIZE, strlen($chunk));
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
             'Accept: application/vnd.twitchtv.v5+json',
             'Client-ID: ' . $this->OAUTH2_CLIENT_ID,
-            'Content-Length: ' . filesize($chunk),
+            'Content-Length: ' . strlen($chunk),
             'Authorization: OAuth ' . $access_token
         ));
         $response = curl_exec($ch);
