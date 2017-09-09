@@ -220,8 +220,7 @@ class Twitch_client_api {
         $success = array('success' => false);
         $url = 'https://api.twitch.tv/kraken/videos/' . $videoId;
         $deleteResponse = $this->curlDeleteAuth($access_token, $url);
-        syslog(LOG_NOTICE, "SMH DEBUG : removeVideo: " . print_r($deleteResponse, true));
-        if ($deleteResponse['ok'] === 'true') {
+        if ($deleteResponse['ok']) {
             $success = array('success' => true);
         }
         return $success;
