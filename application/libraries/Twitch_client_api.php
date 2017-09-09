@@ -216,6 +216,17 @@ class Twitch_client_api {
         return $success;
     }
 
+    public function removeVideo($access_token, $videoId) {
+        $success = array('success' => false);
+        $url = 'https://api.twitch.tv/kraken/videos/' . $videoId;
+        $deleteResponse = $this->curlDeleteAuth($access_token, $url);
+        syslog(LOG_NOTICE, "SMH DEBUG : removeVideo: " . print_r($deleteResponse, true));
+        if ($deleteResponse['ok'] === 'true') {
+            $success = array('success' => true);
+        }
+        return $success;
+    }
+
     public function curlPost($url, $data) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -248,6 +259,22 @@ class Twitch_client_api {
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Accept: application/vnd.twitchtv.v5+json',
+            'Client-ID: ' . $this->OAUTH2_CLIENT_ID,
+            'Authorization: OAuth ' . $access_token
+        ));
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        return json_decode($response, true);
+    }
+
+    public function curlDeleteAuth($access_token, $url) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
             'Accept: application/vnd.twitchtv.v5+json',
             'Client-ID: ' . $this->OAUTH2_CLIENT_ID,
