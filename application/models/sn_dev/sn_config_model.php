@@ -925,6 +925,19 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function remove_db_twitch_vod_entry($pid, $eid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id', $pid);
+        $this->config->where('entryId', $eid);
+        $this->config->delete('twitch_vod_entries');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'message' => 'Nothing removed');
+        }
+        return $success;
+    }
+
     public function store_twitch_authorization($pid, $ks, $code) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
@@ -3718,6 +3731,22 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function remove_twitch_video($pid, $videoId) {
+        $success = array('success' => false);
+        $access_token = $this->validate_twitch_token($pid);
+        if ($access_token['success']) {
+            $remove_video = $this->twitch_client_api->removeVideo($access_token['access_token'], $videoId);
+            if ($remove_video['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Twitch: could not remove video');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Twitch: invalid access token');
+        }
+        return $success;
+    }
+
     public function delete_sn_entry($pid, $ks, $eid) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
@@ -4663,6 +4692,7 @@ class Sn_config_model extends CI_Model {
                 $vod_platforms = $this->get_vod_platforms(json_decode($partnerData['partnerData']));
                 $youtube_status = false;
                 $facebook_status = false;
+                $twitch_status = false;
                 $config = array();
                 $vr = array();
                 $vr['vrSettings'] = false;
@@ -4675,6 +4705,10 @@ class Sn_config_model extends CI_Model {
                         if ($platform['status']) {
                             $youtube_status = true;
                         }
+                    } else if ($platform['platform'] == 'twitch') {
+                        if ($platform['status']) {
+                            $twitch_status = true;
+                        }
                     }
                 }
 
@@ -4683,6 +4717,9 @@ class Sn_config_model extends CI_Model {
 
                 $youtube_config = $this->process_youtube_vod_config($pid, $eid, $projection, $youtube_status, $vod_platforms);
                 array_push($config, $youtube_config);
+
+                $twitch_config = $this->process_twitch_vod_config($pid, $eid, 'rectangular', $twitch_status, $vod_platforms);
+                array_push($config, $twitch_config);
 
                 if ($stereo_mode != '') {
                     $vr['vrSettings'] = true;
@@ -4821,6 +4858,65 @@ class Sn_config_model extends CI_Model {
             } else if (!$youtube_status) {
                 $youtube_config = $this->create_vod_sn_config('youtube', $youtube_status, null, null);
                 array_push($config, $youtube_config['config']);
+            }
+        }
+        return $config[0];
+    }
+
+    public function process_twitch_vod_config($pid, $eid, $projection, $twitch_status, $vod_platforms) {
+        $config = array();
+        if (count($vod_platforms['platforms']) > 0) {
+            $current_twitch_status = '';
+            $current_twitch_upload_status = '';
+            $current_twitch_videoId = '';
+            foreach ($vod_platforms['platforms'] as $platform) {
+                if ($platform['platform'] == 'twitch') {
+                    $current_twitch_status = $platform['status'];
+                    $current_twitch_upload_status = $platform['upload_status'];
+                    $current_twitch_videoId = $platform['videoId'];
+                }
+            }
+            $twitch_upload_exists = $this->check_if_upload_queue_exists($pid, $eid, 'twitch');
+            $twitch_vod_exists = $this->check_if_twitch_vod_exists($pid, $eid);
+            if ($twitch_status) {
+                if (!$twitch_upload_exists && !$twitch_vod_exists) {
+                    $twitch_config = $this->create_vod_sn_config('twitch', $twitch_status, 'ready', 'pending');
+                    array_push($config, $twitch_config['config']);
+                    $this->insert_video_to_upload_queue($pid, $eid, $projection, 'twitch', 'ready');
+                } else {
+                    $twitch_config = $this->create_vod_sn_config('twitch', $current_twitch_status, $current_twitch_upload_status, $current_twitch_videoId);
+                    array_push($config, $twitch_config['config']);
+                }
+            } else if (!$twitch_status) {
+                $is_uploading = $this->check_if_platform_uploading($eid, 'twitch');
+                if ($is_uploading) {
+                    $twitch_config = $this->create_vod_sn_config('twitch', $current_twitch_status, $current_twitch_upload_status, $current_twitch_videoId);
+                    array_push($config, $twitch_config['config']);
+                } else {
+                    if ($twitch_upload_exists) {
+                        $this->removeQueuedPlatformUploadEntry($pid, $eid, 'twitch');
+                    }
+                    if ($twitch_vod_exists) {
+                        $twitch_video = $this->get_twitch_vod_id($pid, $eid);
+                        $remove_twitch_video = $this->remove_twitch_video($pid, $twitch_video['videoId']);
+                        if ($remove_twitch_video['success']) {
+                            $this->remove_db_twitch_vod_entry($pid, $eid);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not delete Twitch video');
+                        }
+                    }
+                    $twitch_config = $this->create_vod_sn_config('twitch', $twitch_status, null, null);
+                    array_push($config, $twitch_config['config']);
+                }
+            }
+        } else {
+            if ($twitch_status) {
+                $twitch_config = $this->create_vod_sn_config('twitch', $twitch_status, 'ready', 'pending');
+                array_push($config, $twitch_config['config']);
+                $this->insert_video_to_upload_queue($pid, $eid, $projection, 'twitch', 'ready');
+            } else if (!$twitch_status) {
+                $twitch_config = $this->create_vod_sn_config('twitch', $twitch_status, null, null);
+                array_push($config, $twitch_config['config']);
             }
         }
         return $config[0];
@@ -5945,6 +6041,43 @@ class Sn_config_model extends CI_Model {
         $videoId = '';
         $this->config->select('*')
                 ->from('facebook_vod_entries')
+                ->where('partner_id', $pid)
+                ->where('entryId', $eid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $videoId = $res['videoId'];
+            }
+            $success = array('success' => true, 'videoId' => $videoId);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function check_if_twitch_vod_exists($pid, $eid) {
+        $success = false;
+        $this->config->select('*')
+                ->from('twitch_vod_entries')
+                ->where('partner_id', $pid)
+                ->where('entryId', $eid);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
+        return $success;
+    }
+
+    public function get_twitch_vod_id($pid, $eid) {
+        $success = array('success' => false);
+        $videoId = '';
+        $this->config->select('*')
+                ->from('twitch_vod_entries')
                 ->where('partner_id', $pid)
                 ->where('entryId', $eid);
 
