@@ -201,7 +201,7 @@ class Twitch_client_api {
             $chunk = fread($handle, $chunkSizeBytes);
             $index++;
             $url = $uploadUrl . '?part=' . $index . '&upload_token=' . $uploadToken;
-            $this->curlPutAuth($url, $chunk);
+            $this->curlPut($url, $chunk);
         }
         fclose($handle);
 
@@ -221,6 +221,16 @@ class Twitch_client_api {
         $url = 'https://api.twitch.tv/kraken/videos/' . $videoId;
         $deleteResponse = $this->curlDeleteAuth($access_token, $url);
         if ($deleteResponse['ok']) {
+            $success = array('success' => true);
+        }
+        return $success;
+    }
+
+    public function updateVodMetaData($access_token, $vid, $name, $desc) {
+        $success = array('success' => false);
+        $url = 'https://api.twitch.tv/kraken/videos/' . $vid . '?title=' . $name . '&description=' . $desc;
+        $updateVideoResponse = $this->curlPutAuth($access_token, $url);
+        if (isset($updateVideoResponse['_id'])) {
             $success = array('success' => true);
         }
         return $success;
@@ -285,7 +295,7 @@ class Twitch_client_api {
         return json_decode($response, true);
     }
 
-    public function curlPutAuth($url, $chunk) {
+    public function curlPut($url, $chunk) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -296,6 +306,23 @@ class Twitch_client_api {
             'Accept: application/vnd.twitchtv.v5+json',
             'Client-ID: ' . $this->OAUTH2_CLIENT_ID,
             'Content-Length: ' . strlen($chunk)
+        ));
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        return json_decode($response, true);
+    }
+
+    public function curlPutAuth($access_token, $url) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_BINARYTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Accept: application/vnd.twitchtv.v5+json',
+            'Client-ID: ' . $this->OAUTH2_CLIENT_ID,
+            'Authorization: OAuth ' . $access_token
         ));
         $response = curl_exec($ch);
         curl_close($ch);
