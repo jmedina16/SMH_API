@@ -3633,6 +3633,9 @@ class Sn_config_model extends CI_Model {
                     if ($platform['platform'] == 'youtube') {
                         $platforms_status['youtube'] = $platform['status'];
                     }
+                    if ($platform['platform'] == 'twitch') {
+                        $platforms_status['twitch'] = $platform['status'];
+                    }
                 }
             }
             $success = array('success' => true, 'platforms_status' => $platforms_status);
@@ -3762,7 +3765,10 @@ class Sn_config_model extends CI_Model {
                         if ($platforms_status['platforms_status']['facebook']) {
                             $success = $this->delete_facebook_vod_entry($pid, $eid);
                         }
-                        if (!$platforms_status['platforms_status']['youtube'] && !$platforms_status['platforms_status']['facebook']) {
+                        if ($platforms_status['platforms_status']['twitch']) {
+                            $success = $this->delete_twitch_vod_entry($pid, $eid);
+                        }
+                        if (!$platforms_status['platforms_status']['youtube'] && !$platforms_status['platforms_status']['facebook'] && !$platforms_status['platforms_status']['twitch']) {
                             $success = array('success' => true, 'message' => 'Social network: nothing to update');
                         }
                     } else {
@@ -3778,6 +3784,23 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
         }
 
+        return $success;
+    }
+
+    public function delete_twitch_vod_entry($pid, $eid) {
+        $success = array('success' => false);
+        $twitch_video = $this->get_twitch_vod_id($pid, $eid);
+        $remove_twitch_video = $this->remove_twitch_video($pid, $twitch_video['videoId']);
+        if ($remove_twitch_video['success']) {
+            $remove_db_twitch_vod_entry = $this->remove_db_twitch_vod_entry($pid, $eid);
+            if ($remove_db_twitch_vod_entry['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Could not remove Twitch video');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Could not delete Twitch video');
+        }
         return $success;
     }
 
