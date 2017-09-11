@@ -3489,6 +3489,11 @@ class Sn_config_model extends CI_Model {
                         } else {
                             $success = array('success' => true, 'message' => 'Social network: nothing to update');
                         }
+                        if ($platforms_status['platforms_status']['twitch']) {
+                            $success = $this->update_twitch_vod_metadata($pid, $name, $desc, $eid);
+                        } else {
+                            $success = array('success' => true, 'message' => 'Social network: nothing to update');
+                        }
                     } else {
                         $success = array('success' => true, 'message' => 'Social network config not present');
                     }
@@ -3552,6 +3557,23 @@ class Sn_config_model extends CI_Model {
             }
         } else {
             $success = array('success' => true);
+        }
+        return $success;
+    }
+
+    public function update_twitch_vod_metadata($pid, $name, $desc, $eid) {
+        $success = array('success' => false);
+        $twitch_video = $this->get_twitch_vod_id($pid, $eid);
+        $access_token = $this->validate_twitch_token($pid);
+        if ($access_token['success']) {
+            $updateMetaData = $this->twitch_client_api->updateVodMetaData($access_token['access_token'], $twitch_video['videoId'], $name, $desc);
+            if ($updateMetaData['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Twitch: Could not update metadata');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Twitch: invalid access token');
         }
         return $success;
     }
