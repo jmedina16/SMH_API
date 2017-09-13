@@ -4075,8 +4075,9 @@ class Sn_config_model extends CI_Model {
                     if ($platforms_status['success']) {
                         if (count($platforms_status['platforms_status'])) {
                             array_push($platforms, array('platform' => 'edgecast', 'status' => $platforms_status['platforms_status']['smh']));
+                            $entry_details = $this->smportal->get_entry_details($pid, $eid);
 
-                            $build_fb_ingestion = $this->build_fb_ingestion($pid, $eid, $facebook_status, $platforms_status);
+                            $build_fb_ingestion = $this->build_fb_ingestion($pid, $eid, $entry_details, $facebook_status, $platforms_status);
                             if ($build_fb_ingestion['success']) {
                                 array_push($platforms, $build_fb_ingestion['fb_platform']);
                             } else {
@@ -4090,7 +4091,7 @@ class Sn_config_model extends CI_Model {
                                 $success = array('success' => false, 'message' => 'Could not build YouTube Ingestion');
                             }
 
-                            $build_twch_ingestion = $this->build_twch_ingestion($pid, $eid, $twitch_status, $platforms_status);
+                            $build_twch_ingestion = $this->build_twch_ingestion($pid, $eid, $entry_details, $twitch_status, $platforms_status);
                             if ($build_twch_ingestion['success']) {
                                 array_push($platforms, $build_twch_ingestion['twch_platform']);
                             } else {
@@ -4125,18 +4126,23 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function build_twch_ingestion($pid, $eid, $twitch_status, $platforms_status) {
+    public function build_twch_ingestion($pid, $eid, $entry_details, $twitch_status, $platforms_status) {
         $success = array('success' => false);
         $twch_platform = array();
         if ($twitch_status['status']) {
             if ($platforms_status['platforms_status']['twitch']) {
                 $ingestionSettings = $this->get_twitch_ingestion_settings($pid);
                 if ($ingestionSettings['success']) {
-                    $update_twitch_ls_status = $this->update_twitch_ls_status($pid, 'live');
-                    if ($update_twitch_ls_status['success']) {
-                        array_push($twch_platform, array('platform' => 'twitch', 'status' => $platforms_status['platforms_status']['twitch'], 'ingestionSettings' => $ingestionSettings['ingestionSettings']));
+                    $update_twch_ls_details = $this->update_twch_ls_details($pid, $entry_details);
+                    if ($update_twch_ls_details['success']) {
+                        $update_twitch_ls_status = $this->update_twitch_ls_status($pid, 'live');
+                        if ($update_twitch_ls_status['success']) {
+                            array_push($twch_platform, array('platform' => 'twitch', 'status' => $platforms_status['platforms_status']['twitch'], 'ingestionSettings' => $ingestionSettings['ingestionSettings']));
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not update twitch live stream status');
+                        }
                     } else {
-                        $success = array('success' => false, 'message' => 'Could not update twitch live stream status');
+                        array_push($twch_platform, array('platform' => 'twitch', 'status' => false));
                     }
                 } else {
                     array_push($twch_platform, array('platform' => 'twitch', 'status' => false));
@@ -4191,12 +4197,29 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function build_fb_ingestion($pid, $eid, $facebook_status, $platforms_status) {
+    public function update_twch_ls_details($pid, $entry_details) {
+        $success = array('success' => false);
+        $access_token = $this->validate_twitch_token($pid);
+        if ($access_token['success']) {
+            $twch_channel_details = $this->get_twch_channel_details($pid);
+            $updateLiveStream = $this->twitch_client_api->updateChannel($twch_channel_details['channel_details']['channel_id'], $entry_details['name'], $access_token['access_token']);
+            if ($updateLiveStream['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Twitch: Could not update live stream');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Twitch: invalid access token');
+        }
+        return $success;
+    }
+
+    public function build_fb_ingestion($pid, $eid, $entry_details, $facebook_status, $platforms_status) {
         $success = array('success' => false);
         $fb_platform = array();
         if ($facebook_status['status']) {
             if ($platforms_status['platforms_status']['facebook']) {
-                $update_fb_ls_details = $this->update_fb_ls_details($pid, $eid);
+                $update_fb_ls_details = $this->update_fb_ls_details($pid, $entry_details);
                 if ($update_fb_ls_details['success']) {
                     $ingestionSettings = $this->get_facebook_ingestion_settings($pid);
                     if ($ingestionSettings['success']) {
@@ -4222,13 +4245,12 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function update_fb_ls_details($pid, $eid) {
+    public function update_fb_ls_details($pid, $entry_details) {
         $success = array('success' => false);
         $get_fb_livestream = $this->get_fb_livestream($pid);
         if ($get_fb_livestream['success']) {
             $access_token = $this->validate_facebook_token($pid);
             if ($access_token['success']) {
-                $entry_details = $this->smportal->get_entry_details($pid, $eid);
                 $updateLiveStream = $this->facebook_client_api->updateLiveStream($get_fb_livestream['live_id'], $entry_details['name'], $entry_details['desc'], $access_token['access_token']);
                 if ($updateLiveStream['success']) {
                     $success = array('success' => true);
