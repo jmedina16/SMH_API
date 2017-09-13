@@ -236,6 +236,17 @@ class Twitch_client_api {
         return $success;
     }
 
+    public function updateChannel($channelId, $name, $access_token) {
+        $success = array('success' => false);
+        $url = 'https://api.twitch.tv/kraken/channels/' . $channelId;
+        $data = array('channel[status]' => $name);
+        $updateChannelResponse = $this->curlPutAuthData($access_token, $url, $data);
+        if (isset($updateChannelResponse['_id'])) {
+            $success = array('success' => true);
+        }
+        return $success;
+    }
+
     public function curlPost($url, $data) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -318,6 +329,23 @@ class Twitch_client_api {
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_BINARYTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Accept: application/vnd.twitchtv.v5+json',
+            'Client-ID: ' . $this->OAUTH2_CLIENT_ID,
+            'Authorization: OAuth ' . $access_token
+        ));
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        return json_decode($response, true);
+    }
+
+    public function curlPutAuthData($access_token, $url, $data) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
             'Accept: application/vnd.twitchtv.v5+json',
