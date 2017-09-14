@@ -107,6 +107,36 @@ class Sn_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code
     }
 
+    public function store_twitch_authorization_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+        $code = $this->get('code');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing pid'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        if (!isset($code) || $code == null) {
+
+            $this->response(array('error' => 'Missing code'), 200);
+        }
+
+        $result = $this->sn_config_model->store_twitch_authorization($pid, $ks, $code);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code
+    }
+
     public function remove_facebook_authorization_get() {
         $pid = $this->get('pid');
         $ks = $this->get('ks');
@@ -164,6 +194,30 @@ class Sn_config extends REST_Controller {
         }
 
         $result = $this->sn_config_model->remove_youtube_authorization($pid, $ks);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code
+    }
+
+    public function remove_twitch_authorization_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing pid'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        $result = $this->sn_config_model->remove_twitch_authorization($pid, $ks);
 
         if (!$result) {
 
@@ -685,6 +739,30 @@ class Sn_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code 
     }
 
+    public function resync_twch_account_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing Partner Id'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        $result = $this->sn_config_model->resync_twch_account($pid, $ks);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code 
+    }
+
     public function get_facebook_embed_get() {
         $pid = $this->get('pid');
 
@@ -748,6 +826,36 @@ class Sn_config extends REST_Controller {
         }
 
         $result = $this->sn_config_model->update_youtube_channel_settings($pid, $ks, $auto_upload);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code 
+    }
+
+    public function update_twch_settings_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+        $auto_upload = $this->get('auto_upload');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing Partner Id'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        if (!isset($auto_upload) || $auto_upload == null) {
+
+            $this->response(array('error' => 'Missing auto_upload'), 200);
+        }
+
+        $result = $this->sn_config_model->update_twitch_channel_settings($pid, $ks, $auto_upload);
 
         if (!$result) {
 
