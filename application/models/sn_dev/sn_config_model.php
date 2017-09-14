@@ -2879,6 +2879,13 @@ class Sn_config_model extends CI_Model {
                         array_push($platforms_preview_embed_arr, "youtube:0");
                     }
                 }
+                if ($platform['platform'] == 'twitch') {
+                    if ($platform['status']) {
+                        array_push($platforms_preview_embed_arr, "twitch:1:" . $platform['liveId']);
+                    } else {
+                        array_push($platforms_preview_embed_arr, "twitch:0");
+                    }
+                }
             }
             $platforms_preview_embed = implode(";", $platforms_preview_embed_arr);
         }

@@ -120,8 +120,9 @@ class Sn_config_model extends CI_Model {
                 $platforms = array();
                 $facebook = $this->facebook_platform($valid['pid'], $ks);
                 $youtube = $this->youtube_platform($valid['pid'], $ks, $projection);
+                $twitter = $this->twitter_platform($valid['pid'], $ks);
                 $twitch = $this->twitch_platform($valid['pid'], $ks);
-                array_push($platforms, $facebook, $youtube, $twitch);
+                array_push($platforms, $facebook, $youtube, $twitter, $twitch);
                 $success = array('success' => true, 'platforms' => $platforms);
             } else {
                 $success = array('success' => false, 'message' => 'Social network service not active');
@@ -131,6 +132,11 @@ class Sn_config_model extends CI_Model {
         }
 
         return $success;
+    }
+
+    public function twitter_platform($pid, $ks) {
+        $twitter = array('platform' => 'twitter', 'authorized' => false, 'channel_details' => null, 'settings' => null, 'redirect_url' => null);
+        return $twitter;
     }
 
     public function twitch_platform($pid, $ks) {
@@ -2871,6 +2877,13 @@ class Sn_config_model extends CI_Model {
                         array_push($platforms_preview_embed_arr, "youtube:1:" . $platform['liveId']);
                     } else {
                         array_push($platforms_preview_embed_arr, "youtube:0");
+                    }
+                }
+                if ($platform['platform'] == 'twitch') {
+                    if ($platform['status']) {
+                        array_push($platforms_preview_embed_arr, "twitch:1:" . $platform['liveId']);
+                    } else {
+                        array_push($platforms_preview_embed_arr, "twitch:0");
                     }
                 }
             }
