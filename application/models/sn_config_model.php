@@ -15,6 +15,7 @@ class Sn_config_model extends CI_Model {
         $this->load->library('SMCipher');
         $this->load->library('google_client_api');
         $this->load->library('facebook_client_api');
+        $this->load->library('twitch_client_api');
     }
 
     public function update_sn_config($pid, $platform, $status) {
@@ -54,13 +55,22 @@ class Sn_config_model extends CI_Model {
             $data = array(
                 'partner_id' => $pid,
                 'facebook_live' => $status,
-                'youtube_live' => 0
+                'youtube_live' => 0,
+                'twitch' => 0
             );
         } else if ($platform == 'youtube') {
             $data = array(
                 'partner_id' => $pid,
                 'facebook_live' => 0,
                 'youtube_live' => $status,
+                'twitch' => 0
+            );
+        } else if ($platform == 'twitch') {
+            $data = array(
+                'partner_id' => $pid,
+                'facebook_live' => 0,
+                'youtube_live' => 0,
+                'twitch' => $status
             );
         }
 
@@ -84,6 +94,10 @@ class Sn_config_model extends CI_Model {
             $data = array(
                 'youtube_live' => $status,
             );
+        } else if ($platform == 'twitch') {
+            $data = array(
+                'twitch' => $status,
+            );
         }
 
         $this->config->where('partner_id', $pid);
@@ -106,7 +120,8 @@ class Sn_config_model extends CI_Model {
                 $platforms = array();
                 $facebook = $this->facebook_platform($valid['pid'], $ks);
                 $youtube = $this->youtube_platform($valid['pid'], $ks, $projection);
-                array_push($platforms, $facebook, $youtube);
+                $twitch = $this->twitch_platform($valid['pid'], $ks);
+                array_push($platforms, $facebook, $youtube, $twitch);
                 $success = array('success' => true, 'platforms' => $platforms);
             } else {
                 $success = array('success' => false, 'message' => 'Social network service not active');
@@ -115,6 +130,74 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
         }
 
+        return $success;
+    }
+
+    public function twitch_platform($pid, $ks) {
+        $twitch_auth = $this->validate_twitch_token($pid);
+        $auth = ($twitch_auth['success']) ? true : false;
+        if ($auth) {
+            $settings = $this->get_twch_settings($pid);
+            $channel_details = $this->get_twch_channel_details($pid);
+            $details = ($channel_details['success']) ? $channel_details['channel_details'] : null;
+            $twitch = array('platform' => 'twitch', 'authorized' => $auth, 'channel_details' => $details, 'settings' => $settings['settings']);
+        } else {
+            $twitch = array('platform' => 'twitch', 'authorized' => $auth, 'channel_details' => null, 'settings' => null, 'redirect_url' => $this->twitch_client_api->getRedirectURL($pid, $ks));
+        }
+        return $twitch;
+    }
+
+    public function get_twch_channel_details($pid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('twitch_channel')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $id = $this->smcipher->decrypt($res['channel_id']);
+                $name = $res['name'];
+                $logo = $res['logo'];
+            }
+            $user_details = array('channel_id' => $id, 'channel_name' => $name, 'channel_logo' => $logo);
+            $success = array('success' => true, 'channel_details' => $user_details);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function validate_twitch_token($pid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('twitch_channel')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            $token = array();
+            foreach ($result as $res) {
+                $token['access_token'] = $this->smcipher->decrypt($res['access_token']);
+                $token['refresh_token'] = $this->smcipher->decrypt($res['refresh_token']);
+            }
+            $tokens_valid = $this->twitch_client_api->checkAuthToken($token);
+            if ($tokens_valid['success'] && ($tokens_valid['message'] == 'valid_access_token')) {
+                $success = array('success' => true, 'access_token' => $tokens_valid['access_token']);
+            }
+            if ($tokens_valid['success'] && ($tokens_valid['message'] == 'new_access_token')) {
+                $access_token = $this->update_twitch_tokens($pid, $tokens_valid);
+                if ($access_token['success']) {
+                    $success = array('success' => true, 'access_token' => $tokens_valid['access_token']);
+                } else {
+                    $success = array('success' => false);
+                }
+            }
+        } else {
+            $success = array('success' => false);
+        }
         return $success;
     }
 
@@ -427,6 +510,25 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function get_twitch_status($pid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('platform_status')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $status = $res['twitch'];
+            }
+            $success = array('success' => true, 'status' => $status);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
     public function youtube_platform($pid, $ks, $projection) {
         $youtube_auth = $this->validate_youtube_token($pid);
         $auth = ($youtube_auth['success']) ? true : false;
@@ -507,6 +609,26 @@ class Sn_config_model extends CI_Model {
                 $projection = $res['projection'];
             }
             $success = array('success' => true, 'embed_status' => $embed_status, 'auto_upload' => $auto_upload, 'projection' => $projection);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function get_twch_settings($pid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('twitch_channel_settings')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $auto_upload = ($res['auto_upload']) ? true : false;
+            }
+            $settings = array('auto_upload' => $auto_upload);
+            $success = array('success' => true, 'settings' => $settings);
         } else {
             $success = array('success' => false);
         }
@@ -803,6 +925,334 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function remove_db_twitch_vod_entry($pid, $eid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id', $pid);
+        $this->config->where('entryId', $eid);
+        $this->config->delete('twitch_vod_entries');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'message' => 'Nothing removed');
+        }
+        return $success;
+    }
+
+    public function store_twitch_authorization($pid, $ks, $code) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $tokens = $this->twitch_client_api->getTokens($code);
+                if ($this->check_twitch($valid['pid'])) {
+                    $result = $this->update_twitch_tokens($valid['pid'], $tokens);
+                } else {
+                    $result = $this->insert_twitch_tokens($valid['pid'], $tokens);
+                }
+                if ($result['success']) {
+                    $channel = $this->retrieve_twitch_channel_details($pid, $tokens['access_token']);
+                    if ($channel['success']) {
+                        $update_twitch_channel_details = $this->update_twitch_channel_details($pid, $channel['channel_details']['channel_name'], $channel['channel_details']['channel_id'], $channel['channel_details']['channel_logo']);
+                        if ($update_twitch_channel_details['success']) {
+                            $channel_stream = $this->twitch_client_api->get_channel_details($tokens['access_token']);
+                            if ($channel_stream['success']) {
+                                $twch_channel_stream = $this->insert_twch_channel_stream($pid, $channel_stream['channel_stream']['ingestId'], $channel_stream['channel_stream']['channelName'], $channel_stream['channel_stream']['streamName'], $channel_stream['channel_stream']['ingestAddress']);
+                                if ($twch_channel_stream['success']) {
+                                    $init_twitch_channel_settings = $this->init_twitch_channel_settings($pid);
+                                    if ($init_twitch_channel_settings['success']) {
+                                        $update_partner_notification = $this->smportal->update_partner_notification($pid, $ks);
+                                        if ($update_partner_notification['success']) {
+                                            $update_status = $this->update_sn_config($pid, 'twitch', 1);
+                                            if ($update_status['success']) {
+                                                $success = array('success' => true);
+                                            } else {
+                                                $success = array('success' => false);
+                                            }
+                                        } else {
+                                            $success = array('success' => false, 'message' => 'Could not update partner notification');
+                                        }
+                                    } else {
+                                        $success = array('success' => false, 'message' => 'Could not init channel settings');
+                                    }
+                                } else {
+                                    $success = array('success' => false, 'message' => 'Could not insert Twitch channel details');
+                                }
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not get Twitch channel details');
+                            }
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not insert channel details');
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not get channel details');
+                    }
+                } else {
+                    $success = array('success' => false);
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Social network service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+
+        return $success;
+    }
+
+    public function insert_twch_channel_stream($pid, $ingestId, $channelName, $streamName, $address) {
+        $success = array('success' => false);
+        $data = array(
+            'partner_id' => $pid,
+            'channel_name' => $channelName,
+            'ingestId' => $ingestId,
+            'streamName' => $this->smcipher->encrypt($streamName),
+            'ingestionAddress' => $this->smcipher->encrypt($this->finalize_address_url($address)),
+            'status' => 'ready',
+            'created_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->insert('twitch_channel_streams', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function update_twch_channel_stream($pid, $ingestId, $channelName, $streamName, $address) {
+        $success = array('success' => false);
+        $data = array(
+            'channel_name' => $channelName,
+            'ingestId' => $ingestId,
+            'streamName' => $this->smcipher->encrypt($streamName),
+            'ingestionAddress' => $this->smcipher->encrypt($this->finalize_address_url($address)),
+            'status' => 'ready',
+            'updated_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->where('partner_id', $pid);
+        $this->config->update('twitch_channel_streams', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function insert_twitch_tokens($pid, $tokens) {
+        $success = array('success' => false);
+        $data = array(
+            'partner_id' => $pid,
+            'access_token' => $this->smcipher->encrypt($tokens['access_token']),
+            'refresh_token' => $this->smcipher->encrypt($tokens['refresh_token']),
+            'created_at' => date("Y-m-d H:i:s")
+        );
+        $this->config->insert('twitch_channel', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function update_twitch_tokens($pid, $tokens) {
+        $success = array('success' => false);
+        $data = array(
+            'access_token' => $this->smcipher->encrypt($tokens['access_token']),
+            'refresh_token' => $this->smcipher->encrypt($tokens['refresh_token']),
+            'updated_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->where('partner_id', $pid);
+        $this->config->update('twitch_channel', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'notice' => 'no changes were made');
+        }
+        return $success;
+    }
+
+    public function retrieve_twitch_channel_details($pid, $access_token) {
+        $success = array('success' => false);
+        $account_details = $this->twitch_client_api->get_account_details($access_token);
+        if ($account_details['success']) {
+            $channel_details = array('channel_name' => $account_details['channel_name'], 'channel_logo' => $account_details['channel_logo'], 'channel_id' => $account_details['channel_id']);
+            $success = array('success' => true, 'channel_details' => $channel_details);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function update_twitch_channel_details($pid, $name, $id, $logo) {
+        $success = array('success' => false);
+        $data = array(
+            'name' => $this->config->escape_str($name),
+            'channel_id' => $this->smcipher->encrypt($id),
+            'logo' => $logo,
+            'updated_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->where('partner_id', $pid);
+        $this->config->update('twitch_channel', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'notice' => 'no changes were made');
+        }
+        return $success;
+    }
+
+    public function remove_twitch_authorization($pid, $ks) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $this->config->select('*')
+                        ->from('twitch_channel')
+                        ->where('partner_id', $valid['pid']);
+
+                $query = $this->config->get();
+                $result = $query->result_array();
+                if ($query->num_rows() > 0) {
+                    foreach ($result as $res) {
+                        $access_token = $this->smcipher->decrypt($res['access_token']);
+                    }
+                    $removeAuth = $this->twitch_client_api->removeAuth($access_token);
+                    if ($removeAuth['success']) {
+                        $remove_channel = $this->remove_twitch_channel($pid);
+                        if ($remove_channel['success']) {
+                            $remove_twitch_channel_stream = $this->remove_twitch_channel_stream($pid);
+                            if ($remove_twitch_channel_stream['success']) {
+                                $remove_live_entries = $this->remove_twch_channel_entries($pid);
+                                if ($remove_live_entries['success']) {
+                                    $remove_twitch_channel_settings = $this->remove_twitch_channel_settings($pid);
+                                    if ($remove_twitch_channel_settings['success']) {
+                                        $update_status = $this->update_sn_config($pid, 'twitch', 0);
+                                        if ($update_status['success']) {
+                                            $success = array('success' => true);
+                                        } else {
+                                            $success = array('success' => false, 'message' => 'Could not update platform status');
+                                        }
+                                    } else {
+                                        $success = array('success' => false, 'message' => 'Could not remove twitch channel settings');
+                                    }
+                                } else {
+                                    $success = array('success' => false, 'message' => 'Could not remove twitch channel entries');
+                                }
+                            } else {
+                                $success = array('success' => false, 'message' => $remove_twitch_channel_stream['message']);
+                            }
+                        } else {
+                            $success = array('success' => false, 'message' => $remove_channel['message']);
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => $removeAuth['message']);
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Twitch access token not found');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Social network service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+
+        return $success;
+    }
+
+    public function remove_twch_channel_entries($pid) {
+        $success = array('success' => false);
+        $vr = array();
+        $vr['vrSettings'] = false;
+        $entries = $this->get_twch_channel_entries($pid);
+        if (count($entries['entries']) > 0) {
+            foreach ($entries['entries'] as $eid) {
+                $remove_twch_channel_entry = $this->remove_twch_channel_entry($pid, $eid);
+                if ($remove_twch_channel_entry['success']) {
+                    $update_sn_live_config = $this->update_sn_live_config($pid, $eid, 'twitch', false, null);
+                    if ($update_sn_live_config['success']) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not update live configuration');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not remove twitch channel entry');
+                }
+            }
+        } else {
+            $success = array('success' => true);
+        }
+        return $success;
+    }
+
+    public function remove_twitch_channel($pid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id = "' . $pid . '"');
+        $this->config->delete('twitch_channel');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false, 'message' => 'Could not remove Twitch channel');
+        }
+        return $success;
+    }
+
+    public function remove_twitch_channel_stream($pid) {
+        $success = array('success' => false);
+        if ($this->check_twch_channel_stream($pid)) {
+            $this->config->where('partner_id = "' . $pid . '"');
+            $this->config->delete('twitch_channel_streams');
+            if ($this->config->affected_rows() > 0) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Could not remove Twitch channel stream');
+            }
+        } else {
+            $success = array('success' => true);
+        }
+        return $success;
+    }
+
+    public function remove_twitch_channel_settings($pid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id = "' . $pid . '"');
+        $this->config->delete('twitch_channel_settings');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'message' => 'Nothing removed');
+        }
+        return $success;
+    }
+
+    public function check_twch_channel_stream($pid) {
+        $success = false;
+        $this->config->select('*')
+                ->from('twitch_channel_streams')
+                ->where('partner_id', $pid);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
+        return $success;
+    }
+
     public function store_facebook_authorization($pid, $ks, $code) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
@@ -816,11 +1266,16 @@ class Sn_config_model extends CI_Model {
                     $result = $this->insert_facebook_tokens($valid['pid'], $tokens);
                 }
                 if ($result['success']) {
-                    $update_status = $this->update_sn_config($pid, 'facebook', 1);
-                    if ($update_status['success']) {
-                        $success = array('success' => true);
+                    $update_partner_notification = $this->smportal->update_partner_notification($pid, $ks);
+                    if ($update_partner_notification['success']) {
+                        $update_status = $this->update_sn_config($pid, 'facebook', 1);
+                        if ($update_status['success']) {
+                            $success = array('success' => true);
+                        } else {
+                            $success = array('success' => false);
+                        }
                     } else {
-                        $success = array('success' => false);
+                        $success = array('success' => false, 'message' => 'Could not update partner notification');
                     }
                 } else {
                     $success = array('success' => false);
@@ -1271,6 +1726,27 @@ class Sn_config_model extends CI_Model {
             $src = explode('&', $src);
             $src = $src[0];
             $success = array('success' => true, 'src' => $src);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function get_twch_channel_entries($pid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('twitch_channel_entries')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            $entries = array();
+            foreach ($result as $res) {
+                $id = $res['entryId'];
+                array_push($entries, $id);
+            }
+            $success = array('success' => true, 'entries' => $entries);
         } else {
             $success = array('success' => false);
         }
@@ -1845,11 +2321,16 @@ class Sn_config_model extends CI_Model {
                         if ($update_youtube_channel_details['success']) {
                             $init_youtube_channel_settings = $this->init_youtube_channel_settings($pid, $projection);
                             if ($init_youtube_channel_settings['success']) {
-                                $update_status = $this->update_sn_config($pid, 'youtube', 1);
-                                if ($update_status['success']) {
-                                    $success = array('success' => true);
+                                $update_partner_notification = $this->smportal->update_partner_notification($pid, $ks);
+                                if ($update_partner_notification['success']) {
+                                    $update_status = $this->update_sn_config($pid, 'youtube', 1);
+                                    if ($update_status['success']) {
+                                        $success = array('success' => true);
+                                    } else {
+                                        $success = array('success' => false);
+                                    }
                                 } else {
-                                    $success = array('success' => false);
+                                    $success = array('success' => false, 'message' => 'Could not update partner notification');
                                 }
                             } else {
                                 $success = array('success' => false, 'message' => 'Could not init channel settings');
@@ -1965,6 +2446,21 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function check_twitch($pid) {
+        $success = false;
+        $this->config->select('*')
+                ->from('twitch_channel')
+                ->where('partner_id', $pid);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
+        return $success;
+    }
+
     public function create_sn_livestreams($pid, $ks, $name, $desc, $eid, $platforms, $projection) {
         $success = array('success' => false);
         $vr = array();
@@ -1977,6 +2473,7 @@ class Sn_config_model extends CI_Model {
                 $snConfig = $this->build_live_sn_config($platforms);
                 $youtube_success = array('platform' => 'youtube', 'success' => false, 'message' => 'Was not asked to create a live stream');
                 $facebook_success = array('platform' => 'facebook', 'success' => false, 'message' => 'Was not asked to create a live stream');
+                $twitch_success = array('platform' => 'twitch', 'success' => false, 'message' => 'Was not asked to create a live stream');
                 $youtube_embed = true;
 
                 if ($snConfig['smh']) {
@@ -2022,11 +2519,29 @@ class Sn_config_model extends CI_Model {
                     array_push($config, $facebook_live_config['config']);
                 }
 
+                if ($snConfig['twitch']) {
+                    $create_twitch_channel_stream = $this->create_twitch_channel_stream($pid, $eid);
+                    if ($create_twitch_channel_stream['success']) {
+                        $twitch_success['success'] = true;
+                        $twitch_live_config = $this->create_live_sn_config('twitch', true, $create_twitch_channel_stream['live_id']);
+                        array_push($config, $twitch_live_config['config']);
+                    } else {
+                        $twitch_success['success'] = false;
+                        $twitch_success['message'] = $create_twitch_channel_stream['message'];
+                        $twitch_live_config = $this->create_live_sn_config('twitch', false, null);
+                        array_push($config, $twitch_live_config['config']);
+                    }
+                } else {
+                    $twitch_live_config = $this->create_live_sn_config('twitch', false, null);
+                    array_push($config, $twitch_live_config['config']);
+                }
+
                 $partnerData = $this->update_sn_partnerData($pid, $eid, $config, $vr);
                 if ($partnerData['success']) {
                     $platforms_responses = array();
                     array_push($platforms_responses, $youtube_success);
                     array_push($platforms_responses, $facebook_success);
+                    array_push($platforms_responses, $twitch_success);
                     $platf = $this->get_live_platforms(json_decode($partnerData['partnerData']));
                     $configSettings = $this->buildConfigSettings($platf);
                     $success = array('success' => true, 'configSettings' => $configSettings, 'youtube_embed_status' => $youtube_embed, 'platforms_responses' => $platforms_responses);
@@ -2040,6 +2555,23 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
         }
 
+        return $success;
+    }
+
+    public function create_twitch_channel_stream($pid, $eid) {
+        $success = array('success' => false);
+        $access_token = $this->validate_twitch_token($pid);
+        if ($access_token['success']) {
+            $livestream_ids = $this->get_twch_channel_stream($pid);
+            $add_live_entry = $this->add_twch_channel_entry($pid, $eid, $livestream_ids['id']);
+            if ($add_live_entry['success']) {
+                $success = array('success' => true, 'live_id' => $livestream_ids['live_id']);
+            } else {
+                $success = array('success' => false, 'message' => 'Could not insert Twitch Channel Entry');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Twitch: invalid access token');
+        }
         return $success;
     }
 
@@ -2120,6 +2652,90 @@ class Sn_config_model extends CI_Model {
             }
         } else {
             $success = array('success' => true);
+        }
+        return $success;
+    }
+
+    public function remove_twch_channel_entry($pid, $eid) {
+        $success = array('success' => false);
+        if ($this->check_twch_channel_entry($pid, $eid)) {
+            $this->config->where('partner_id = "' . $pid . '" AND entryId = "' . $eid . '"');
+            $this->config->delete('twitch_channel_entries');
+            if ($this->config->affected_rows() > 0) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false);
+            }
+        } else {
+            $success = array('success' => true);
+        }
+        return $success;
+    }
+
+    public function add_twch_channel_entry($pid, $eid, $id) {
+        $success = array('success' => false);
+        if ($this->check_twch_channel_entry($pid, $eid)) {
+            $result = $this->update_twch_channel_entry($pid, $eid, $id);
+        } else {
+            $result = $this->insert_twch_channel_entry($pid, $eid, $id);
+        }
+        if ($result['success']) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function check_twch_channel_entry($pid, $eid) {
+        $success = false;
+        $this->config->select('*')
+                ->from('twitch_channel_entries')
+                ->where('partner_id', $pid)
+                ->where('entryId', $eid);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
+        return $success;
+    }
+
+    public function update_twch_channel_entry($pid, $eid, $live_id) {
+        $success = array('success' => false);
+        $data = array(
+            'channel_stream_id' => $live_id,
+            'updated_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->where('partner_id', $pid);
+        $this->config->where('entryId', $eid);
+        $this->config->update('twitch_channel_entries', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'notice' => 'no changes were made');
+        }
+        return $success;
+    }
+
+    public function insert_twch_channel_entry($pid, $eid, $live_id) {
+        $success = array('success' => false);
+        $data = array(
+            'partner_id' => $pid,
+            'entryId' => $eid,
+            'channel_stream_id' => $live_id,
+            'created_at' => date("Y-m-d H:i:s")
+        );
+        $this->config->insert('twitch_channel_entries', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'notice' => 'no changes were made');
         }
         return $success;
     }
@@ -2212,6 +2828,26 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function get_twch_channel_stream($pid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('twitch_channel_streams')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $id = $res['id'];
+                $live_id = $res['channel_name'];
+            }
+            $success = array('success' => true, 'id' => $id, 'live_id' => $live_id);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
     public function buildConfigSettings($platforms) {
         $platforms_preview_embed_arr = array();
         if ($platforms['snConfig']) {
@@ -2292,6 +2928,7 @@ class Sn_config_model extends CI_Model {
         $smh = false;
         $facebook = false;
         $youtube = false;
+        $twitch = false;
         $res = '240p';
         foreach ($platforms['platforms'] as $platform) {
             if ($platform['platform'] == 'smh') {
@@ -2307,9 +2944,13 @@ class Sn_config_model extends CI_Model {
                     $youtube = true;
                     $res = $platform['config']['res'];
                 }
+            } else if ($platform['platform'] == 'twitch') {
+                if ($platform['status']) {
+                    $twitch = true;
+                }
             }
         }
-        $success = array('success' => true, 'smh' => $smh, 'youtube' => $youtube, 'youtube_res' => $res, 'facebook' => $facebook);
+        $success = array('success' => true, 'smh' => $smh, 'youtube' => $youtube, 'youtube_res' => $res, 'facebook' => $facebook, 'twitch' => $twitch);
         return $success;
     }
 
@@ -2326,6 +2967,7 @@ class Sn_config_model extends CI_Model {
                 $youtube_success = array('platform' => 'youtube', 'success' => false, 'message' => 'Was not asked to create or update a live stream');
                 $facebook_success = array('platform' => 'facebook', 'success' => false, 'message' => 'Was not asked to create or update a live stream');
                 $youtube_embed = true;
+                $twitch_success = array('platform' => 'twitch', 'success' => false, 'message' => 'Was not asked to create or update a live stream');
 
                 if ($snConfig['smh']) {
                     $smh_config = $this->create_live_sn_config('smh', true, null);
@@ -2370,11 +3012,29 @@ class Sn_config_model extends CI_Model {
                     array_push($config, $facebook_live_config['config']);
                 }
 
+                $update_twitch_channel_stream = $this->update_twitch_channel_stream($pid, $eid, $snConfig);
+                if ($update_twitch_channel_stream['success']) {
+                    $twitch_success['success'] = true;
+                    if ($update_twitch_channel_stream['live_id']) {
+                        $twitch_live_config = $this->create_live_sn_config('twitch', true, $update_twitch_channel_stream['live_id']);
+                        array_push($config, $twitch_live_config['config']);
+                    } else {
+                        $twitch_live_config = $this->create_live_sn_config('twitch', false, null);
+                        array_push($config, $twitch_live_config['config']);
+                    }
+                } else {
+                    $twitch_success['success'] = false;
+                    $twitch_success['message'] = $update_twitch_channel_stream['message'];
+                    $twitch_live_config = $this->create_live_sn_config('twitch', false, null);
+                    array_push($config, $twitch_live_config['config']);
+                }
+
                 $partnerData = $this->update_sn_partnerData($pid, $eid, $config, $vr);
                 if ($partnerData['success']) {
                     $platforms_responses = array();
                     array_push($platforms_responses, $youtube_success);
                     array_push($platforms_responses, $facebook_success);
+                    array_push($platforms_responses, $twitch_success);
                     $success = array('success' => true, 'youtube_embed_status' => $youtube_embed, 'platforms_responses' => $platforms_responses);
                 } else {
                     $success = array('success' => false, 'message' => 'Could not update entry partnerData');
@@ -2386,6 +3046,32 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
         }
 
+        return $success;
+    }
+
+    public function update_twitch_channel_stream($pid, $eid, $snConfig) {
+        $success = array('success' => false);
+        if ($snConfig['twitch']) {
+            $access_token = $this->validate_twitch_token($pid);
+            if ($access_token['success']) {
+                $livestream_ids = $this->get_twch_channel_stream($pid);
+                $add_live_entry = $this->add_twch_channel_entry($pid, $eid, $livestream_ids['id']);
+                if ($add_live_entry['success']) {
+                    $success = array('success' => true, 'live_id' => $livestream_ids['live_id']);
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not insert Twitch Channel Entry');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Twitch: invalid access token');
+            }
+        } else if (!$snConfig['twitch']) {
+            $remove_live_entry = $this->remove_twch_channel_entry($pid, $eid);
+            if ($remove_live_entry['success']) {
+                $success = array('success' => true, 'live_id' => null);
+            } else {
+                $success = array('success' => false, 'message' => 'Could not insert Twitch Channel Entry');
+            }
+        }
         return $success;
     }
 
@@ -2643,6 +3329,65 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function init_twitch_channel_settings($pid) {
+        $success = array('success' => false);
+        $data = array(
+            'partner_id' => $pid,
+            'auto_upload' => false,
+            'created_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->insert('twitch_channel_settings', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function update_twitch_channel_settings($pid, $ks, $auto_upload) {
+        $success = array('success' => false);
+        $auto_upload = ($auto_upload == 'true') ? true : false;
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $update_twitch_auto_upload = $this->update_twitch_auto_upload($pid, $auto_upload);
+                if ($update_twitch_auto_upload['success']) {
+                    $success = array('success' => true);
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not update auto upload status');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Social network service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+
+        return $success;
+    }
+
+    public function update_twitch_auto_upload($pid, $auto_upload) {
+        $success = array('success' => false);
+        $data = array(
+            'auto_upload' => $auto_upload,
+            'updated_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->where('partner_id', $pid);
+        $this->config->update('twitch_channel_settings', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
     public function update_youtube_channel_settings($pid, $ks, $auto_upload) {
         $success = array('success' => false);
         $auto_upload = ($auto_upload == 'true') ? true : false;
@@ -2650,16 +3395,11 @@ class Sn_config_model extends CI_Model {
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $update_partner_notification = $this->smportal->update_partner_notification($pid, $ks, $auto_upload);
-                if ($update_partner_notification['success']) {
-                    $update_youtube_auto_upload = $this->update_youtube_auto_upload($pid, $auto_upload);
-                    if ($update_youtube_auto_upload['success']) {
-                        $success = array('success' => true);
-                    } else {
-                        $success = array('success' => false, 'message' => 'Could not update auto upload status');
-                    }
+                $update_youtube_auto_upload = $this->update_youtube_auto_upload($pid, $auto_upload);
+                if ($update_youtube_auto_upload['success']) {
+                    $success = array('success' => true);
                 } else {
-                    $success = array('success' => false, 'message' => 'Could not update partner notification');
+                    $success = array('success' => false, 'message' => 'Could not update auto upload status');
                 }
             } else {
                 $success = array('success' => false, 'message' => 'Social network service not active');
@@ -2749,6 +3489,11 @@ class Sn_config_model extends CI_Model {
                         } else {
                             $success = array('success' => true, 'message' => 'Social network: nothing to update');
                         }
+                        if ($platforms_status['platforms_status']['twitch']) {
+                            $success = $this->update_twitch_vod_metadata($pid, $name, $desc, $eid);
+                        } else {
+                            $success = array('success' => true, 'message' => 'Social network: nothing to update');
+                        }
                     } else {
                         $success = array('success' => true, 'message' => 'Social network config not present');
                     }
@@ -2816,6 +3561,23 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function update_twitch_vod_metadata($pid, $name, $desc, $eid) {
+        $success = array('success' => false);
+        $twitch_video = $this->get_twitch_vod_id($pid, $eid);
+        $access_token = $this->validate_twitch_token($pid);
+        if ($access_token['success']) {
+            $updateMetaData = $this->twitch_client_api->updateVodMetaData($access_token['access_token'], $twitch_video['videoId'], $name, $desc);
+            if ($updateMetaData['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Twitch: Could not update metadata');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Twitch: invalid access token');
+        }
+        return $success;
+    }
+
     public function update_facebook_vod_metadata($pid, $name, $desc, $eid) {
         $success = array('success' => false);
         $facebook_video = $this->get_facebook_vod_id($pid, $eid);
@@ -2867,6 +3629,9 @@ class Sn_config_model extends CI_Model {
                     if ($platform['platform'] == 'youtube_live') {
                         $platforms_status['youtube'] = $platform['status'];
                     }
+                    if ($platform['platform'] == 'twitch') {
+                        $platforms_status['twitch'] = $platform['status'];
+                    }
                 }
             }
             $success = array('success' => true, 'platforms_status' => $platforms_status);
@@ -2889,6 +3654,9 @@ class Sn_config_model extends CI_Model {
                     }
                     if ($platform['platform'] == 'youtube') {
                         $platforms_status['youtube'] = $platform['status'];
+                    }
+                    if ($platform['platform'] == 'twitch') {
+                        $platforms_status['twitch'] = $platform['status'];
                     }
                 }
             }
@@ -2919,6 +3687,23 @@ class Sn_config_model extends CI_Model {
 //            }
         } else {
             $success = array('success' => false, 'message' => 'Social network service not active');
+        }
+        return $success;
+    }
+
+    public function upload_twitch_video($pid, $entry_details, $video_path) {
+        $success = array('success' => false);
+        $access_token = $this->validate_twitch_token($pid);
+        if ($access_token['success']) {
+            $channel_details = $this->get_twch_channel_details($pid);
+            $upload_video = $this->twitch_client_api->uploadVideo($access_token['access_token'], $channel_details['channel_details']['channel_id'], $entry_details['name'], $entry_details['desc'], $video_path);
+            if ($upload_video['success']) {
+                $success = array('success' => true, 'videoId' => $upload_video['videoId']);
+            } else {
+                $success = array('success' => false, 'message' => 'Twitch: could not upload video');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Twitch: invalid access token');
         }
         return $success;
     }
@@ -2971,6 +3756,22 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function remove_twitch_video($pid, $videoId) {
+        $success = array('success' => false);
+        $access_token = $this->validate_twitch_token($pid);
+        if ($access_token['success']) {
+            $remove_video = $this->twitch_client_api->removeVideo($access_token['access_token'], $videoId);
+            if ($remove_video['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Twitch: could not remove video');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Twitch: invalid access token');
+        }
+        return $success;
+    }
+
     public function delete_sn_entry($pid, $ks, $eid) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
@@ -2986,7 +3787,10 @@ class Sn_config_model extends CI_Model {
                         if ($platforms_status['platforms_status']['facebook']) {
                             $success = $this->delete_facebook_vod_entry($pid, $eid);
                         }
-                        if (!$platforms_status['platforms_status']['youtube'] && !$platforms_status['platforms_status']['facebook']) {
+                        if ($platforms_status['platforms_status']['twitch']) {
+                            $success = $this->delete_twitch_vod_entry($pid, $eid);
+                        }
+                        if (!$platforms_status['platforms_status']['youtube'] && !$platforms_status['platforms_status']['facebook'] && !$platforms_status['platforms_status']['twitch']) {
                             $success = array('success' => true, 'message' => 'Social network: nothing to update');
                         }
                     } else {
@@ -3002,6 +3806,23 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
         }
 
+        return $success;
+    }
+
+    public function delete_twitch_vod_entry($pid, $eid) {
+        $success = array('success' => false);
+        $twitch_video = $this->get_twitch_vod_id($pid, $eid);
+        $remove_twitch_video = $this->remove_twitch_video($pid, $twitch_video['videoId']);
+        if ($remove_twitch_video['success']) {
+            $remove_db_twitch_vod_entry = $this->remove_db_twitch_vod_entry($pid, $eid);
+            if ($remove_db_twitch_vod_entry['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Could not remove Twitch video');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Could not delete Twitch video');
+        }
         return $success;
     }
 
@@ -3132,7 +3953,10 @@ class Sn_config_model extends CI_Model {
                         if ($platforms_status['platforms_status']['facebook']) {
                             $success = $this->delete_facebook_livestream($pid, $eid);
                         }
-                        if (!$platforms_status['platforms_status']['youtube'] && !$platforms_status['platforms_status']['facebook']) {
+                        if ($platforms_status['platforms_status']['twitch']) {
+                            $success = $this->remove_twch_channel_entry($pid, $eid);
+                        }
+                        if (!$platforms_status['platforms_status']['youtube'] && !$platforms_status['platforms_status']['facebook'] && !$platforms_status['platforms_status']['twitch']) {
                             $success = array('success' => true, 'message' => 'Social network: nothing to update');
                         }
                     } else {
@@ -3245,13 +4069,15 @@ class Sn_config_model extends CI_Model {
                 array_push($multiBitrate_status, $multiBitrate['multiBitrate']);
                 $youtube_status = $this->get_youtube_status($pid);
                 $facebook_status = $this->get_facebook_status($pid);
-                if ($youtube_status['status'] || $facebook_status['status']) {
+                $twitch_status = $this->get_twitch_status($pid);
+                if ($youtube_status['status'] || $facebook_status['status'] || $twitch_status['status']) {
                     $platforms_status = $this->get_live_entry_platforms_status($pid, $eid);
                     if ($platforms_status['success']) {
                         if (count($platforms_status['platforms_status'])) {
                             array_push($platforms, array('platform' => 'edgecast', 'status' => $platforms_status['platforms_status']['smh']));
+                            $entry_details = $this->smportal->get_entry_details($pid, $eid);
 
-                            $build_fb_ingestion = $this->build_fb_ingestion($pid, $eid, $facebook_status, $platforms_status);
+                            $build_fb_ingestion = $this->build_fb_ingestion($pid, $eid, $entry_details, $facebook_status, $platforms_status);
                             if ($build_fb_ingestion['success']) {
                                 array_push($platforms, $build_fb_ingestion['fb_platform']);
                             } else {
@@ -3265,11 +4091,19 @@ class Sn_config_model extends CI_Model {
                                 $success = array('success' => false, 'message' => 'Could not build YouTube Ingestion');
                             }
 
+                            $build_twch_ingestion = $this->build_twch_ingestion($pid, $eid, $entry_details, $twitch_status, $platforms_status);
+                            if ($build_twch_ingestion['success']) {
+                                array_push($platforms, $build_twch_ingestion['twch_platform']);
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not build Twitch Ingestion');
+                            }
+
                             $success = array('success' => true, 'platforms' => $platforms, 'multiBitrate' => $multiBitrate_status);
                         } else {
                             array_push($platforms, array('platform' => 'edgecast', 'status' => true));
                             array_push($platforms, array('platform' => 'facebook', 'status' => false));
                             array_push($platforms, array('platform' => 'youtube', 'status' => false));
+                            array_push($platforms, array('platform' => 'twitch', 'status' => false));
                             $success = array('success' => true, 'platforms' => $platforms, 'multiBitrate' => $multiBitrate_status);
                         }
                     } else {
@@ -3279,6 +4113,7 @@ class Sn_config_model extends CI_Model {
                     array_push($platforms, array('platform' => 'edgecast', 'status' => true));
                     array_push($platforms, array('platform' => 'facebook', 'status' => false));
                     array_push($platforms, array('platform' => 'youtube', 'status' => false));
+                    array_push($platforms, array('platform' => 'twitch', 'status' => false));
                     $success = array('success' => true, 'platforms' => $platforms, 'multiBitrate' => $multiBitrate_status);
                 }
             } else {
@@ -3291,12 +4126,100 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function build_fb_ingestion($pid, $eid, $facebook_status, $platforms_status) {
+    public function build_twch_ingestion($pid, $eid, $entry_details, $twitch_status, $platforms_status) {
+        $success = array('success' => false);
+        $twch_platform = array();
+        if ($twitch_status['status']) {
+            if ($platforms_status['platforms_status']['twitch']) {
+                $ingestionSettings = $this->get_twitch_ingestion_settings($pid);
+                if ($ingestionSettings['success']) {
+                    $update_twch_ls_details = $this->update_twch_ls_details($pid, $entry_details);
+                    if ($update_twch_ls_details['success']) {
+                        $update_twitch_ls_status = $this->update_twitch_ls_status($pid, 'live');
+                        if ($update_twitch_ls_status['success']) {
+                            array_push($twch_platform, array('platform' => 'twitch', 'status' => $platforms_status['platforms_status']['twitch'], 'ingestionSettings' => $ingestionSettings['ingestionSettings']));
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not update twitch live stream status');
+                        }
+                    } else {
+                        array_push($twch_platform, array('platform' => 'twitch', 'status' => false));
+                    }
+                } else {
+                    array_push($twch_platform, array('platform' => 'twitch', 'status' => false));
+                }
+            } else {
+                array_push($twch_platform, array('platform' => 'twitch', 'status' => false));
+            }
+        } else {
+            array_push($twch_platform, array('platform' => 'twitch', 'status' => false));
+        }
+        $success = array('success' => true, 'twch_platform' => $twch_platform[0]);
+        return $success;
+    }
+
+    public function get_twitch_ingestion_settings($pid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('twitch_channel_streams')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            $ingestionSettings = array();
+            foreach ($result as $res) {
+                $streamName = $this->smcipher->decrypt($res['streamName']);
+                $ingestionAddress = $this->smcipher->decrypt($res['ingestionAddress']);
+            }
+            array_push($ingestionSettings, array('streamName' => $streamName, 'ingestionAddress' => $ingestionAddress));
+            $success = array('success' => true, 'ingestionSettings' => $ingestionSettings);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function update_twitch_ls_status($pid, $status) {
+        $success = array('success' => false);
+        $data = array(
+            'status' => $status,
+            'updated_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->where('partner_id', $pid);
+        $this->config->update('twitch_channel_streams', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'notice' => 'no changes were made');
+        }
+        return $success;
+    }
+
+    public function update_twch_ls_details($pid, $entry_details) {
+        $success = array('success' => false);
+        $access_token = $this->validate_twitch_token($pid);
+        if ($access_token['success']) {
+            $twch_channel_details = $this->get_twch_channel_details($pid);
+            $updateLiveStream = $this->twitch_client_api->updateChannel($twch_channel_details['channel_details']['channel_id'], $entry_details['name'], $access_token['access_token']);
+            if ($updateLiveStream['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Twitch: Could not update live stream');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Twitch: invalid access token');
+        }
+        return $success;
+    }
+
+    public function build_fb_ingestion($pid, $eid, $entry_details, $facebook_status, $platforms_status) {
         $success = array('success' => false);
         $fb_platform = array();
         if ($facebook_status['status']) {
             if ($platforms_status['platforms_status']['facebook']) {
-                $update_fb_ls_details = $this->update_fb_ls_details($pid, $eid);
+                $update_fb_ls_details = $this->update_fb_ls_details($pid, $entry_details);
                 if ($update_fb_ls_details['success']) {
                     $ingestionSettings = $this->get_facebook_ingestion_settings($pid);
                     if ($ingestionSettings['success']) {
@@ -3322,13 +4245,12 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function update_fb_ls_details($pid, $eid) {
+    public function update_fb_ls_details($pid, $entry_details) {
         $success = array('success' => false);
         $get_fb_livestream = $this->get_fb_livestream($pid);
         if ($get_fb_livestream['success']) {
             $access_token = $this->validate_facebook_token($pid);
             if ($access_token['success']) {
-                $entry_details = $this->smportal->get_entry_details($pid, $eid);
                 $updateLiveStream = $this->facebook_client_api->updateLiveStream($get_fb_livestream['live_id'], $entry_details['name'], $entry_details['desc'], $access_token['access_token']);
                 if ($updateLiveStream['success']) {
                     $success = array('success' => true);
@@ -3623,6 +4545,13 @@ class Sn_config_model extends CI_Model {
                     } else {
                         $success = array('success' => false, 'message' => $process_facebook_upload_queue['message']);
                     }
+                } else if ($get_ready_upload['ready_upload']['platform'] === 'twitch') {
+                    $process_twitch_upload_queue = $this->process_twitch_upload_queue($get_ready_upload['ready_upload']['pid'], $get_ready_upload['ready_upload']['eid'], $entry_details, $entry_path);
+                    if ($process_twitch_upload_queue['success']) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false, 'message' => $process_twitch_upload_queue['message']);
+                    }
                 }
             } else {
                 $success = array('success' => true);
@@ -3755,6 +4684,35 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function process_twitch_upload_queue($pid, $eid, $entry_details, $entry_path) {
+        $success = array('success' => false);
+        $video_path = $entry_path['original_path'];
+        $update_twitch_upload_status = $this->update_platform_upload_status($pid, $eid, 'twitch', 'uploading', 'pending');
+        if ($update_twitch_upload_status['success']) {
+            $upload_twitch_video = $this->upload_twitch_video($pid, $entry_details, $video_path);
+            if ($upload_twitch_video['success']) {
+                $this->config = $this->load->database('sn', TRUE);
+                $this->config->reconnect();
+                $insert_entry_to_twitch_vod = $this->insert_entry_to_twitch_vod($pid, $eid, $upload_twitch_video['videoId']);
+                if ($insert_entry_to_twitch_vod['success']) {
+                    $update_twitch_upload_status = $this->update_platform_upload_status($pid, $eid, 'twitch', 'completed', $upload_twitch_video['videoId']);
+                    if ($update_twitch_upload_status['success']) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false, 'message' => $update_twitch_upload_status['message']);
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not insert entry into Twitch vod');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Could not upload video to Twitch');
+            }
+        } else {
+            $success = array('success' => false, 'message' => $update_twitch_upload_status['message']);
+        }
+        return $success;
+    }
+
     public function update_platform_upload_status($pid, $eid, $sn_platform, $upload_status, $videoId) {
         $config = array();
         $vr = array();
@@ -3801,6 +4759,7 @@ class Sn_config_model extends CI_Model {
                 $vod_platforms = $this->get_vod_platforms(json_decode($partnerData['partnerData']));
                 $youtube_status = false;
                 $facebook_status = false;
+                $twitch_status = false;
                 $config = array();
                 $vr = array();
                 $vr['vrSettings'] = false;
@@ -3813,6 +4772,10 @@ class Sn_config_model extends CI_Model {
                         if ($platform['status']) {
                             $youtube_status = true;
                         }
+                    } else if ($platform['platform'] == 'twitch') {
+                        if ($platform['status']) {
+                            $twitch_status = true;
+                        }
                     }
                 }
 
@@ -3821,6 +4784,9 @@ class Sn_config_model extends CI_Model {
 
                 $youtube_config = $this->process_youtube_vod_config($pid, $eid, $projection, $youtube_status, $vod_platforms);
                 array_push($config, $youtube_config);
+
+                $twitch_config = $this->process_twitch_vod_config($pid, $eid, 'rectangular', $twitch_status, $vod_platforms);
+                array_push($config, $twitch_config);
 
                 if ($stereo_mode != '') {
                     $vr['vrSettings'] = true;
@@ -3964,6 +4930,65 @@ class Sn_config_model extends CI_Model {
         return $config[0];
     }
 
+    public function process_twitch_vod_config($pid, $eid, $projection, $twitch_status, $vod_platforms) {
+        $config = array();
+        if (count($vod_platforms['platforms']) > 0) {
+            $current_twitch_status = '';
+            $current_twitch_upload_status = '';
+            $current_twitch_videoId = '';
+            foreach ($vod_platforms['platforms'] as $platform) {
+                if ($platform['platform'] == 'twitch') {
+                    $current_twitch_status = $platform['status'];
+                    $current_twitch_upload_status = $platform['upload_status'];
+                    $current_twitch_videoId = $platform['videoId'];
+                }
+            }
+            $twitch_upload_exists = $this->check_if_upload_queue_exists($pid, $eid, 'twitch');
+            $twitch_vod_exists = $this->check_if_twitch_vod_exists($pid, $eid);
+            if ($twitch_status) {
+                if (!$twitch_upload_exists && !$twitch_vod_exists) {
+                    $twitch_config = $this->create_vod_sn_config('twitch', $twitch_status, 'ready', 'pending');
+                    array_push($config, $twitch_config['config']);
+                    $this->insert_video_to_upload_queue($pid, $eid, $projection, 'twitch', 'ready');
+                } else {
+                    $twitch_config = $this->create_vod_sn_config('twitch', $current_twitch_status, $current_twitch_upload_status, $current_twitch_videoId);
+                    array_push($config, $twitch_config['config']);
+                }
+            } else if (!$twitch_status) {
+                $is_uploading = $this->check_if_platform_uploading($eid, 'twitch');
+                if ($is_uploading) {
+                    $twitch_config = $this->create_vod_sn_config('twitch', $current_twitch_status, $current_twitch_upload_status, $current_twitch_videoId);
+                    array_push($config, $twitch_config['config']);
+                } else {
+                    if ($twitch_upload_exists) {
+                        $this->removeQueuedPlatformUploadEntry($pid, $eid, 'twitch');
+                    }
+                    if ($twitch_vod_exists) {
+                        $twitch_video = $this->get_twitch_vod_id($pid, $eid);
+                        $remove_twitch_video = $this->remove_twitch_video($pid, $twitch_video['videoId']);
+                        if ($remove_twitch_video['success']) {
+                            $this->remove_db_twitch_vod_entry($pid, $eid);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not delete Twitch video');
+                        }
+                    }
+                    $twitch_config = $this->create_vod_sn_config('twitch', $twitch_status, null, null);
+                    array_push($config, $twitch_config['config']);
+                }
+            }
+        } else {
+            if ($twitch_status) {
+                $twitch_config = $this->create_vod_sn_config('twitch', $twitch_status, 'ready', 'pending');
+                array_push($config, $twitch_config['config']);
+                $this->insert_video_to_upload_queue($pid, $eid, $projection, 'twitch', 'ready');
+            } else if (!$twitch_status) {
+                $twitch_config = $this->create_vod_sn_config('twitch', $twitch_status, null, null);
+                array_push($config, $twitch_config['config']);
+            }
+        }
+        return $config[0];
+    }
+
     public function create_vod_sn_config($platform, $status, $upload_status, $video_id) {
         $config = array();
         if ($status) {
@@ -3985,6 +5010,24 @@ class Sn_config_model extends CI_Model {
             $config = array('platform' => $platform, 'status' => $status);
         }
         $success = array('success' => true, 'config' => $config);
+        return $success;
+    }
+
+    public function insert_entry_to_twitch_vod($pid, $eid, $vid) {
+        $success = array('success' => false);
+        $data = array(
+            'partner_id' => $pid,
+            'entryId' => $eid,
+            'videoId' => $vid,
+            'created_at' => date("Y-m-d H:i:s")
+        );
+        $this->config->insert('twitch_vod_entries', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
         return $success;
     }
 
@@ -4333,12 +5376,28 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function is_twitch_live($pid) {
+        $success = false;
+        $this->config->select('*')
+                ->from('twitch_channel_streams')
+                ->where('partner_id', $pid)
+                ->where('status', 'live');
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+        return $success;
+    }
+
     public function sn_livestreams_complete($pid, $ks, $eid) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
             $is_youtube_live = $this->is_youtube_live($pid, $eid);
             $is_facebook_live = $this->is_facebook_live($pid);
+            $is_twitch_live = $this->is_twitch_live($pid);
             if ($is_youtube_live) {
                 $complete_youtube = $this->youtube_entry_complete($pid, $ks, $eid);
                 if ($complete_youtube['success']) {
@@ -4365,6 +5424,14 @@ class Sn_config_model extends CI_Model {
                     }
                 } else {
                     $success = array('success' => false, 'message' => 'Could not get Facebook user settings');
+                }
+            }
+            if ($is_twitch_live) {
+                $update_twitch_ls_status = $this->update_twitch_ls_status($pid, 'ready');
+                if ($update_twitch_ls_status['success']) {
+                    $success = array('success' => true);
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not update Twitch live status');
                 }
             }
         } else {
@@ -4553,6 +5620,45 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => true);
         } else {
             $success = array('success' => false, 'message' => 'Could not update entry partnerData');
+        }
+
+        return $success;
+    }
+
+    public function resync_twch_account($pid, $ks) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $access_token = $this->validate_twitch_token($pid);
+                if ($access_token['success']) {
+                    $channel = $this->retrieve_twitch_channel_details($pid, $access_token['access_token']);
+                    if ($channel['success']) {
+                        $update_twitch_channel_details = $this->update_twitch_channel_details($pid, $channel['channel_details']['channel_name'], $channel['channel_details']['channel_id'], $channel['channel_details']['channel_logo']);
+                        if ($update_twitch_channel_details['success']) {
+                            $channel_stream = $this->twitch_client_api->get_channel_details($access_token['access_token']);
+                            $update_twch_channel_stream = $this->update_twch_channel_stream($pid, $channel_stream['channel_stream']['ingestId'], $channel_stream['channel_stream']['channelName'], $channel_stream['channel_stream']['streamName'], $channel_stream['channel_stream']['ingestAddress']);
+                            if ($update_twch_channel_stream['success']) {
+                                $channel_details = array('channel_name' => $channel['channel_details']['channel_name'], 'channel_logo' => $channel['channel_details']['channel_logo']);
+                                $success = array('success' => true, 'channel_details' => $channel_details);
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not update channel stream');
+                            }
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not insert channel details');
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not get channel details');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Twitch: invalid access token');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Social network service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
         }
 
         return $success;
@@ -4756,6 +5862,9 @@ class Sn_config_model extends CI_Model {
             $facebook_to_upload_queue = $this->add_facebook_to_upload_queue($pid, $eid, $get_auto_upload_statuses);
             array_push($config, $facebook_to_upload_queue);
 
+            $twitch_to_upload_queue = $this->add_twitch_to_upload_queue($pid, $eid, $get_auto_upload_statuses);
+            array_push($config, $twitch_to_upload_queue);
+
             $partnerData = $this->update_sn_partnerData($pid, $eid, $config, $vr);
             if ($partnerData['success']) {
                 $success = array('success' => true);
@@ -4766,6 +5875,30 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => false, 'message' => 'Social network service not active');
         }
         return $success;
+    }
+
+    public function add_twitch_to_upload_queue($pid, $eid, $twitch_upload_status) {
+        $config = array();
+        $twitch_status = (isset($twitch_upload_status['auto_upload']['twitch'])) ? true : false;
+        if ($twitch_status) {
+            $twitch_auto_upload_status = $twitch_upload_status['auto_upload']['twitch'];
+            if ($twitch_auto_upload_status) {
+                $insert_video_to_upload_queue = $this->insert_video_to_upload_queue($pid, $eid, 'rectangular', 'twitch', 'pending');
+                if ($insert_video_to_upload_queue['success']) {
+                    $twitch_config = $this->create_vod_sn_config('twitch', true, 'pending', 'pending');
+                    array_push($config, $twitch_config['config']);
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not insert into upload queue');
+                }
+            } else {
+                $twitch_config = $this->create_vod_sn_config('twitch', false, null, null);
+                array_push($config, $twitch_config['config']);
+            }
+        } else {
+            $twitch_config = $this->create_vod_sn_config('twitch', false, null, null);
+            array_push($config, $twitch_config['config']);
+        }
+        return $config[0];
     }
 
     public function add_youtube_to_upload_queue($pid, $eid, $youtube_upload_status) {
@@ -4821,6 +5954,7 @@ class Sn_config_model extends CI_Model {
         $statuses = array();
         $youtube_status = $this->get_youtube_status($pid);
         $facebook_status = $this->get_facebook_status($pid);
+        $twitch_status = $this->get_twitch_status($pid);
         if ($youtube_status['status']) {
             $youtube = $this->get_yt_settings($pid);
             if ($youtube['success']) {
@@ -4833,6 +5967,12 @@ class Sn_config_model extends CI_Model {
             if ($facebook['success']) {
                 $statuses['facebook'] = $facebook['userSettings'][0]['auto_upload'];
                 $statuses['facebook_projection'] = $facebook['userSettings'][0]['projection'];
+            }
+        }
+        if ($twitch_status['status']) {
+            $twitch = $this->get_twch_settings($pid);
+            if ($twitch['success']) {
+                $statuses['twitch'] = $twitch['settings']['auto_upload'];
             }
         }
         $success = array('success' => true, 'auto_upload' => $statuses);
@@ -4968,6 +6108,43 @@ class Sn_config_model extends CI_Model {
         $videoId = '';
         $this->config->select('*')
                 ->from('facebook_vod_entries')
+                ->where('partner_id', $pid)
+                ->where('entryId', $eid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $videoId = $res['videoId'];
+            }
+            $success = array('success' => true, 'videoId' => $videoId);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function check_if_twitch_vod_exists($pid, $eid) {
+        $success = false;
+        $this->config->select('*')
+                ->from('twitch_vod_entries')
+                ->where('partner_id', $pid)
+                ->where('entryId', $eid);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
+        return $success;
+    }
+
+    public function get_twitch_vod_id($pid, $eid) {
+        $success = array('success' => false);
+        $videoId = '';
+        $this->config->select('*')
+                ->from('twitch_vod_entries')
                 ->where('partner_id', $pid)
                 ->where('entryId', $eid);
 
