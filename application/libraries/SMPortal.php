@@ -130,6 +130,24 @@ class SMPortal {
         return $partner_info;
     }
 
+    function get_channels($pid, $ks) {
+        $channel_ids = array();
+        $config = new KalturaConfiguration($pid);
+        $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
+        $client = new KalturaClient($config);
+        $client->setKs($ks);
+        $filter = new KalturaLiveChannelFilter();
+        $filter->orderBy = '-createdAt';
+        $pager = null;
+        $results = $client->liveChannel->listAction($filter, $pager);
+        foreach ($results->objects as $r) {
+            $cat_id = $r->categoryId;
+            array_push($channel_ids, $r->id);
+        }
+
+        return $channel_ids;
+    }
+
     public function get_player_details($pid, $uiconf) {
         $sess = $this->impersonate($pid);
         $partnerId = $pid;
@@ -262,7 +280,7 @@ class SMPortal {
 
         $original_path = '/opt/kaltura/web/content/entry/data/' . $pid . '/' . $entryId . '_' . $id . '_' . $version . '.' . $ext;
         $threesixty_tmp_path = '/opt/kaltura/web/content/entry/data/' . $pid . '/' . $entryId . '_' . $id . '_' . $version . '_tmp.' . $ext;
-        
+
         $success = array('success' => true, 'original_path' => $original_path, 'threesixty_tmp_path' => $threesixty_tmp_path);
 
         return $success;
