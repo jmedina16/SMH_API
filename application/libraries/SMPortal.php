@@ -141,7 +141,6 @@ class SMPortal {
         $pager = null;
         $results = $client->liveChannel->listAction($filter, $pager);
         foreach ($results->objects as $r) {
-            $cat_id = $r->categoryId;
             array_push($channel_ids, $r->id);
         }
 
