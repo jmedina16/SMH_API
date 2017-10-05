@@ -4228,3 +4228,10 @@ Stack trace:
 #3 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('10012', NULL, NULL, NULL, NULL, 'Active', 'Pending')
 #4 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('vpinBl9VANmX1f2...', 'I-GVGLAVFLP465', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Test', 'User', 'user2@smh.com', 'Z2NPJYZKK2RSY', 'US', 'Pending', '10E60660PX73815...', 'instant', '03:53:36 Oct 04...')
 #5 [internal  in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
+[05-Oct-2017 03:37:02 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'Exception' with message 'String could not be parsed as XML' in /var/www/vhosts/api/application/libraries/SMPortal.php:59
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/SMPortal.php(59): SimpleXMLElement->__construct('')
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(237): SMPortal->impersonate('\xB8\n@+"<h6_$\xC7\xD7\x13\x81<...')
+#2 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2693): SMPortal->get_entry_details('\xB8\n@+"<h6_$\xC7\xD7\x13\x81<...', '')
+#3 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('\xB8\n@+"<h6_$\xC7\xD7\x13\x81<...', NULL, NULL, NULL, NULL, 'Active', 'Pending')
+#4 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('1470411527:0 D:...', 'I-KK69XCRSXEHV', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Test', 'User', 'user2@smh.com', 'Z2NPJYZKK2RSY', 'US', 'Pending', '52631496W894812...', 'instant in /var/www/vhosts/api/application/libraries/SMPortal.php on line 59
