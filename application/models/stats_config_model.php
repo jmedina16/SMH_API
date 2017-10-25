@@ -21,7 +21,7 @@ class Stats_config_model extends CI_Model {
         if ($valid['success']) {
             $start_date = date('d/M/Y', strtotime("-25 days"));
             $end_date = date('d/M/Y', strtotime("-25 days"));
-            $this->getLocations(10012, $start_date, $end_date);
+            $this->getLocations($cpid, $start_date, $end_date);
         }
 
         return $success;
