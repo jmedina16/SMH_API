@@ -19,47 +19,23 @@ class Stats_config_model extends CI_Model {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
-            $start_date = date('d/M/Y', strtotime("-25 days"));
-            $end_date = date('d/M/Y', strtotime("-25 days"));
-            $this->getLocations($cpid, $start_date, $end_date);
+            $locationEntries = $this->getLocations($cpid, $start_date, $end_date);
         }
 
-        return $success;
+        return $locationEntries;
     }
 
     public function getLocations($cpid, $start_date, $end_date) {
-        syslog(LOG_NOTICE, "SMH DEBUG : getLocationsX: " . print_r($cpid, true));
-        $locationEntries = array();
         $this->config->select('*')
                 ->from('locations')
                 ->where('partner_id', $cpid)
-                ->where('statistics_for >=', $start_date);
-                //->where('statistics_for <=', $end_date);
+                ->where('statistics_for >=', $start_date)
+                ->where('statistics_for <=', $end_date);
 
         $query = $this->config->get();
-        $result = $query->result_array();
+        $locationEntries = $query->result_array();
         
-        //echo $this->config->last_query();
-        syslog(LOG_NOTICE, "SMH DEBUG : getLocationsY: " . print_r($this->config->last_query(), true));
-        
-        syslog(LOG_NOTICE, "SMH DEBUG : getLocations: " . print_r($result, true));
-        
-//        foreach ($result as $res) {
-//
-//        }
-
-        
-
-//        if ($query->num_rows() > 0) {
-//            foreach ($result as $res) {
-//                $name = $res['name'];
-//                $user_id = $this->smcipher->decrypt($res['user_id']);
-//                $id = $res['id'];
-//            }
-//            $success = array('success' => true, 'user_name' => $name, 'user_id' => $user_id, 'id' => $id);
-//        } else {
-//            $success = array('success' => false);
-//        }
+        return $locationEntries;
     }
 
     public function verfiy_ks($pid, $ks) {
