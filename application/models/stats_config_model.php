@@ -2,7 +2,7 @@
 
 error_reporting(1);
 
-require_once APPPATH."/libraries/PHPExcel/Classes/PHPExcel.php";
+require_once APPPATH . "/libraries/PHPExcel/Classes/PHPExcel.php";
 
 class Stats_config_model extends CI_Model {
 
@@ -25,9 +25,82 @@ class Stats_config_model extends CI_Model {
             $liveStatsEntries = $this->getLiveStats($cpid, $start_date, $end_date);
             $locationEntries = $this->getLocations($cpid, $start_date, $end_date);
             $objPHPExcel = new PHPExcel();
+            $objPHPExcel->setActiveSheetIndex(0)
+                    ->setCellValue('A1', 'Content')
+                    ->setCellValue('B1', 'Hits')
+                    ->setCellValue('C1', 'Viewers')
+                    ->setCellValue('D1', 'Duration')
+                    ->setCellValue('E1', 'Duration per Hit (average)')
+                    ->setCellValue('F1', 'Duration per Viewer (average)')
+                    ->setCellValue('G1', 'Data Transfer');
+
+            $content_vod_stats_zoomed = array();
+            foreach ($vodStatsEntries as $row) {
+                if (!$this->multi_array_search($row['content'], $content_vod_stats_zoomed)) {
+                    array_push($content_vod_stats_zoomed, $row['content']);
+                }
+            }
+
+            $content_vod_stats_zoomed_view = array();
+            foreach ($content_vod_stats_zoomed as $c) {
+                $hits = 0;
+                $viewers = 0;
+                $duration = 0;
+                $duration_per_hit = 0;
+                $duration_per_viewer = 0;
+                $data_transfer = 0;
+                foreach ($vodStatsEntries as $row) {
+                    if ($row['content'] == $c) {
+                        $hits += $row['hits'];
+                        $viewers += $$row['viewers'];
+                        $duration += $row['duration'];
+                        $duration_per_hit += $row['duration_per_hit'];
+                        $duration_per_viewer += $row['duration_per_viewer'];
+                        $data_transfer += $row['data_transfer'];
+                    }
+                }
+                $data_transfer_formated = $this->human_filesize($data_transfer);
+                $duration_formated = ($duration == 0) ? '00:00:00' : $duration;
+                $duration_per_hit_formated = ($duration_per_hit == 0) ? '00:00:00' : $duration_per_hit;
+                $duration_per_viewer_formated = ($duration_per_viewer == 0) ? '00:00:00' : $duration_per_viewer;
+                array_push($content_vod_stats_zoomed_view, array($c, number_format($hits), number_format($viewers), $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
+            }
+
+            $i = 2;
+            foreach ($content_vod_stats_zoomed_view as $value) {
+                $objPHPExcel->setActiveSheetIndex(0)
+                        ->setCellValue('A' . $i, $value[0])
+                        ->setCellValue('B' . $i, $value[1])
+                        ->setCellValue('C' . $i, $value[2])
+                        ->setCellValue('D' . $i, $value[3])
+                        ->setCellValue('E' . $i, $value[4])
+                        ->setCellValue('F' . $i, $value[5])
+                        ->setCellValue('G' . $i, $value[6]);
+                $i++;
+            }
+
+            $objPHPExcel->getActiveSheet()->setTitle('Vod_Content');
+            $objPHPExcel->setActiveSheetIndex(0);
+
+            $filename = $cpid . '_vod_content_' . date('m-d-Y_H_i_s');
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $filename . '.xlsx"');
+            header('Cache-Control: max-age=0');
+            header("Content-Type: application/force-download");
+            header("Content-Type: application/download");
+            header('Cache-Control: max-age=1');
+            header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+            header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+            header('Cache-Control: cache, must-revalidate');
+            header('Pragma: public');
+            $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+            $objWriter->save('php://output');
+            exit;
+
+            //syslog(LOG_NOTICE, "SMH DEBUG : get_child_stats: " . print_r($content_vod_stats_zoomed_view, true));
         }
 
-        return $locationEntries;
+        return $success;
     }
 
     public function getLocations($cpid, $start_date, $end_date) {
@@ -67,6 +140,19 @@ class Stats_config_model extends CI_Model {
         $vodStatsEntries = $query->result_array();
 
         return $vodStatsEntries;
+    }
+
+    public function multi_array_search($search_for, $search_in) {
+        foreach ($search_in as $element) {
+            if (($element === $search_for)) {
+                return true;
+            } elseif (is_array($element)) {
+                $result = $this->multi_array_search($search_for, $element);
+                if ($result == true)
+                    return true;
+            }
+        }
+        return false;
     }
 
     public function human_filesize($bytes, $decimals = 2) {
