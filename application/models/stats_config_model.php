@@ -34,73 +34,8 @@ class Stats_config_model extends CI_Model {
                     ->setCellValue('F1', 'Duration per Viewer (average)')
                     ->setCellValue('G1', 'Data Transfer');
 
-            $content_vod_stats_zoomed = array();
-            foreach ($vodStatsEntries as $row) {
-                if (!$this->multi_array_search($row['content'], $content_vod_stats_zoomed)) {
-                    array_push($content_vod_stats_zoomed, $row['content']);
-                }
-            }
-
-            $content_vod_stats_zoomed_view = array();
-            foreach ($content_vod_stats_zoomed as $c) {
-                $hits = 0;
-                $viewers = 0;
-                $duration = 0;
-                $duration_per_hit = 0;
-                $duration_per_viewer = 0;
-                $data_transfer = 0;
-                foreach ($vodStatsEntries as $row) {
-                    if ($row['content'] == $c) {
-                        $hits += $row['hits'];
-                        $viewers += $row['viewers'];
-                        $duration += $row['duration'];
-                        $duration_per_hit += $row['duration_per_hit'];
-                        $duration_per_viewer += $row['duration_per_viewer'];
-                        $data_transfer += $row['data_transfer'];
-                    }
-                }
-                $data_transfer_formated = $this->human_filesize($data_transfer);
-                $duration_formated = ($duration == 0) ? '00:00:00' : $duration;
-                $duration_per_hit_formated = ($duration_per_hit == 0) ? '00:00:00' : $duration_per_hit;
-                $duration_per_viewer_formated = ($duration_per_viewer == 0) ? '00:00:00' : $duration_per_viewer;
-                array_push($content_vod_stats_zoomed_view, array($c, $hits, $viewers, $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
-            }
-
-            $vod_content = array();
-            foreach ($vodStatsEntries as $row) {
-                $content_explode = explode("/", $row['content']);
-                $content_found = $content_explode[0];
-                if (!$this->multi_array_search($content_found, $vod_content)) {
-                    array_push($vod_content, $content_found);
-                }
-            }
-
-            $content_vod_stats_view = array();
-            foreach ($vod_content as $c) {
-                $hits = 0;
-                $viewers = 0;
-                $duration = 0;
-                $duration_per_hit = 0;
-                $duration_per_viewer = 0;
-                $data_transfer = 0;
-                foreach ($vodStatsEntries as $row) {
-                    $content_explode = explode("/", $row['content']);
-                    $content_found = $content_explode[0];
-                    if ($content_found == $c) {
-                        $hits += $row['hits'];
-                        $viewers += $row['viewers'];
-                        $duration += $row['duration'];
-                        $duration_per_hit += $row['duration_per_hit'];
-                        $duration_per_viewer += $row['duration_per_viewer'];
-                        $data_transfer += $row['data_transfer'];
-                    }
-                }
-                $data_transfer_formated = $this->human_filesize($data_transfer);
-                $duration_formated = ($duration == 0) ? '00:00:00' : $duration;
-                $duration_per_hit_formated = ($duration_per_hit == 0) ? '00:00:00' : $duration_per_hit;
-                $duration_per_viewer_formated = ($duration_per_viewer == 0) ? '00:00:00' : $duration_per_viewer;
-                array_push($content_vod_stats_view, array('Total', $hits, $viewers, $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
-            }
+            $content_vod_stats_zoomed_view = $this->get_vod_stats_zoomed($vodStatsEntries);
+            $content_vod_stats_total = $this->get_vod_stats_total($vodStatsEntries);
 
             $i = 2;
             foreach ($content_vod_stats_zoomed_view as $value) {
@@ -116,7 +51,7 @@ class Stats_config_model extends CI_Model {
             }
 
             $i++;
-            foreach ($content_vod_stats_view as $value) {
+            foreach ($content_vod_stats_total as $value) {
                 $objPHPExcel->setActiveSheetIndex(0)
                         ->setCellValue('A' . $i, $value[0])
                         ->setCellValue('B' . $i, $value[1])
@@ -149,6 +84,81 @@ class Stats_config_model extends CI_Model {
         }
 
         return $success;
+    }
+
+    public function get_vod_stats_zoomed($vodStatsEntries) {
+        $content_vod_stats_zoomed = array();
+        foreach ($vodStatsEntries as $row) {
+            if (!$this->multi_array_search($row['content'], $content_vod_stats_zoomed)) {
+                array_push($content_vod_stats_zoomed, $row['content']);
+            }
+        }
+
+        $content_vod_stats_zoomed_view = array();
+        foreach ($content_vod_stats_zoomed as $c) {
+            $hits = 0;
+            $viewers = 0;
+            $duration = 0;
+            $duration_per_hit = 0;
+            $duration_per_viewer = 0;
+            $data_transfer = 0;
+            foreach ($vodStatsEntries as $row) {
+                if ($row['content'] == $c) {
+                    $hits += $row['hits'];
+                    $viewers += $row['viewers'];
+                    $duration += $row['duration'];
+                    $duration_per_hit += $row['duration_per_hit'];
+                    $duration_per_viewer += $row['duration_per_viewer'];
+                    $data_transfer += $row['data_transfer'];
+                }
+            }
+            $data_transfer_formated = $this->human_filesize($data_transfer);
+            $duration_formated = ($duration == 0) ? '00:00:00' : $duration;
+            $duration_per_hit_formated = ($duration_per_hit == 0) ? '00:00:00' : $duration_per_hit;
+            $duration_per_viewer_formated = ($duration_per_viewer == 0) ? '00:00:00' : $duration_per_viewer;
+            array_push($content_vod_stats_zoomed_view, array($c, $hits, $viewers, $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
+        }
+
+        return $content_vod_stats_zoomed_view;
+    }
+
+    public function get_vod_stats_total($vodStatsEntries) {
+        $vod_content = array();
+        foreach ($vodStatsEntries as $row) {
+            $content_explode = explode("/", $row['content']);
+            $content_found = $content_explode[0];
+            if (!$this->multi_array_search($content_found, $vod_content)) {
+                array_push($vod_content, $content_found);
+            }
+        }
+
+        $content_vod_stats_view = array();
+        foreach ($vod_content as $c) {
+            $hits = 0;
+            $viewers = 0;
+            $duration = 0;
+            $duration_per_hit = 0;
+            $duration_per_viewer = 0;
+            $data_transfer = 0;
+            foreach ($vodStatsEntries as $row) {
+                $content_explode = explode("/", $row['content']);
+                $content_found = $content_explode[0];
+                if ($content_found == $c) {
+                    $hits += $row['hits'];
+                    $viewers += $row['viewers'];
+                    $duration += $row['duration'];
+                    $duration_per_hit += $row['duration_per_hit'];
+                    $duration_per_viewer += $row['duration_per_viewer'];
+                    $data_transfer += $row['data_transfer'];
+                }
+            }
+            $data_transfer_formated = $this->human_filesize($data_transfer);
+            $duration_formated = ($duration == 0) ? '00:00:00' : $duration;
+            $duration_per_hit_formated = ($duration_per_hit == 0) ? '00:00:00' : $duration_per_hit;
+            $duration_per_viewer_formated = ($duration_per_viewer == 0) ? '00:00:00' : $duration_per_viewer;
+            array_push($content_vod_stats_view, array('Total', $hits, $viewers, $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
+        }
+        return $content_vod_stats_view;
     }
 
     public function getLocations($cpid, $start_date, $end_date) {
