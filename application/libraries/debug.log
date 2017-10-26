@@ -4303,3 +4303,14 @@ Stack trace:
 [25-Oct-2017 15:13:26 America/Los_Angeles] PHP Fatal error:  Call to undefined method Stats_config_model::multi_array_search() in /var/www/vhosts/api/application/models/stats_config_model.php on line 39
 [25-Oct-2017 15:14:11 America/Los_Angeles] PHP Fatal error:  Call to undefined method Stats_config_model::multi_array_search() in /var/www/vhosts/api/application/models/stats_config_model.php on line 39
 [26-Oct-2017 00:20:22 America/Los_Angeles] PHP Fatal error:  Call to undefined method PHPExcel_Cell::setCellValue() in /var/www/vhosts/api/application/models/stats_config_model.php on line 74
+[26-Oct-2017 10:18:18 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'PHPExcel_Exception' with message 'You tried to set a sheet active by the out of bounds index: 1. The actual number of sheets is 1.' in /var/www/vhosts/api/application/libraries/PHPExcel/Classes/PHPExcel.php:695
+Stack trace:
+#0 /var/www/vhosts/api/application/models/stats_config_model.php(68): PHPExcel->setActiveSheetIndex(1)
+#1 /var/www/vhosts/api/application/controllers/api/stats_config.php(46): Stats_config_model->get_child_stats('10012', 'NzRjMDAwMmI4OWR...', '10012', '28/Sep/2017', '28/Sep/2017')
+#2 [internal function]: Stats_config->get_child_stats_get()
+#3 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#4 /var/www/vhosts/api/application/libraries/REST_Controller.php(316): REST_Controller->_fire_method(Array, Array)
+#5 /var/www/vhosts/api/system/core/CodeIgniter.php(325): REST_Controller->_remap('get_child_stats', Array)
+#6 /var/www/vhosts/api/index.php(202): require_once('/var/www/vhosts...')
+#7 {main}
+  thrown in /var/www/vhosts/api/application/libraries/PHPExcel/Classes/PHPExcel.php on line 695
