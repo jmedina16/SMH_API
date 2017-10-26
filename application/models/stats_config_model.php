@@ -37,6 +37,11 @@ class Stats_config_model extends CI_Model {
             $content_vod_stats_zoomed_view = $this->get_vod_stats_zoomed($vodStatsEntries);
             $content_vod_stats_total = $this->get_vod_stats_total($vodStatsEntries);
 
+            $content_live_stats_zoomed_view = $this->get_live_stats_zoomed($liveStatsEntries);
+            $content_live_stats_total = $this->get_live_stats_total($liveStatsEntries);
+
+            $countries_view = $this->get_countries_view($locationEntries);
+
             $i = 2;
             foreach ($content_vod_stats_zoomed_view as $value) {
                 $objPHPExcel->setActiveSheetIndex(0)
@@ -63,9 +68,68 @@ class Stats_config_model extends CI_Model {
             }
 
             $objPHPExcel->getActiveSheet()->setTitle('Vod_Content');
-            $objPHPExcel->setActiveSheetIndex(0);
 
-            $filename = $cpid . '_vod_content_' . date('m-d-Y_H_i_s');
+            $objPHPExcel->createSheet();
+            $objPHPExcel->setActiveSheetIndex(1)
+                    ->setCellValue('A1', 'Content')
+                    ->setCellValue('B1', 'Hits')
+                    ->setCellValue('C1', 'Viewers')
+                    ->setCellValue('D1', 'Duration')
+                    ->setCellValue('E1', 'Duration per Hit (average)')
+                    ->setCellValue('F1', 'Duration per Viewer (average)')
+                    ->setCellValue('G1', 'Data Transfer');
+            $objPHPExcel->getActiveSheet()->setTitle('Live_Content');
+
+            $i = 2;
+            foreach ($content_live_stats_zoomed_view as $value) {
+                $objPHPExcel->setActiveSheetIndex(1)
+                        ->setCellValue('A' . $i, $value[0])
+                        ->setCellValue('B' . $i, $value[1])
+                        ->setCellValue('C' . $i, $value[2])
+                        ->setCellValue('D' . $i, $value[3])
+                        ->setCellValue('E' . $i, $value[4])
+                        ->setCellValue('F' . $i, $value[5])
+                        ->setCellValue('G' . $i, $value[6]);
+                $i++;
+            }
+
+            $i++;
+            foreach ($content_live_stats_total as $value) {
+                $objPHPExcel->setActiveSheetIndex(1)
+                        ->setCellValue('A' . $i, $value[0])
+                        ->setCellValue('B' . $i, $value[1])
+                        ->setCellValue('C' . $i, $value[2])
+                        ->setCellValue('D' . $i, $value[3])
+                        ->setCellValue('E' . $i, $value[4])
+                        ->setCellValue('F' . $i, $value[5])
+                        ->setCellValue('G' . $i, $value[6]);
+            }
+
+            $objPHPExcel->createSheet();
+            $objPHPExcel->setActiveSheetIndex(2)
+                    ->setCellValue('A1', 'Location')
+                    ->setCellValue('B1', 'Hits')
+                    ->setCellValue('C1', 'Viewers')
+                    ->setCellValue('D1', 'Duration')
+                    ->setCellValue('E1', 'Duration per Hit (average)')
+                    ->setCellValue('F1', 'Duration per Viewer (average)')
+                    ->setCellValue('G1', 'Data Transfer');
+            $objPHPExcel->getActiveSheet()->setTitle('Geographic_Locations_Countries');
+
+            $i = 2;
+            foreach ($countries_view as $value) {
+                $objPHPExcel->setActiveSheetIndex(2)
+                        ->setCellValue('A' . $i, $value[0])
+                        ->setCellValue('B' . $i, $value[1])
+                        ->setCellValue('C' . $i, $value[2])
+                        ->setCellValue('D' . $i, $value[3])
+                        ->setCellValue('E' . $i, $value[4])
+                        ->setCellValue('F' . $i, $value[5])
+                        ->setCellValue('G' . $i, $value[6]);
+                $i++;
+            }
+
+            $filename = $cpid . '_streaming_stats_' . date('m-d-Y_H_i_s');
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             header('Content-Disposition: attachment;filename="' . $filename . '.xlsx"');
             header('Cache-Control: max-age=0');
@@ -159,6 +223,122 @@ class Stats_config_model extends CI_Model {
             array_push($content_vod_stats_view, array('Total', $hits, $viewers, $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
         }
         return $content_vod_stats_view;
+    }
+
+    public function get_live_stats_zoomed($liveStatsEntries) {
+        $content_live_stats_zoomed = array();
+        foreach ($liveStatsEntries as $row) {
+            if (!$this->multi_array_search($row['content'], $content_live_stats_zoomed)) {
+                array_push($content_live_stats_zoomed, $row['content']);
+            }
+        }
+
+        $content_live_stats_zoomed_view = array();
+        foreach ($content_live_stats_zoomed as $c) {
+            $hits = 0;
+            $viewers = 0;
+            $duration = 0;
+            $duration_per_hit = 0;
+            $duration_per_viewer = 0;
+            $data_transfer = 0;
+            foreach ($liveStatsEntries as $row) {
+                if ($row['content'] == $c) {
+                    $hits += $row['hits'];
+                    $viewers += $row['viewers'];
+                    $duration += $row['duration'];
+                    $duration_per_hit += $row['duration_per_hit'];
+                    $duration_per_viewer += $row['duration_per_viewer'];
+                    $data_transfer += $row['data_transfer'];
+                }
+            }
+            $data_transfer_formated = $this->human_filesize($data_transfer);
+            $duration_formated = ($duration == 0) ? '00:00:00' : $duration;
+            $duration_per_hit_formated = ($duration_per_hit == 0) ? '00:00:00' : $duration_per_hit;
+            $duration_per_viewer_formated = ($duration_per_viewer == 0) ? '00:00:00' : $duration_per_viewer;
+            array_push($content_live_stats_zoomed_view, array($c, number_format($hits), number_format($viewers), $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
+        }
+
+        return $content_live_stats_zoomed_view;
+    }
+
+    public function get_live_stats_total($liveStatsEntries) {
+        $live_content = array();
+        foreach ($liveStatsEntries as $row) {
+            $content_explode = explode("/", $row['content']);
+            $content_found = $content_explode[0];
+            if (!$this->multi_array_search($content_found, $live_content)) {
+                array_push($live_content, $content_found);
+            }
+        }
+
+        $content_live_stats_view = array();
+        foreach ($live_content as $c) {
+            $hits = 0;
+            $viewers = 0;
+            $duration = 0;
+            $duration_per_hit = 0;
+            $duration_per_viewer = 0;
+            $data_transfer = 0;
+            foreach ($liveStatsEntries as $row) {
+                $content_explode = explode("/", $row['content']);
+                $content_found = $content_explode[0];
+                if ($content_found == $c) {
+                    $hits += $row['hits'];
+                    $viewers += $row['viewers'];
+                    $duration += $row['duration'];
+                    $duration_per_hit += $row['duration_per_hit'];
+                    $duration_per_viewer += $row['duration_per_viewer'];
+                    $data_transfer += $row['data_transfer'];
+                }
+            }
+            $data_transfer_formated = $this->human_filesize($data_transfer);
+            $duration_formated = ($duration == 0) ? '00:00:00' : $duration;
+            $duration_per_hit_formated = ($duration_per_hit == 0) ? '00:00:00' : $duration_per_hit;
+            $duration_per_viewer_formated = ($duration_per_viewer == 0) ? '00:00:00' : $duration_per_viewer;
+            array_push($content_live_stats_view, array('Total', number_format($hits), number_format($viewers), $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
+        }
+
+        return $content_live_stats_view;
+    }
+
+    public function get_countries_view($locationEntries) {
+        $countries = array();
+        foreach ($locationEntries as $row) {
+            $location = explode("/", $row['location']);
+            $country = $location[0];
+            if (!$this->multi_array_search($country, $countries)) {
+                array_push($countries, $country);
+            }
+        }
+
+        $countries_view = array();
+        foreach ($countries as $c) {
+            $hits = 0;
+            $viewers = 0;
+            $duration = 0;
+            $duration_per_hit = 0;
+            $duration_per_viewer = 0;
+            $data_transfer = 0;
+            foreach ($locationEntries as $row) {
+                $location = explode("/", $row['location']);
+                $country = $location[0];
+                if ($country == $c) {
+                    $hits += $row['hits'];
+                    $viewers += $row['viewers'];
+                    $duration += $row['duration'];
+                    $duration_per_hit += $row['duration_per_hit'];
+                    $duration_per_viewer += $row['duration_per_viewer'];
+                    $data_transfer += $row['data_transfer'];
+                }
+            }
+            $data_transfer_formated = $this->human_filesize($data_transfer);
+            $duration_formated = ($duration == 0) ? '00:00:00' : $duration;
+            $duration_per_hit_formated = ($duration_per_hit == 0) ? '00:00:00' : $duration_per_hit;
+            $duration_per_viewer_formated = ($duration_per_viewer == 0) ? '00:00:00' : $duration_per_viewer;
+            array_push($countries_view, array($c, number_format($hits), number_format($viewers), $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
+        }
+
+        return $countries_view;
     }
 
     public function getLocations($cpid, $start_date, $end_date) {
