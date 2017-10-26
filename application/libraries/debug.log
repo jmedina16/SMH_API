@@ -4302,3 +4302,4 @@ Stack trace:
 [25-Oct-2017 09:35:18 America/Los_Angeles] PHP Fatal error:  Call to a member function result_array() on boolean in /var/www/vhosts/api/application/models/stats_config_model.php on line 40
 [25-Oct-2017 15:13:26 America/Los_Angeles] PHP Fatal error:  Call to undefined method Stats_config_model::multi_array_search() in /var/www/vhosts/api/application/models/stats_config_model.php on line 39
 [25-Oct-2017 15:14:11 America/Los_Angeles] PHP Fatal error:  Call to undefined method Stats_config_model::multi_array_search() in /var/www/vhosts/api/application/models/stats_config_model.php on line 39
+[26-Oct-2017 00:20:22 America/Los_Angeles] PHP Fatal error:  Call to undefined method PHPExcel_Cell::setCellValue() in /var/www/vhosts/api/application/models/stats_config_model.php on line 74
