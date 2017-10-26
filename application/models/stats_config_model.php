@@ -66,6 +66,42 @@ class Stats_config_model extends CI_Model {
                 array_push($content_vod_stats_zoomed_view, array($c, $hits, $viewers, $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
             }
 
+            $vod_content = array();
+            foreach ($vodStatsEntries as $row) {
+                $content_explode = explode("/", $row['content']);
+                $content_found = $content_explode[0];
+                if (!$this->multi_array_search($content_found, $vod_content)) {
+                    array_push($vod_content, $content_found);
+                }
+            }
+
+            $content_vod_stats_view = array();
+            foreach ($vod_content as $c) {
+                $hits = 0;
+                $viewers = 0;
+                $duration = 0;
+                $duration_per_hit = 0;
+                $duration_per_viewer = 0;
+                $data_transfer = 0;
+                foreach ($vodStatsEntries as $row) {
+                    $content_explode = explode("/", $row['content']);
+                    $content_found = $content_explode[0];
+                    if ($content_found == $c) {
+                        $hits += $row['hits'];
+                        $viewers += $row['viewers'];
+                        $duration += $row['duration'];
+                        $duration_per_hit += $row['duration_per_hit'];
+                        $duration_per_viewer += $row['duration_per_viewer'];
+                        $data_transfer += $row['data_transfer'];
+                    }
+                }
+                $data_transfer_formated = $this->human_filesize($data_transfer);
+                $duration_formated = ($duration == 0) ? '00:00:00' : $duration;
+                $duration_per_hit_formated = ($duration_per_hit == 0) ? '00:00:00' : $duration_per_hit;
+                $duration_per_viewer_formated = ($duration_per_viewer == 0) ? '00:00:00' : $duration_per_viewer;
+                array_push($content_vod_stats_view, array('Total', $hits, $viewers, $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
+            }
+
             $i = 2;
             foreach ($content_vod_stats_zoomed_view as $value) {
                 $objPHPExcel->setActiveSheetIndex(0)
@@ -77,6 +113,18 @@ class Stats_config_model extends CI_Model {
                         ->setCellValue('F' . $i, $value[5])
                         ->setCellValue('G' . $i, $value[6]);
                 $i++;
+            }
+
+            $i++;
+            foreach ($content_vod_stats_view as $value) {
+                $objPHPExcel->setActiveSheetIndex(0)
+                        ->setCellValue('A' . $i, $value[0])
+                        ->setCellValue('B' . $i, $value[1])
+                        ->setCellValue('C' . $i, $value[2])
+                        ->setCellValue('D' . $i, $value[3])
+                        ->setCellValue('E' . $i, $value[4])
+                        ->setCellValue('F' . $i, $value[5])
+                        ->setCellValue('G' . $i, $value[6]);
             }
 
             $objPHPExcel->getActiveSheet()->setTitle('Vod_Content');
