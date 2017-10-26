@@ -52,7 +52,7 @@ class Stats_config_model extends CI_Model {
                 foreach ($vodStatsEntries as $row) {
                     if ($row['content'] == $c) {
                         $hits += $row['hits'];
-                        $viewers += $$row['viewers'];
+                        $viewers += $row['viewers'];
                         $duration += $row['duration'];
                         $duration_per_hit += $row['duration_per_hit'];
                         $duration_per_viewer += $row['duration_per_viewer'];
@@ -63,7 +63,7 @@ class Stats_config_model extends CI_Model {
                 $duration_formated = ($duration == 0) ? '00:00:00' : $duration;
                 $duration_per_hit_formated = ($duration_per_hit == 0) ? '00:00:00' : $duration_per_hit;
                 $duration_per_viewer_formated = ($duration_per_viewer == 0) ? '00:00:00' : $duration_per_viewer;
-                array_push($content_vod_stats_zoomed_view, array($c, number_format($hits), number_format($viewers), $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
+                array_push($content_vod_stats_zoomed_view, array($c, $hits, $viewers, $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
             }
 
             $i = 2;
