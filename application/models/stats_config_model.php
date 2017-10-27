@@ -17,6 +17,16 @@ class Stats_config_model extends CI_Model {
         $this->load->library('SMCipher');
     }
 
+    public function get_all_child_stats($pid, $ks, $start_date, $end_date) {
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $childIds = $this->smportal->get_partner_child_acnts($pid, $ks);
+            syslog(LOG_NOTICE, "SMH DEBUG : get_all_child_stats: " . print_r($childIds, true));
+        } else {
+            return false;
+        }
+    }
+
     public function get_child_stats($pid, $ks, $cpid, $start_date, $end_date) {
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
