@@ -294,9 +294,11 @@ class SMPortal {
 
             $filter = new KalturaPartnerFilter();
             $filter->orderBy = '-createdAt';
-            //$filter->statusIn = '1,2';
+            $filter->statusIn = '1,2';
             $filter->idNotIn = $pid;
-            $pager = null;
+            $pager = new KalturaFilterPager();
+            $pager->pageSize = 200;
+            $pager->pageIndex = 0;
             $result = $client->partner->listAction($filter, $pager);
 
             syslog(LOG_NOTICE, "SMH DEBUG : get_partner_child_acnts: " . print_r($result, true));
