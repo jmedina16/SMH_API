@@ -4314,3 +4314,5 @@ Stack trace:
 #6 /var/www/vhosts/api/index.php(202): require_once('/var/www/vhosts...')
 #7 {main}
   thrown in /var/www/vhosts/api/application/libraries/PHPExcel/Classes/PHPExcel.php on line 695
+[27-Oct-2017 02:13:55 America/Los_Angeles] PHP Fatal error:  Cannot use object of type KalturaPartnerListResponse as array in /var/www/vhosts/api/application/libraries/SMPortal.php on line 303
+[27-Oct-2017 02:15:14 America/Los_Angeles] PHP Fatal error:  Cannot use object of type KalturaPartnerListResponse as array in /var/www/vhosts/api/application/libraries/SMPortal.php on line 305

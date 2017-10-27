@@ -285,6 +285,34 @@ class SMPortal {
         return $success;
     }
 
+    public function get_partner_child_acnts($pid, $ks) {
+        try {
+            $config = new KalturaConfiguration($pid);
+            $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
+            $client = new KalturaClient($config);
+            $client->setKs($ks);
+
+            $filter = new KalturaPartnerFilter();
+            $filter->orderBy = '-createdAt';
+            //$filter->statusIn = '1,2';
+            $filter->idNotIn = $pid;
+            $pager = null;
+            $result = $client->partner->listAction($filter, $pager);
+
+            syslog(LOG_NOTICE, "SMH DEBUG : get_partner_child_acnts: " . print_r($result, true));
+
+            $child_ids = array();
+            foreach ($result->objects as $partner) {
+                array_push($child_ids, $partner->id);
+            }
+
+            $success = array('success' => true, 'childIds' => $child_ids);
+        } catch (Exception $ex) {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
     public function get_entry_partnerData($pid, $entryId) {
         try {
             $sess = $this->impersonate($pid);
