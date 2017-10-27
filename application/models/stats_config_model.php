@@ -40,7 +40,8 @@ class Stats_config_model extends CI_Model {
             $content_live_stats_zoomed_view = $this->get_live_stats_zoomed($liveStatsEntries);
             $content_live_stats_total = $this->get_live_stats_total($liveStatsEntries);
 
-            $countries_view = $this->get_countries_view($locationEntries);
+            $cities_view = $this->get_cities_view($locationEntries);
+            $countries_stats_total = $this->get_countries_total($locationEntries);
 
             $i = 2;
             foreach ($content_vod_stats_zoomed_view as $value) {
@@ -114,10 +115,10 @@ class Stats_config_model extends CI_Model {
                     ->setCellValue('E1', 'Duration per Hit (average)')
                     ->setCellValue('F1', 'Duration per Viewer (average)')
                     ->setCellValue('G1', 'Data Transfer');
-            $objPHPExcel->getActiveSheet()->setTitle('Geographic_Locations_Countries');
+            $objPHPExcel->getActiveSheet()->setTitle('Geographic_Locations');
 
             $i = 2;
-            foreach ($countries_view as $value) {
+            foreach ($cities_view as $value) {
                 $objPHPExcel->setActiveSheetIndex(2)
                         ->setCellValue('A' . $i, $value[0])
                         ->setCellValue('B' . $i, $value[1])
@@ -128,6 +129,16 @@ class Stats_config_model extends CI_Model {
                         ->setCellValue('G' . $i, $value[6]);
                 $i++;
             }
+
+            $i++;
+            $objPHPExcel->setActiveSheetIndex(2)
+                    ->setCellValue('A' . $i, $countries_stats_total[0])
+                    ->setCellValue('B' . $i, $countries_stats_total[1])
+                    ->setCellValue('C' . $i, $countries_stats_total[2])
+                    ->setCellValue('D' . $i, $countries_stats_total[3])
+                    ->setCellValue('E' . $i, $countries_stats_total[4])
+                    ->setCellValue('F' . $i, $countries_stats_total[5])
+                    ->setCellValue('G' . $i, $countries_stats_total[6]);
 
             $filename = $cpid . '_streaming_stats_' . date('m-d-Y_H_i_s');
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -255,7 +266,7 @@ class Stats_config_model extends CI_Model {
             $duration_formated = ($duration == 0) ? '00:00:00' : $duration;
             $duration_per_hit_formated = ($duration_per_hit == 0) ? '00:00:00' : $duration_per_hit;
             $duration_per_viewer_formated = ($duration_per_viewer == 0) ? '00:00:00' : $duration_per_viewer;
-            array_push($content_live_stats_zoomed_view, array($c, number_format($hits), number_format($viewers), $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
+            array_push($content_live_stats_zoomed_view, array($c, $hits, $viewers, $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
         }
 
         return $content_live_stats_zoomed_view;
@@ -295,24 +306,22 @@ class Stats_config_model extends CI_Model {
             $duration_formated = ($duration == 0) ? '00:00:00' : $duration;
             $duration_per_hit_formated = ($duration_per_hit == 0) ? '00:00:00' : $duration_per_hit;
             $duration_per_viewer_formated = ($duration_per_viewer == 0) ? '00:00:00' : $duration_per_viewer;
-            array_push($content_live_stats_view, array('Total', number_format($hits), number_format($viewers), $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
+            array_push($content_live_stats_view, array('Total', $hits, $viewers, $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
         }
 
         return $content_live_stats_view;
     }
 
-    public function get_countries_view($locationEntries) {
-        $countries = array();
+    public function get_cities_view($locationEntries) {
+        $cities = array();
         foreach ($locationEntries as $row) {
-            $location = explode("/", $row['location']);
-            $country = $location[0];
-            if (!$this->multi_array_search($country, $countries)) {
-                array_push($countries, $country);
+            if (!$this->multi_array_search($row['location'], $cities)) {
+                array_push($cities, $row['location']);
             }
         }
 
-        $countries_view = array();
-        foreach ($countries as $c) {
+        $cities_view = array();
+        foreach ($cities as $city) {
             $hits = 0;
             $viewers = 0;
             $duration = 0;
@@ -320,9 +329,7 @@ class Stats_config_model extends CI_Model {
             $duration_per_viewer = 0;
             $data_transfer = 0;
             foreach ($locationEntries as $row) {
-                $location = explode("/", $row['location']);
-                $country = $location[0];
-                if ($country == $c) {
+                if ($row['location'] == $city) {
                     $hits += $row['hits'];
                     $viewers += $row['viewers'];
                     $duration += $row['duration'];
@@ -335,10 +342,34 @@ class Stats_config_model extends CI_Model {
             $duration_formated = ($duration == 0) ? '00:00:00' : $duration;
             $duration_per_hit_formated = ($duration_per_hit == 0) ? '00:00:00' : $duration_per_hit;
             $duration_per_viewer_formated = ($duration_per_viewer == 0) ? '00:00:00' : $duration_per_viewer;
-            array_push($countries_view, array($c, number_format($hits), number_format($viewers), $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
+            array_push($cities_view, array($city, $hits, $viewers, $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
         }
 
-        return $countries_view;
+        return $cities_view;
+    }
+
+    public function get_countries_total($locationEntries) {
+        $hits = 0;
+        $viewers = 0;
+        $duration = 0;
+        $duration_per_hit = 0;
+        $duration_per_viewer = 0;
+        $data_transfer = 0;
+        $locationsTotal = array();
+        foreach ($locationEntries as $row) {
+            $hits += $row['hits'];
+            $viewers += $row['viewers'];
+            $duration += $row['duration'];
+            $duration_per_hit += $row['duration_per_hit'];
+            $duration_per_viewer += $row['duration_per_viewer'];
+            $data_transfer += $row['data_transfer'];
+        }
+        $data_transfer_formated = $this->human_filesize($data_transfer);
+        $duration_formated = ($duration == 0) ? '00:00:00' : $duration;
+        $duration_per_hit_formated = ($duration_per_hit == 0) ? '00:00:00' : $duration_per_hit;
+        $duration_per_viewer_formated = ($duration_per_viewer == 0) ? '00:00:00' : $duration_per_viewer;
+        array_push($locationsTotal, 'Total', $hits, $viewers, $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated);
+        return $locationsTotal;
     }
 
     public function getLocations($cpid, $start_date, $end_date) {
