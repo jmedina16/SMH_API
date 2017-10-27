@@ -18,21 +18,11 @@ class Stats_config_model extends CI_Model {
     }
 
     public function get_child_stats($pid, $ks, $cpid, $start_date, $end_date) {
-        $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
             $vodStatsEntries = $this->getVodStats($cpid, $start_date, $end_date);
             $liveStatsEntries = $this->getLiveStats($cpid, $start_date, $end_date);
             $locationEntries = $this->getLocations($cpid, $start_date, $end_date);
-            $objPHPExcel = new PHPExcel();
-            $objPHPExcel->setActiveSheetIndex(0)
-                    ->setCellValue('A1', 'Content')
-                    ->setCellValue('B1', 'Hits')
-                    ->setCellValue('C1', 'Viewers')
-                    ->setCellValue('D1', 'Duration')
-                    ->setCellValue('E1', 'Duration per Hit (average)')
-                    ->setCellValue('F1', 'Duration per Viewer (average)')
-                    ->setCellValue('G1', 'Data Transfer');
 
             $content_vod_stats_zoomed_view = $this->get_vod_stats_zoomed($vodStatsEntries);
             $content_vod_stats_total = $this->get_vod_stats_total($vodStatsEntries);
@@ -42,6 +32,16 @@ class Stats_config_model extends CI_Model {
 
             $cities_view = $this->get_cities_view($locationEntries);
             $countries_stats_total = $this->get_countries_total($locationEntries);
+
+            $objPHPExcel = new PHPExcel();
+            $objPHPExcel->setActiveSheetIndex(0)
+                    ->setCellValue('A1', 'Content')
+                    ->setCellValue('B1', 'Hits')
+                    ->setCellValue('C1', 'Viewers')
+                    ->setCellValue('D1', 'Duration')
+                    ->setCellValue('E1', 'Duration per Hit (average)')
+                    ->setCellValue('F1', 'Duration per Viewer (average)')
+                    ->setCellValue('G1', 'Data Transfer');
 
             $i = 2;
             foreach ($content_vod_stats_zoomed_view as $value) {
@@ -130,8 +130,6 @@ class Stats_config_model extends CI_Model {
                         ->setCellValue('G' . $i, '0.00 B');
             }
 
-
-
             $objPHPExcel->createSheet();
             $objPHPExcel->setActiveSheetIndex(2)
                     ->setCellValue('A1', 'Location')
@@ -180,11 +178,9 @@ class Stats_config_model extends CI_Model {
             $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
             $objWriter->save('php://output');
             exit;
-
-            //syslog(LOG_NOTICE, "SMH DEBUG : get_child_stats: " . print_r($content_vod_stats_zoomed_view, true));
+        } else {
+            return false;
         }
-
-        return $success;
     }
 
     public function get_vod_stats_zoomed($vodStatsEntries) {
