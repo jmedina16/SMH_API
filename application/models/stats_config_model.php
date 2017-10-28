@@ -479,7 +479,7 @@ class Stats_config_model extends CI_Model {
                 ->where('statistics_for <=', $end_date);
 
         $query = $this->config->get();
-        if ($query->num_rows() > 0) {
+        if ($query !== FALSE && $query->num_rows() > 0) {
             $vodStatsEntries = $query->result_array();
         } else {
             $vodStatsEntries = array();
