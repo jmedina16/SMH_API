@@ -21,7 +21,48 @@ class Stats_config_model extends CI_Model {
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
             $childIds = $this->smportal->get_partner_child_acnts($pid, $ks);
-            syslog(LOG_NOTICE, "SMH DEBUG : get_all_child_stats: " . print_r($childIds, true));
+
+            $objPHPExcel = new PHPExcel();
+            $objPHPExcel->setActiveSheetIndex(0)
+                    ->setCellValue('A1', 'Content')
+                    ->setCellValue('B1', 'Hits')
+                    ->setCellValue('C1', 'Viewers')
+                    ->setCellValue('D1', 'Duration')
+                    ->setCellValue('E1', 'Duration per Hit (average)')
+                    ->setCellValue('F1', 'Duration per Viewer (average)')
+                    ->setCellValue('G1', 'Data Transfer');
+            $i = 2;
+            foreach ($childIds as $child) {
+                $vodStatsEntries = $this->getVodStats($child, $start_date, $end_date);
+                $content_vod_stats_zoomed_view = $this->get_vod_stats_zoomed($vodStatsEntries);
+                foreach ($content_vod_stats_zoomed_view as $value) {
+                    $objPHPExcel->setActiveSheetIndex(0)
+                            ->setCellValue('A' . $i, $value[0])
+                            ->setCellValue('B' . $i, $value[1])
+                            ->setCellValue('C' . $i, $value[2])
+                            ->setCellValue('D' . $i, $value[3])
+                            ->setCellValue('E' . $i, $value[4])
+                            ->setCellValue('F' . $i, $value[5])
+                            ->setCellValue('G' . $i, $value[6]);
+                    $i++;
+                }
+            }
+            $objPHPExcel->getActiveSheet()->setTitle('Vod_Content');
+
+            $filename = $pid . '_child_streaming_stats_' . date('m-d-Y_H_i_s');
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $filename . '.xlsx"');
+            header('Cache-Control: max-age=0');
+            header("Content-Type: application/force-download");
+            header("Content-Type: application/download");
+            header('Cache-Control: max-age=1');
+            header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+            header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT');
+            header('Cache-Control: cache, must-revalidate');
+            header('Pragma: public');
+            $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+            $objWriter->save('php://output');
+            exit;
         } else {
             return false;
         }
@@ -438,7 +479,11 @@ class Stats_config_model extends CI_Model {
                 ->where('statistics_for <=', $end_date);
 
         $query = $this->config->get();
-        $vodStatsEntries = $query->result_array();
+        if ($query->num_rows() > 0) {
+            $vodStatsEntries = $query->result_array();
+        } else {
+            $vodStatsEntries = array();
+        }        
 
         return $vodStatsEntries;
     }
