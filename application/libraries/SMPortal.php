@@ -301,8 +301,6 @@ class SMPortal {
             $pager->pageIndex = 0;
             $result = $client->partner->listAction($filter, $pager);
 
-            syslog(LOG_NOTICE, "SMH DEBUG : get_partner_child_acnts: " . print_r($result, true));
-
             $child_ids = array();
             foreach ($result->objects as $partner) {
                 array_push($child_ids, $partner->id);

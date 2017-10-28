@@ -4316,3 +4316,5 @@ Stack trace:
   thrown in /var/www/vhosts/api/application/libraries/PHPExcel/Classes/PHPExcel.php on line 695
 [27-Oct-2017 02:13:55 America/Los_Angeles] PHP Fatal error:  Cannot use object of type KalturaPartnerListResponse as array in /var/www/vhosts/api/application/libraries/SMPortal.php on line 303
 [27-Oct-2017 02:15:14 America/Los_Angeles] PHP Fatal error:  Cannot use object of type KalturaPartnerListResponse as array in /var/www/vhosts/api/application/libraries/SMPortal.php on line 305
+[27-Oct-2017 19:42:32 America/Los_Angeles] PHP Fatal error:  Call to a member function result_array() on boolean in /var/www/vhosts/api/application/models/stats_config_model.php on line 482
+[27-Oct-2017 19:58:08 America/Los_Angeles] PHP Fatal error:  Call to a member function num_rows() on boolean in /var/www/vhosts/api/application/models/stats_config_model.php on line 482
