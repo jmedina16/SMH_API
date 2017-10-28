@@ -32,8 +32,10 @@ class Stats_config_model extends CI_Model {
                     ->setCellValue('F1', 'Duration per Viewer (average)')
                     ->setCellValue('G1', 'Data Transfer');
             $i = 2;
-            foreach ($childIds as $child) {
+            foreach ($childIds['childIds'] as $child) {
+                syslog(LOG_NOTICE, "SMH DEBUG : get_all_child_stats0: " . $child);
                 $vodStatsEntries = $this->getVodStats($child, $start_date, $end_date);
+                syslog(LOG_NOTICE, "SMH DEBUG : get_all_child_stats1: " . print_r($vodStatsEntries, true));
                 $content_vod_stats_zoomed_view = $this->get_vod_stats_zoomed($vodStatsEntries);
                 foreach ($content_vod_stats_zoomed_view as $value) {
                     $objPHPExcel->setActiveSheetIndex(0)
@@ -483,7 +485,7 @@ class Stats_config_model extends CI_Model {
             $vodStatsEntries = $query->result_array();
         } else {
             $vodStatsEntries = array();
-        }        
+        }
 
         return $vodStatsEntries;
     }
