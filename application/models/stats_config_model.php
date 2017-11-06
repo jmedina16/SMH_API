@@ -21,6 +21,7 @@ class Stats_config_model extends CI_Model {
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
             $childIds = $this->smportal->get_partner_child_acnts($pid, $ks);
+            $child_vod_stats_total = array();
 
             $objPHPExcel = new PHPExcel();
             $objPHPExcel->setActiveSheetIndex(0)
@@ -33,11 +34,17 @@ class Stats_config_model extends CI_Model {
                     ->setCellValue('G1', 'Data Transfer');
             $i = 2;
             foreach ($childIds['childIds'] as $child) {
-                syslog(LOG_NOTICE, "SMH DEBUG : get_all_child_stats: child: " . print_r($child, true));
+                //syslog(LOG_NOTICE, "SMH DEBUG : get_all_child_stats: child: " . print_r($child, true));
                 $vodStatsEntries = $this->getVodStats($child, $start_date, $end_date);
                 $content_vod_stats_zoomed_view = $this->get_vod_stats_zoomed($vodStatsEntries);
-                $content_vod_stats_total = $this->get_vod_stats_total($vodStatsEntries);
-                syslog(LOG_NOTICE, "SMH DEBUG : get_all_child_stats: " . print_r($content_vod_stats_total, true));
+                $content_vod_stats_total = $this->get_child_vod_stats($vodStatsEntries);
+
+                //syslog(LOG_NOTICE, "SMH DEBUG : get_all_child_stats: child_vod_stats_total_responseZZZZ: " . print_r($content_vod_stats_total, true));
+
+
+                array_push($child_vod_stats_total, array($content_vod_stats_total[0][1], $content_vod_stats_total[0][2], $content_vod_stats_total[0][3], $content_vod_stats_total[0][4], $content_vod_stats_total[0][5], $content_vod_stats_total[0][6]));
+
+                //syslog(LOG_NOTICE, "SMH DEBUG : get_all_child_stats: " . print_r($content_vod_stats_total, true));
                 foreach ($content_vod_stats_zoomed_view as $value) {
                     $objPHPExcel->setActiveSheetIndex(0)
                             ->setCellValue('A' . $i, $value[0])
@@ -50,6 +57,12 @@ class Stats_config_model extends CI_Model {
                     $i++;
                 }
             }
+
+            //syslog(LOG_NOTICE, "SMH DEBUG : get_all_child_stats: child_vod_stats_total_responseXXX: " . print_r($child_vod_stats_total, true));
+
+
+            $child_vod_stats_total_response = $this->get_child_vod_stats_total($child_vod_stats_total);
+            syslog(LOG_NOTICE, "SMH DEBUG : get_all_child_stats: child_vod_stats_total_response: " . print_r($child_vod_stats_total_response, true));
 
 //            if (count($content_vod_stats_total) > 0) {
 //                $i++;
@@ -295,6 +308,65 @@ class Stats_config_model extends CI_Model {
         }
 
         return $content_vod_stats_zoomed_view;
+    }
+
+    public function get_child_vod_stats_total($vodStatsEntries) {
+        $content_vod_stats_view = array();
+        $hits = 0;
+        $viewers = 0;
+        $duration = 0;
+        $duration_per_hit = 0;
+        $duration_per_viewer = 0;
+        $data_transfer = 0;
+        foreach ($vodStatsEntries as $row) {
+            $hits += $row[0];
+            $viewers += $row[1];
+            $duration += $row[2];
+            $duration_per_hit += $row[3];
+            $duration_per_viewer += $row[4];
+            $data_transfer += $row[5];
+        }
+        $data_transfer_formated = $this->human_filesize($data_transfer);
+        $duration_formated = ($duration == 0) ? '00:00:00' : $duration;
+        $duration_per_hit_formated = ($duration_per_hit == 0) ? '00:00:00' : $duration_per_hit;
+        $duration_per_viewer_formated = ($duration_per_viewer == 0) ? '00:00:00' : $duration_per_viewer;
+        array_push($content_vod_stats_view, array('Total', $hits, $viewers, $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
+        return $content_vod_stats_view;
+    }
+
+    public function get_child_vod_stats($vodStatsEntries) {
+        $vod_content = array();
+        foreach ($vodStatsEntries as $row) {
+            $content_explode = explode("/", $row['content']);
+            $content_found = $content_explode[0];
+            if (!$this->multi_array_search($content_found, $vod_content)) {
+                array_push($vod_content, $content_found);
+            }
+        }
+
+        $content_vod_stats_view = array();
+        foreach ($vod_content as $c) {
+            $hits = 0;
+            $viewers = 0;
+            $duration = 0;
+            $duration_per_hit = 0;
+            $duration_per_viewer = 0;
+            $data_transfer = 0;
+            foreach ($vodStatsEntries as $row) {
+                $content_explode = explode("/", $row['content']);
+                $content_found = $content_explode[0];
+                if ($content_found == $c) {
+                    $hits += $row['hits'];
+                    $viewers += $row['viewers'];
+                    $duration += $row['duration'];
+                    $duration_per_hit += $row['duration_per_hit'];
+                    $duration_per_viewer += $row['duration_per_viewer'];
+                    $data_transfer += $row['data_transfer'];
+                }
+            }
+            array_push($content_vod_stats_view, array('Total', $hits, $viewers, $duration, $duration_per_hit, $duration_per_viewer, $data_transfer));
+        }
+        return $content_vod_stats_view;
     }
 
     public function get_vod_stats_total($vodStatsEntries) {
