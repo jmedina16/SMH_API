@@ -22,6 +22,7 @@ class Stats_config_model extends CI_Model {
         if ($valid['success']) {
             $childIds = $this->smportal->get_partner_child_acnts($pid, $ks);
             $child_vod_stats_total = array();
+            $child_live_stats_total = array();
 
             $objPHPExcel = new PHPExcel();
             $objPHPExcel->setActiveSheetIndex(0)
@@ -39,6 +40,7 @@ class Stats_config_model extends CI_Model {
                 $content_vod_stats_total = $this->get_child_vod_stats($vodStatsEntries);
 
                 array_push($child_vod_stats_total, array($content_vod_stats_total[0][1], $content_vod_stats_total[0][2], $content_vod_stats_total[0][3], $content_vod_stats_total[0][4], $content_vod_stats_total[0][5], $content_vod_stats_total[0][6]));
+
                 foreach ($content_vod_stats_zoomed_view as $value) {
                     $objPHPExcel->setActiveSheetIndex(0)
                             ->setCellValue('A' . $i, $value[0])
@@ -77,6 +79,69 @@ class Stats_config_model extends CI_Model {
                         ->setCellValue('G' . $i, '0.00 B');
             }
             $objPHPExcel->getActiveSheet()->setTitle('Vod_Content');
+
+
+            $objPHPExcel->createSheet();
+            $objPHPExcel->setActiveSheetIndex(1)
+                    ->setCellValue('A1', 'Content')
+                    ->setCellValue('B1', 'Hits')
+                    ->setCellValue('C1', 'Viewers')
+                    ->setCellValue('D1', 'Duration')
+                    ->setCellValue('E1', 'Duration per Hit (average)')
+                    ->setCellValue('F1', 'Duration per Viewer (average)')
+                    ->setCellValue('G1', 'Data Transfer');
+            $objPHPExcel->getActiveSheet()->setTitle('Live_Content');
+
+            $i = 2;
+            foreach ($childIds['childIds'] as $child) {
+                $liveStatsEntries = $this->getLiveStats($child, $start_date, $end_date);
+                $content_live_stats_zoomed_view = $this->get_live_stats_zoomed($liveStatsEntries);
+                $content_live_stats_total = $this->get_child_live_stats($liveStatsEntries);
+
+                syslog(LOG_NOTICE, "SMH DEBUG : get_all_child_stats:  " . print_r($content_live_stats_total, true));
+
+                array_push($child_live_stats_total, array($content_live_stats_total[0][1], $content_live_stats_total[0][2], $content_live_stats_total[0][3], $content_live_stats_total[0][4], $content_live_stats_total[0][5], $content_live_stats_total[0][6]));
+
+                foreach ($content_live_stats_zoomed_view as $value) {
+                    $objPHPExcel->setActiveSheetIndex(1)
+                            ->setCellValue('A' . $i, $value[0])
+                            ->setCellValue('B' . $i, $value[1])
+                            ->setCellValue('C' . $i, $value[2])
+                            ->setCellValue('D' . $i, $value[3])
+                            ->setCellValue('E' . $i, $value[4])
+                            ->setCellValue('F' . $i, $value[5])
+                            ->setCellValue('G' . $i, $value[6]);
+                    $i++;
+                }
+            }
+
+            $child_live_stats_total_response = $this->get_child_live_stats_total($child_live_stats_total);
+
+            if (count($child_live_stats_total_response) > 0) {
+                $i++;
+                foreach ($child_live_stats_total_response as $value) {
+                    $objPHPExcel->setActiveSheetIndex(1)
+                            ->setCellValue('A' . $i, $value[0])
+                            ->setCellValue('B' . $i, $value[1])
+                            ->setCellValue('C' . $i, $value[2])
+                            ->setCellValue('D' . $i, $value[3])
+                            ->setCellValue('E' . $i, $value[4])
+                            ->setCellValue('F' . $i, $value[5])
+                            ->setCellValue('G' . $i, $value[6]);
+                }
+            } else {
+                $i++;
+                $objPHPExcel->setActiveSheetIndex(1)
+                        ->setCellValue('A' . $i, 'Total')
+                        ->setCellValue('B' . $i, 0)
+                        ->setCellValue('C' . $i, 0)
+                        ->setCellValue('D' . $i, '00:00:00')
+                        ->setCellValue('E' . $i, '00:00:00')
+                        ->setCellValue('F' . $i, '00:00:00')
+                        ->setCellValue('G' . $i, '0.00 B');
+            }
+
+
 
             $filename = $pid . '_child_streaming_stats_' . date('m-d-Y_H_i_s');
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -297,6 +362,65 @@ class Stats_config_model extends CI_Model {
         }
 
         return $content_vod_stats_zoomed_view;
+    }
+
+    public function get_child_live_stats($liveStatsEntries) {
+        $vod_content = array();
+        foreach ($liveStatsEntries as $row) {
+            $content_explode = explode("/", $row['content']);
+            $content_found = $content_explode[0];
+            if (!$this->multi_array_search($content_found, $vod_content)) {
+                array_push($vod_content, $content_found);
+            }
+        }
+
+        $content_live_stats_view = array();
+        foreach ($vod_content as $c) {
+            $hits = 0;
+            $viewers = 0;
+            $duration = 0;
+            $duration_per_hit = 0;
+            $duration_per_viewer = 0;
+            $data_transfer = 0;
+            foreach ($liveStatsEntries as $row) {
+                $content_explode = explode("/", $row['content']);
+                $content_found = $content_explode[0];
+                if ($content_found == $c) {
+                    $hits += $row['hits'];
+                    $viewers += $row['viewers'];
+                    $duration += $row['duration'];
+                    $duration_per_hit += $row['duration_per_hit'];
+                    $duration_per_viewer += $row['duration_per_viewer'];
+                    $data_transfer += $row['data_transfer'];
+                }
+            }
+            array_push($content_live_stats_view, array('Total', $hits, $viewers, $duration, $duration_per_hit, $duration_per_viewer, $data_transfer));
+        }
+        return $content_live_stats_view;
+    }
+
+    public function get_child_live_stats_total($vodStatsEntries) {
+        $content_live_stats_view = array();
+        $hits = 0;
+        $viewers = 0;
+        $duration = 0;
+        $duration_per_hit = 0;
+        $duration_per_viewer = 0;
+        $data_transfer = 0;
+        foreach ($vodStatsEntries as $row) {
+            $hits += $row[0];
+            $viewers += $row[1];
+            $duration += $row[2];
+            $duration_per_hit += $row[3];
+            $duration_per_viewer += $row[4];
+            $data_transfer += $row[5];
+        }
+        $data_transfer_formated = $this->human_filesize($data_transfer);
+        $duration_formated = ($duration == 0) ? '00:00:00' : $duration;
+        $duration_per_hit_formated = ($duration_per_hit == 0) ? '00:00:00' : $duration_per_hit;
+        $duration_per_viewer_formated = ($duration_per_viewer == 0) ? '00:00:00' : $duration_per_viewer;
+        array_push($content_live_stats_view, array('Total', $hits, $viewers, $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
+        return $content_live_stats_view;
     }
 
     public function get_child_vod_stats_total($vodStatsEntries) {
