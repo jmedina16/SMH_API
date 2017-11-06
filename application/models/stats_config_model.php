@@ -34,17 +34,11 @@ class Stats_config_model extends CI_Model {
                     ->setCellValue('G1', 'Data Transfer');
             $i = 2;
             foreach ($childIds['childIds'] as $child) {
-                //syslog(LOG_NOTICE, "SMH DEBUG : get_all_child_stats: child: " . print_r($child, true));
                 $vodStatsEntries = $this->getVodStats($child, $start_date, $end_date);
                 $content_vod_stats_zoomed_view = $this->get_vod_stats_zoomed($vodStatsEntries);
                 $content_vod_stats_total = $this->get_child_vod_stats($vodStatsEntries);
 
-                //syslog(LOG_NOTICE, "SMH DEBUG : get_all_child_stats: child_vod_stats_total_responseZZZZ: " . print_r($content_vod_stats_total, true));
-
-
                 array_push($child_vod_stats_total, array($content_vod_stats_total[0][1], $content_vod_stats_total[0][2], $content_vod_stats_total[0][3], $content_vod_stats_total[0][4], $content_vod_stats_total[0][5], $content_vod_stats_total[0][6]));
-
-                //syslog(LOG_NOTICE, "SMH DEBUG : get_all_child_stats: " . print_r($content_vod_stats_total, true));
                 foreach ($content_vod_stats_zoomed_view as $value) {
                     $objPHPExcel->setActiveSheetIndex(0)
                             ->setCellValue('A' . $i, $value[0])
@@ -58,35 +52,30 @@ class Stats_config_model extends CI_Model {
                 }
             }
 
-            //syslog(LOG_NOTICE, "SMH DEBUG : get_all_child_stats: child_vod_stats_total_responseXXX: " . print_r($child_vod_stats_total, true));
-
-
             $child_vod_stats_total_response = $this->get_child_vod_stats_total($child_vod_stats_total);
-            syslog(LOG_NOTICE, "SMH DEBUG : get_all_child_stats: child_vod_stats_total_response: " . print_r($child_vod_stats_total_response, true));
-
-//            if (count($content_vod_stats_total) > 0) {
-//                $i++;
-//                foreach ($content_vod_stats_total as $value) {
-//                    $objPHPExcel->setActiveSheetIndex(0)
-//                            ->setCellValue('A' . $i, $value[0])
-//                            ->setCellValue('B' . $i, $value[1])
-//                            ->setCellValue('C' . $i, $value[2])
-//                            ->setCellValue('D' . $i, $value[3])
-//                            ->setCellValue('E' . $i, $value[4])
-//                            ->setCellValue('F' . $i, $value[5])
-//                            ->setCellValue('G' . $i, $value[6]);
-//                }
-//            } else {
-//                $i++;
-//                $objPHPExcel->setActiveSheetIndex(0)
-//                        ->setCellValue('A' . $i, 'Total')
-//                        ->setCellValue('B' . $i, 0)
-//                        ->setCellValue('C' . $i, 0)
-//                        ->setCellValue('D' . $i, '00:00:00')
-//                        ->setCellValue('E' . $i, '00:00:00')
-//                        ->setCellValue('F' . $i, '00:00:00')
-//                        ->setCellValue('G' . $i, '0.00 B');
-//            }
+            if (count($child_vod_stats_total_response) > 0) {
+                $i++;
+                foreach ($child_vod_stats_total_response as $value) {
+                    $objPHPExcel->setActiveSheetIndex(0)
+                            ->setCellValue('A' . $i, $value[0])
+                            ->setCellValue('B' . $i, $value[1])
+                            ->setCellValue('C' . $i, $value[2])
+                            ->setCellValue('D' . $i, $value[3])
+                            ->setCellValue('E' . $i, $value[4])
+                            ->setCellValue('F' . $i, $value[5])
+                            ->setCellValue('G' . $i, $value[6]);
+                }
+            } else {
+                $i++;
+                $objPHPExcel->setActiveSheetIndex(0)
+                        ->setCellValue('A' . $i, 'Total')
+                        ->setCellValue('B' . $i, 0)
+                        ->setCellValue('C' . $i, 0)
+                        ->setCellValue('D' . $i, '00:00:00')
+                        ->setCellValue('E' . $i, '00:00:00')
+                        ->setCellValue('F' . $i, '00:00:00')
+                        ->setCellValue('G' . $i, '0.00 B');
+            }
             $objPHPExcel->getActiveSheet()->setTitle('Vod_Content');
 
             $filename = $pid . '_child_streaming_stats_' . date('m-d-Y_H_i_s');
