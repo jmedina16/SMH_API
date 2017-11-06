@@ -33,6 +33,7 @@ class Stats_config_model extends CI_Model {
                     ->setCellValue('G1', 'Data Transfer');
             $i = 2;
             foreach ($childIds['childIds'] as $child) {
+                syslog(LOG_NOTICE, "SMH DEBUG : get_all_child_stats: child: " . print_r($child, true));
                 $vodStatsEntries = $this->getVodStats($child, $start_date, $end_date);
                 $content_vod_stats_zoomed_view = $this->get_vod_stats_zoomed($vodStatsEntries);
                 $content_vod_stats_total = $this->get_vod_stats_total($vodStatsEntries);
