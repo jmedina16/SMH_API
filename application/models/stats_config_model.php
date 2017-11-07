@@ -156,11 +156,11 @@ class Stats_config_model extends CI_Model {
                 $locationEntries = $this->getLocations($child, $start_date, $end_date);
                 $cities_view = $this->get_cities_view($locationEntries);
                 $countries_stats_total = $this->get_child_countries($locationEntries);
-                array_push($child_locations_total, array($countries_stats_total[0][1], $countries_stats_total[0][2], $countries_stats_total[0][3], $countries_stats_total[0][4], $countries_stats_total[0][5], $countries_stats_total[0][6]));
+                array_push($child_locations_total, array($countries_stats_total[1], $countries_stats_total[2], $countries_stats_total[3], $countries_stats_total[4], $countries_stats_total[5], $countries_stats_total[6]));
 
                 foreach ($cities_view as $value) {
                     $objPHPExcel->setActiveSheetIndex(2)
-                            ->setCellValue('A' . $i, $value[0])
+                            ->setCellValue('A' . $i, $child . "/" . $value[0])
                             ->setCellValue('B' . $i, $value[1])
                             ->setCellValue('C' . $i, $value[2])
                             ->setCellValue('D' . $i, $value[3])
@@ -174,16 +174,14 @@ class Stats_config_model extends CI_Model {
             $child_locations_stats_total_response = $this->get_child_locations_stats_total($child_locations_total);
             if (count($child_locations_stats_total_response) > 0) {
                 $i++;
-                foreach ($child_locations_stats_total_response as $value) {
-                    $objPHPExcel->setActiveSheetIndex(2)
-                            ->setCellValue('A' . $i, $value[0])
-                            ->setCellValue('B' . $i, $value[1])
-                            ->setCellValue('C' . $i, $value[2])
-                            ->setCellValue('D' . $i, $value[3])
-                            ->setCellValue('E' . $i, $value[4])
-                            ->setCellValue('F' . $i, $value[5])
-                            ->setCellValue('G' . $i, $value[6]);
-                }
+                $objPHPExcel->setActiveSheetIndex(2)
+                        ->setCellValue('A' . $i, $child_locations_stats_total_response[0])
+                        ->setCellValue('B' . $i, $child_locations_stats_total_response[1])
+                        ->setCellValue('C' . $i, $child_locations_stats_total_response[2])
+                        ->setCellValue('D' . $i, $child_locations_stats_total_response[3])
+                        ->setCellValue('E' . $i, $child_locations_stats_total_response[4])
+                        ->setCellValue('F' . $i, $child_locations_stats_total_response[5])
+                        ->setCellValue('G' . $i, $child_locations_stats_total_response[6]);
             } else {
                 $i++;
                 $objPHPExcel->setActiveSheetIndex(2)
@@ -195,8 +193,6 @@ class Stats_config_model extends CI_Model {
                         ->setCellValue('F' . $i, '00:00:00')
                         ->setCellValue('G' . $i, '0.00 B');
             }
-
-
 
             $filename = $pid . '_child_streaming_stats_' . date('m-d-Y_H_i_s');
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
