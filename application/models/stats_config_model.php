@@ -38,7 +38,7 @@ class Stats_config_model extends CI_Model {
                 $content_vod_stats_zoomed_view = $this->get_vod_stats_zoomed($vodStatsEntries);
                 $content_vod_stats_total = $this->get_child_vod_stats($vodStatsEntries);
 
-                array_push($child_vod_stats_total, array($content_vod_stats_total[0][1], $content_vod_stats_total[0][2], $content_vod_stats_total[0][6]));
+                array_push($child_vod_stats_total, array($content_vod_stats_total[0][1], $content_vod_stats_total[0][2], $content_vod_stats_total[0][3]));
 
                 foreach ($content_vod_stats_zoomed_view as $value) {
                     $objPHPExcel->setActiveSheetIndex(0)
@@ -74,13 +74,11 @@ class Stats_config_model extends CI_Model {
 
             $objPHPExcel->createSheet();
             $objPHPExcel->setActiveSheetIndex(1)
-                    ->setCellValue('A1', 'Content')
-                    ->setCellValue('B1', 'Hits')
-                    ->setCellValue('C1', 'Viewers')
-                    ->setCellValue('D1', 'Duration')
-                    ->setCellValue('E1', 'Duration per Hit (average)')
-                    ->setCellValue('F1', 'Duration per Viewer (average)')
-                    ->setCellValue('G1', 'Data Transfer');
+                    ->setCellValue('A1', 'Account')
+                    ->setCellValue('B1', 'Content')
+                    ->setCellValue('C1', 'Hits')
+                    ->setCellValue('D1', 'Viewers')
+                    ->setCellValue('E1', 'Data Transfer');
             $objPHPExcel->getActiveSheet()->setTitle('Live_Content');
 
             $i = 2;
@@ -88,17 +86,15 @@ class Stats_config_model extends CI_Model {
                 $liveStatsEntries = $this->getLiveStats($child, $start_date, $end_date);
                 $content_live_stats_zoomed_view = $this->get_live_stats_zoomed($liveStatsEntries);
                 $content_live_stats_total = $this->get_child_live_stats($liveStatsEntries);
-                array_push($child_live_stats_total, array($content_live_stats_total[0][1], $content_live_stats_total[0][2], $content_live_stats_total[0][3], $content_live_stats_total[0][4], $content_live_stats_total[0][5], $content_live_stats_total[0][6]));
+                array_push($child_live_stats_total, array($content_live_stats_total[0][1], $content_live_stats_total[0][2], $content_live_stats_total[0][3]));
 
                 foreach ($content_live_stats_zoomed_view as $value) {
                     $objPHPExcel->setActiveSheetIndex(1)
-                            ->setCellValue('A' . $i, $value[0])
-                            ->setCellValue('B' . $i, $value[1])
-                            ->setCellValue('C' . $i, $value[2])
-                            ->setCellValue('D' . $i, $value[3])
-                            ->setCellValue('E' . $i, $value[4])
-                            ->setCellValue('F' . $i, $value[5])
-                            ->setCellValue('G' . $i, $value[6]);
+                            ->setCellValue('A' . $i, $child)
+                            ->setCellValue('B' . $i, $value[0])
+                            ->setCellValue('C' . $i, $value[1])
+                            ->setCellValue('D' . $i, $value[2])
+                            ->setCellValue('E' . $i, $value[3]);
                     $i++;
                 }
             }
@@ -110,35 +106,28 @@ class Stats_config_model extends CI_Model {
                 foreach ($child_live_stats_total_response as $value) {
                     $objPHPExcel->setActiveSheetIndex(1)
                             ->setCellValue('A' . $i, $value[0])
-                            ->setCellValue('B' . $i, $value[1])
-                            ->setCellValue('C' . $i, $value[2])
-                            ->setCellValue('D' . $i, $value[3])
-                            ->setCellValue('E' . $i, $value[4])
-                            ->setCellValue('F' . $i, $value[5])
-                            ->setCellValue('G' . $i, $value[6]);
+                            ->setCellValue('C' . $i, $value[1])
+                            ->setCellValue('D' . $i, $value[2])
+                            ->setCellValue('E' . $i, $value[3]);
                 }
             } else {
                 $i++;
                 $objPHPExcel->setActiveSheetIndex(1)
                         ->setCellValue('A' . $i, 'Total')
-                        ->setCellValue('B' . $i, 0)
                         ->setCellValue('C' . $i, 0)
-                        ->setCellValue('D' . $i, '00:00:00')
-                        ->setCellValue('E' . $i, '00:00:00')
-                        ->setCellValue('F' . $i, '00:00:00')
-                        ->setCellValue('G' . $i, '0.00 B');
+                        ->setCellValue('D' . $i, 0)
+                        ->setCellValue('E' . $i, '0.00 B');
             }
 
 
             $objPHPExcel->createSheet();
             $objPHPExcel->setActiveSheetIndex(2)
-                    ->setCellValue('A1', 'Location')
-                    ->setCellValue('B1', 'Hits')
-                    ->setCellValue('C1', 'Viewers')
-                    ->setCellValue('D1', 'Duration')
-                    ->setCellValue('E1', 'Duration per Hit (average)')
-                    ->setCellValue('F1', 'Duration per Viewer (average)')
-                    ->setCellValue('G1', 'Data Transfer');
+                    ->setCellValue('A1', 'Account')
+                    ->setCellValue('B1', 'Region')
+                    ->setCellValue('C1', 'Country')
+                    ->setCellValue('D1', 'Hits')
+                    ->setCellValue('E1', 'Viewers')
+                    ->setCellValue('F1', 'Data Transfer');
             $objPHPExcel->getActiveSheet()->setTitle('Geographic_Locations');
 
             $i = 2;
@@ -146,17 +135,16 @@ class Stats_config_model extends CI_Model {
                 $locationEntries = $this->getLocations($child, $start_date, $end_date);
                 $states_view = $this->get_states_view($locationEntries);
                 $countries_stats_total = $this->get_child_countries($locationEntries);
-                array_push($child_locations_total, array($countries_stats_total[1], $countries_stats_total[2], $countries_stats_total[3], $countries_stats_total[4], $countries_stats_total[5], $countries_stats_total[6]));
+                array_push($child_locations_total, array($countries_stats_total[1], $countries_stats_total[2], $countries_stats_total[3]));
 
                 foreach ($states_view as $value) {
                     $objPHPExcel->setActiveSheetIndex(2)
-                            ->setCellValue('A' . $i, $child . "/" . $value[0])
-                            ->setCellValue('B' . $i, $value[1])
-                            ->setCellValue('C' . $i, $value[2])
-                            ->setCellValue('D' . $i, $value[3])
-                            ->setCellValue('E' . $i, $value[4])
-                            ->setCellValue('F' . $i, $value[5])
-                            ->setCellValue('G' . $i, $value[6]);
+                            ->setCellValue('A' . $i, $child)
+                            ->setCellValue('B' . $i, $value[0])
+                            ->setCellValue('C' . $i, $value[1])
+                            ->setCellValue('D' . $i, $value[2])
+                            ->setCellValue('E' . $i, $value[3])
+                            ->setCellValue('F' . $i, $value[4]);
                     $i++;
                 }
             }
@@ -166,22 +154,16 @@ class Stats_config_model extends CI_Model {
                 $i++;
                 $objPHPExcel->setActiveSheetIndex(2)
                         ->setCellValue('A' . $i, $child_locations_stats_total_response[0])
-                        ->setCellValue('B' . $i, $child_locations_stats_total_response[1])
-                        ->setCellValue('C' . $i, $child_locations_stats_total_response[2])
-                        ->setCellValue('D' . $i, $child_locations_stats_total_response[3])
-                        ->setCellValue('E' . $i, $child_locations_stats_total_response[4])
-                        ->setCellValue('F' . $i, $child_locations_stats_total_response[5])
-                        ->setCellValue('G' . $i, $child_locations_stats_total_response[6]);
+                        ->setCellValue('D' . $i, $child_locations_stats_total_response[1])
+                        ->setCellValue('E' . $i, $child_locations_stats_total_response[2])
+                        ->setCellValue('F' . $i, $child_locations_stats_total_response[3]);
             } else {
                 $i++;
                 $objPHPExcel->setActiveSheetIndex(2)
                         ->setCellValue('A' . $i, 'Total')
-                        ->setCellValue('B' . $i, 0)
-                        ->setCellValue('C' . $i, 0)
-                        ->setCellValue('D' . $i, '00:00:00')
-                        ->setCellValue('E' . $i, '00:00:00')
-                        ->setCellValue('F' . $i, '00:00:00')
-                        ->setCellValue('G' . $i, '0.00 B');
+                        ->setCellValue('D' . $i, 0)
+                        ->setCellValue('E' . $i, 0)
+                        ->setCellValue('F' . $i, '0.00 B');
             }
 
             $filename = $pid . '_child_streaming_stats_' . date('m-d-Y_H_i_s');
@@ -379,9 +361,6 @@ class Stats_config_model extends CI_Model {
         foreach ($vod_content as $c) {
             $hits = 0;
             $viewers = 0;
-            $duration = 0;
-            $duration_per_hit = 0;
-            $duration_per_viewer = 0;
             $data_transfer = 0;
             foreach ($liveStatsEntries as $row) {
                 $content_explode = explode("/", $row['content']);
@@ -389,13 +368,10 @@ class Stats_config_model extends CI_Model {
                 if ($content_found == $c) {
                     $hits += $row['hits'];
                     $viewers += $row['viewers'];
-                    $duration += $row['duration'];
-                    $duration_per_hit += $row['duration_per_hit'];
-                    $duration_per_viewer += $row['duration_per_viewer'];
                     $data_transfer += $row['data_transfer'];
                 }
             }
-            array_push($content_live_stats_view, array('Total', $hits, $viewers, $duration, $duration_per_hit, $duration_per_viewer, $data_transfer));
+            array_push($content_live_stats_view, array('Total', $hits, $viewers, $data_transfer));
         }
         return $content_live_stats_view;
     }
@@ -404,23 +380,14 @@ class Stats_config_model extends CI_Model {
         $content_live_stats_view = array();
         $hits = 0;
         $viewers = 0;
-        $duration = 0;
-        $duration_per_hit = 0;
-        $duration_per_viewer = 0;
         $data_transfer = 0;
         foreach ($vodStatsEntries as $row) {
             $hits += $row[0];
             $viewers += $row[1];
-            $duration += $row[2];
-            $duration_per_hit += $row[3];
-            $duration_per_viewer += $row[4];
-            $data_transfer += $row[5];
+            $data_transfer += $row[2];
         }
         $data_transfer_formated = $this->human_filesize($data_transfer);
-        $duration_formated = ($duration == 0) ? '00:00:00' : $duration;
-        $duration_per_hit_formated = ($duration_per_hit == 0) ? '00:00:00' : $duration_per_hit;
-        $duration_per_viewer_formated = ($duration_per_viewer == 0) ? '00:00:00' : $duration_per_viewer;
-        array_push($content_live_stats_view, array('Total', $hits, $viewers, $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated));
+        array_push($content_live_stats_view, array('Total', $hits, $viewers, $data_transfer_formated));
         return $content_live_stats_view;
     }
 
@@ -453,9 +420,6 @@ class Stats_config_model extends CI_Model {
         foreach ($vod_content as $c) {
             $hits = 0;
             $viewers = 0;
-            $duration = 0;
-            $duration_per_hit = 0;
-            $duration_per_viewer = 0;
             $data_transfer = 0;
             foreach ($vodStatsEntries as $row) {
                 $content_explode = explode("/", $row['content']);
@@ -463,13 +427,10 @@ class Stats_config_model extends CI_Model {
                 if ($content_found == $c) {
                     $hits += $row['hits'];
                     $viewers += $row['viewers'];
-                    $duration += $row['duration'];
-                    $duration_per_hit += $row['duration_per_hit'];
-                    $duration_per_viewer += $row['duration_per_viewer'];
                     $data_transfer += $row['data_transfer'];
                 }
             }
-            array_push($content_vod_stats_view, array('Total', $hits, $viewers, $duration, $duration_per_hit, $duration_per_viewer, $data_transfer));
+            array_push($content_vod_stats_view, array('Total', $hits, $viewers, $data_transfer));
         }
         return $content_vod_stats_view;
     }
@@ -587,7 +548,7 @@ class Stats_config_model extends CI_Model {
             $data_transfer_formated = $this->human_filesize($data_transfer);
             array_push($states_view, array($state[0], $state[1], $hits, $viewers, $data_transfer_formated));
         }
-        
+
         syslog(LOG_NOTICE, "SMH DEBUG : get_states_view2: " . print_r($states_view, true));
 
         return $states_view;
@@ -611,44 +572,29 @@ class Stats_config_model extends CI_Model {
     public function get_child_countries($locationEntries) {
         $hits = 0;
         $viewers = 0;
-        $duration = 0;
-        $duration_per_hit = 0;
-        $duration_per_viewer = 0;
         $data_transfer = 0;
         $locationsTotal = array();
         foreach ($locationEntries as $row) {
             $hits += $row['hits'];
             $viewers += $row['viewers'];
-            $duration += $row['duration'];
-            $duration_per_hit += $row['duration_per_hit'];
-            $duration_per_viewer += $row['duration_per_viewer'];
             $data_transfer += $row['data_transfer'];
         }
-        array_push($locationsTotal, 'Total', $hits, $viewers, $duration, $duration_per_hit, $duration_per_viewer, $data_transfer);
+        array_push($locationsTotal, 'Total', $hits, $viewers, $data_transfer);
         return $locationsTotal;
     }
 
     public function get_child_locations_stats_total($locationEntries) {
         $hits = 0;
         $viewers = 0;
-        $duration = 0;
-        $duration_per_hit = 0;
-        $duration_per_viewer = 0;
         $data_transfer = 0;
         $locationsTotal = array();
         foreach ($locationEntries as $row) {
             $hits += $row[0];
             $viewers += $row[1];
-            $duration += $row[2];
-            $duration_per_hit += $row[3];
-            $duration_per_viewer += $row[4];
-            $data_transfer += $row[5];
+            $data_transfer += $row[2];
         }
         $data_transfer_formated = $this->human_filesize($data_transfer);
-        $duration_formated = ($duration == 0) ? '00:00:00' : $duration;
-        $duration_per_hit_formated = ($duration_per_hit == 0) ? '00:00:00' : $duration_per_hit;
-        $duration_per_viewer_formated = ($duration_per_viewer == 0) ? '00:00:00' : $duration_per_viewer;
-        array_push($locationsTotal, 'Total', $hits, $viewers, $duration_formated, $duration_per_hit_formated, $duration_per_viewer_formated, $data_transfer_formated);
+        array_push($locationsTotal, 'Total', $hits, $viewers, $data_transfer_formated);
         return $locationsTotal;
     }
 
