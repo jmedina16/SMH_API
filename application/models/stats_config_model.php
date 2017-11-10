@@ -214,7 +214,7 @@ class Stats_config_model extends CI_Model {
             $content_live_stats_zoomed_view = $this->get_live_stats_zoomed($liveStatsEntries);
             $content_live_stats_total = $this->get_live_stats_total($liveStatsEntries);
 
-            $cities_view = $this->get_cities_view($locationEntries);
+            $states_view = $this->get_states_view($locationEntries);
             $countries_stats_total = $this->get_countries_total($locationEntries);
 
             $objPHPExcel = new PHPExcel();
@@ -292,28 +292,30 @@ class Stats_config_model extends CI_Model {
 
             $objPHPExcel->createSheet();
             $objPHPExcel->setActiveSheetIndex(2)
-                    ->setCellValue('A1', 'Location')
-                    ->setCellValue('B1', 'Hits')
-                    ->setCellValue('C1', 'Viewers')
-                    ->setCellValue('D1', 'Data Transfer');
+                    ->setCellValue('A1', 'Region')
+                    ->setCellValue('B1', 'Country')
+                    ->setCellValue('C1', 'Hits')
+                    ->setCellValue('D1', 'Viewers')
+                    ->setCellValue('E1', 'Data Transfer');
             $objPHPExcel->getActiveSheet()->setTitle('Geographic_Locations');
 
             $i = 2;
-            foreach ($cities_view as $value) {
+            foreach ($states_view as $value) {
                 $objPHPExcel->setActiveSheetIndex(2)
                         ->setCellValue('A' . $i, $value[0])
                         ->setCellValue('B' . $i, $value[1])
                         ->setCellValue('C' . $i, $value[2])
-                        ->setCellValue('D' . $i, $value[3]);
+                        ->setCellValue('D' . $i, $value[3])
+                        ->setCellValue('E' . $i, $value[4]);
                 $i++;
             }
 
             $i++;
             $objPHPExcel->setActiveSheetIndex(2)
                     ->setCellValue('A' . $i, $countries_stats_total[0])
-                    ->setCellValue('B' . $i, $countries_stats_total[1])
-                    ->setCellValue('C' . $i, $countries_stats_total[2])
-                    ->setCellValue('D' . $i, $countries_stats_total[3]);
+                    ->setCellValue('C' . $i, $countries_stats_total[1])
+                    ->setCellValue('D' . $i, $countries_stats_total[2])
+                    ->setCellValue('E' . $i, $countries_stats_total[3]);
 
             $filename = $cpid . '_streaming_stats_' . date('m-d-Y_H_i_s');
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -558,31 +560,35 @@ class Stats_config_model extends CI_Model {
         return $content_live_stats_view;
     }
 
-    public function get_cities_view($locationEntries) {
-        $cities = array();
+    public function get_states_view($locationEntries) {
+        $states = array();
         foreach ($locationEntries as $row) {
-            if (!$this->multi_array_search($row['location'], $cities)) {
-                array_push($cities, $row['location']);
+            if (!$this->multi_array_search($row['region'], $states)) {
+                array_push($states, array($row['region'], $row['country']));
             }
         }
 
-        $cities_view = array();
-        foreach ($cities as $city) {
+        syslog(LOG_NOTICE, "SMH DEBUG : get_states_view1: " . print_r($states, true));
+
+        $states_view = array();
+        foreach ($states as $state) {
             $hits = 0;
             $viewers = 0;
             $data_transfer = 0;
             foreach ($locationEntries as $row) {
-                if ($row['location'] == $city) {
+                if ($row['region'] == $state[0]) {
                     $hits += $row['hits'];
                     $viewers += $row['viewers'];
                     $data_transfer += $row['data_transfer'];
                 }
             }
             $data_transfer_formated = $this->human_filesize($data_transfer);
-            array_push($cities_view, array($city, $hits, $viewers, $data_transfer_formated));
+            array_push($states_view, array($state[0], $state[1], $hits, $viewers, $data_transfer_formated));
         }
+        
+        syslog(LOG_NOTICE, "SMH DEBUG : get_states_view2: " . print_r($states_view, true));
 
-        return $cities_view;
+        return $states_view;
     }
 
     public function get_countries_total($locationEntries) {
