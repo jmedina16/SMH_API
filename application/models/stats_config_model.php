@@ -340,7 +340,6 @@ class Stats_config_model extends CI_Model {
                     $data_transfer += $row['data_transfer'];
                 }
             }
-            syslog(LOG_NOTICE, "SMH DEBUG : get_vod_stats_zoomed: " . print_r($data_transfer, true));
             $data_transfer_formated = $this->human_filesize($data_transfer);
             array_push($content_vod_stats_zoomed_view, array($c, $hits, $viewers, $data_transfer_formated));
         }
@@ -460,7 +459,6 @@ class Stats_config_model extends CI_Model {
                     $data_transfer += $row['data_transfer'];
                 }
             }
-            syslog(LOG_NOTICE, "SMH DEBUG : get_vod_stats_total: " . print_r($data_transfer, true));
             $data_transfer_formated = $this->human_filesize($data_transfer);
             array_push($content_vod_stats_view, array('Total', $hits, $viewers, $data_transfer_formated));
         }
@@ -653,15 +651,12 @@ class Stats_config_model extends CI_Model {
     }
 
     public function human_filesize($bytes, $decimals = 2) {
-        syslog(LOG_NOTICE, "SMH DEBUG : human_filesize1: " . print_r($bytes, true));
         $bytes_temp = $bytes;
         $labels = array('B', 'KB', 'MB', 'GB', 'TB');
 
         foreach ($labels as $label) {
-            syslog(LOG_NOTICE, "SMH DEBUG : label: " . print_r($label, true));
-            if ($bytes > 1024) {
+            if (($bytes / 1024) > 0.9) {
                 $bytes = $bytes / 1024;
-                syslog(LOG_NOTICE, "SMH DEBUG : human_filesize2: " . print_r($bytes, true));
             } else {
                 break;
             }
