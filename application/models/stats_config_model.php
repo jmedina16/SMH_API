@@ -23,7 +23,8 @@ class Stats_config_model extends CI_Model {
             $childIds = $this->smportal->get_partner_child_acnts($pid, $ks);
             $child_vod_stats_total = array();
             $child_live_stats_total = array();
-            $child_locations_total = array();
+            $child_states_total = array();
+            $child_cities_total = array();
 
             $objPHPExcel = new PHPExcel();
             $objPHPExcel->setActiveSheetIndex(0)
@@ -128,14 +129,14 @@ class Stats_config_model extends CI_Model {
                     ->setCellValue('D1', 'Hits')
                     ->setCellValue('E1', 'Viewers')
                     ->setCellValue('F1', 'Data Transfer');
-            $objPHPExcel->getActiveSheet()->setTitle('Geographic_Locations');
+            $objPHPExcel->getActiveSheet()->setTitle('Geographic_Locations_Regions');
 
             $i = 2;
             foreach ($childIds['childIds'] as $child) {
-                $locationEntries = $this->getLocations($child, $start_date, $end_date);
-                $states_view = $this->get_states_view($locationEntries);
-                $countries_stats_total = $this->get_child_countries($locationEntries);
-                array_push($child_locations_total, array($countries_stats_total[1], $countries_stats_total[2], $countries_stats_total[3]));
+                $locationStatesEntries = $this->getLocationsStates($child, $start_date, $end_date);
+                $states_view = $this->get_states_view($locationStatesEntries);
+                $states_stats_total = $this->get_child_states($locationStatesEntries);
+                array_push($child_states_total, array($states_stats_total[1], $states_stats_total[2], $states_stats_total[3]));
 
                 foreach ($states_view as $value) {
                     $objPHPExcel->setActiveSheetIndex(2)
@@ -149,17 +150,63 @@ class Stats_config_model extends CI_Model {
                 }
             }
 
-            $child_locations_stats_total_response = $this->get_child_locations_stats_total($child_locations_total);
-            if (count($child_locations_stats_total_response) > 0) {
+            $child_states_stats_total_response = $this->get_child_states_stats_total($child_states_total);
+            if (count($child_states_stats_total_response) > 0) {
                 $i++;
                 $objPHPExcel->setActiveSheetIndex(2)
-                        ->setCellValue('A' . $i, $child_locations_stats_total_response[0])
-                        ->setCellValue('D' . $i, $child_locations_stats_total_response[1])
-                        ->setCellValue('E' . $i, $child_locations_stats_total_response[2])
-                        ->setCellValue('F' . $i, $child_locations_stats_total_response[3]);
+                        ->setCellValue('A' . $i, $child_states_stats_total_response[0])
+                        ->setCellValue('D' . $i, $child_states_stats_total_response[1])
+                        ->setCellValue('E' . $i, $child_states_stats_total_response[2])
+                        ->setCellValue('F' . $i, $child_states_stats_total_response[3]);
             } else {
                 $i++;
                 $objPHPExcel->setActiveSheetIndex(2)
+                        ->setCellValue('A' . $i, 'Total')
+                        ->setCellValue('D' . $i, 0)
+                        ->setCellValue('E' . $i, 0)
+                        ->setCellValue('F' . $i, '0.00 B');
+            }
+
+            $objPHPExcel->createSheet();
+            $objPHPExcel->setActiveSheetIndex(3)
+                    ->setCellValue('A1', 'Account')
+                    ->setCellValue('B1', 'City')
+                    ->setCellValue('C1', 'Country')
+                    ->setCellValue('D1', 'Hits')
+                    ->setCellValue('E1', 'Viewers')
+                    ->setCellValue('F1', 'Data Transfer');
+            $objPHPExcel->getActiveSheet()->setTitle('Geographic_Locations_Cities');
+
+            $i = 2;
+            foreach ($childIds['childIds'] as $child) {
+                $locationCitiesEntries = $this->getLocationsCities($child, $start_date, $end_date);
+                $cities_view = $this->get_cities_view($locationCitiesEntries);
+                $cities_stats_total = $this->get_child_cities($locationCitiesEntries);
+                array_push($child_cities_total, array($cities_stats_total[1], $cities_stats_total[2], $cities_stats_total[3]));
+
+                foreach ($cities_view as $value) {
+                    $objPHPExcel->setActiveSheetIndex(3)
+                            ->setCellValue('A' . $i, $child)
+                            ->setCellValue('B' . $i, $value[0])
+                            ->setCellValue('C' . $i, $value[1])
+                            ->setCellValue('D' . $i, $value[2])
+                            ->setCellValue('E' . $i, $value[3])
+                            ->setCellValue('F' . $i, $value[4]);
+                    $i++;
+                }
+            }
+
+            $child_cities_stats_total_response = $this->get_child_cities_stats_total($child_cities_total);
+            if (count($child_cities_stats_total_response) > 0) {
+                $i++;
+                $objPHPExcel->setActiveSheetIndex(3)
+                        ->setCellValue('A' . $i, $child_cities_stats_total_response[0])
+                        ->setCellValue('D' . $i, $child_cities_stats_total_response[1])
+                        ->setCellValue('E' . $i, $child_cities_stats_total_response[2])
+                        ->setCellValue('F' . $i, $child_cities_stats_total_response[3]);
+            } else {
+                $i++;
+                $objPHPExcel->setActiveSheetIndex(3)
                         ->setCellValue('A' . $i, 'Total')
                         ->setCellValue('D' . $i, 0)
                         ->setCellValue('E' . $i, 0)
@@ -190,7 +237,8 @@ class Stats_config_model extends CI_Model {
         if ($valid['success']) {
             $vodStatsEntries = $this->getVodStats($cpid, $start_date, $end_date);
             $liveStatsEntries = $this->getLiveStats($cpid, $start_date, $end_date);
-            $locationEntries = $this->getLocationsStates($cpid, $start_date, $end_date);
+            $locationStatesEntries = $this->getLocationsStates($cpid, $start_date, $end_date);
+            $locationCitiesEntries = $this->getLocationsCities($cpid, $start_date, $end_date);
 
             $content_vod_stats_zoomed_view = $this->get_vod_stats_zoomed($vodStatsEntries);
             $content_vod_stats_total = $this->get_vod_stats_total($vodStatsEntries);
@@ -198,8 +246,11 @@ class Stats_config_model extends CI_Model {
             $content_live_stats_zoomed_view = $this->get_live_stats_zoomed($liveStatsEntries);
             $content_live_stats_total = $this->get_live_stats_total($liveStatsEntries);
 
-            $states_view = $this->get_states_view($locationEntries);
-            $countries_stats_total = $this->get_countries_total($locationEntries);
+            $states_view = $this->get_states_view($locationStatesEntries);
+            $countries_stats_total = $this->get_states_total($locationStatesEntries);
+
+            $cities_view = $this->get_cities_view($locationCitiesEntries);
+            $countries_cities_total = $this->get_cities_total($locationCitiesEntries);
 
             $objPHPExcel = new PHPExcel();
             $objPHPExcel->setActiveSheetIndex(0)
@@ -281,7 +332,7 @@ class Stats_config_model extends CI_Model {
                     ->setCellValue('C1', 'Hits')
                     ->setCellValue('D1', 'Viewers')
                     ->setCellValue('E1', 'Data Transfer');
-            $objPHPExcel->getActiveSheet()->setTitle('Geographic_Locations');
+            $objPHPExcel->getActiveSheet()->setTitle('Geographic_Locations_Regions');
 
             $i = 2;
             foreach ($states_view as $value) {
@@ -300,6 +351,33 @@ class Stats_config_model extends CI_Model {
                     ->setCellValue('C' . $i, $countries_stats_total[1])
                     ->setCellValue('D' . $i, $countries_stats_total[2])
                     ->setCellValue('E' . $i, $countries_stats_total[3]);
+
+            $objPHPExcel->createSheet();
+            $objPHPExcel->setActiveSheetIndex(3)
+                    ->setCellValue('A1', 'City')
+                    ->setCellValue('B1', 'Country')
+                    ->setCellValue('C1', 'Hits')
+                    ->setCellValue('D1', 'Viewers')
+                    ->setCellValue('E1', 'Data Transfer');
+            $objPHPExcel->getActiveSheet()->setTitle('Geographic_Locations_Cities');
+
+            $i = 2;
+            foreach ($cities_view as $value) {
+                $objPHPExcel->setActiveSheetIndex(3)
+                        ->setCellValue('A' . $i, $value[0])
+                        ->setCellValue('B' . $i, $value[1])
+                        ->setCellValue('C' . $i, $value[2])
+                        ->setCellValue('D' . $i, $value[3])
+                        ->setCellValue('E' . $i, $value[4]);
+                $i++;
+            }
+
+            $i++;
+            $objPHPExcel->setActiveSheetIndex(3)
+                    ->setCellValue('A' . $i, $countries_cities_total[0])
+                    ->setCellValue('C' . $i, $countries_cities_total[1])
+                    ->setCellValue('D' . $i, $countries_cities_total[2])
+                    ->setCellValue('E' . $i, $countries_cities_total[3]);
 
             $filename = $cpid . '_streaming_stats_' . date('m-d-Y_H_i_s');
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -550,7 +628,7 @@ class Stats_config_model extends CI_Model {
         return $states_view;
     }
 
-    public function get_countries_total($locationEntries) {
+    public function get_states_total($locationEntries) {
         $hits = 0;
         $viewers = 0;
         $data_transfer = 0;
@@ -565,7 +643,49 @@ class Stats_config_model extends CI_Model {
         return $locationsTotal;
     }
 
-    public function get_child_countries($locationEntries) {
+    public function get_cities_view($locationEntries) {
+        $cities = array();
+        foreach ($locationEntries as $row) {
+            if (!$this->multi_array_search($row['city'], $cities)) {
+                array_push($cities, array($row['city'], $row['country']));
+            }
+        }
+
+        $cities_view = array();
+        foreach ($cities as $city) {
+            $hits = 0;
+            $viewers = 0;
+            $data_transfer = 0;
+            foreach ($locationEntries as $row) {
+                if ($row['city'] == $city[0]) {
+                    $hits += $row['hits'];
+                    $viewers += $row['viewers'];
+                    $data_transfer += $row['data_transfer'];
+                }
+            }
+            $data_transfer_formated = $this->human_filesize($data_transfer);
+            array_push($cities_view, array($city[0], $city[1], $hits, $viewers, $data_transfer_formated));
+        }
+
+        return $cities_view;
+    }
+
+    public function get_cities_total($locationEntries) {
+        $hits = 0;
+        $viewers = 0;
+        $data_transfer = 0;
+        $locationsTotal = array();
+        foreach ($locationEntries as $row) {
+            $hits += $row['hits'];
+            $viewers += $row['viewers'];
+            $data_transfer += $row['data_transfer'];
+        }
+        $data_transfer_formated = $this->human_filesize($data_transfer);
+        array_push($locationsTotal, 'Total', $hits, $viewers, $data_transfer_formated);
+        return $locationsTotal;
+    }
+
+    public function get_child_states($locationEntries) {
         $hits = 0;
         $viewers = 0;
         $data_transfer = 0;
@@ -579,7 +699,36 @@ class Stats_config_model extends CI_Model {
         return $locationsTotal;
     }
 
-    public function get_child_locations_stats_total($locationEntries) {
+    public function get_child_states_stats_total($locationEntries) {
+        $hits = 0;
+        $viewers = 0;
+        $data_transfer = 0;
+        $locationsTotal = array();
+        foreach ($locationEntries as $row) {
+            $hits += $row[0];
+            $viewers += $row[1];
+            $data_transfer += $row[2];
+        }
+        $data_transfer_formated = $this->human_filesize($data_transfer);
+        array_push($locationsTotal, 'Total', $hits, $viewers, $data_transfer_formated);
+        return $locationsTotal;
+    }
+
+    public function get_child_cities($locationEntries) {
+        $hits = 0;
+        $viewers = 0;
+        $data_transfer = 0;
+        $locationsTotal = array();
+        foreach ($locationEntries as $row) {
+            $hits += $row['hits'];
+            $viewers += $row['viewers'];
+            $data_transfer += $row['data_transfer'];
+        }
+        array_push($locationsTotal, 'Total', $hits, $viewers, $data_transfer);
+        return $locationsTotal;
+    }
+
+    public function get_child_cities_stats_total($locationEntries) {
         $hits = 0;
         $viewers = 0;
         $data_transfer = 0;
@@ -597,6 +746,19 @@ class Stats_config_model extends CI_Model {
     public function getLocationsStates($cpid, $start_date, $end_date) {
         $this->config->select('*')
                 ->from('locations_state')
+                ->where('partner_id', $cpid)
+                ->where('statistics_for >=', $start_date)
+                ->where('statistics_for <=', $end_date);
+
+        $query = $this->config->get();
+        $locationEntries = $query->result_array();
+
+        return $locationEntries;
+    }
+
+    public function getLocationsCities($cpid, $start_date, $end_date) {
+        $this->config->select('*')
+                ->from('locations_city')
                 ->where('partner_id', $cpid)
                 ->where('statistics_for >=', $start_date)
                 ->where('statistics_for <=', $end_date);
