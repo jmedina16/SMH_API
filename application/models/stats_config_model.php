@@ -190,7 +190,7 @@ class Stats_config_model extends CI_Model {
         if ($valid['success']) {
             $vodStatsEntries = $this->getVodStats($cpid, $start_date, $end_date);
             $liveStatsEntries = $this->getLiveStats($cpid, $start_date, $end_date);
-            $locationEntries = $this->getLocations($cpid, $start_date, $end_date);
+            $locationEntries = $this->getLocationsStates($cpid, $start_date, $end_date);
 
             $content_vod_stats_zoomed_view = $this->get_vod_stats_zoomed($vodStatsEntries);
             $content_vod_stats_total = $this->get_vod_stats_total($vodStatsEntries);
@@ -340,6 +340,7 @@ class Stats_config_model extends CI_Model {
                     $data_transfer += $row['data_transfer'];
                 }
             }
+            syslog(LOG_NOTICE, "SMH DEBUG : get_vod_stats_zoomed: " . print_r($data_transfer, true));
             $data_transfer_formated = $this->human_filesize($data_transfer);
             array_push($content_vod_stats_zoomed_view, array($c, $hits, $viewers, $data_transfer_formated));
         }
@@ -459,6 +460,7 @@ class Stats_config_model extends CI_Model {
                     $data_transfer += $row['data_transfer'];
                 }
             }
+            syslog(LOG_NOTICE, "SMH DEBUG : get_vod_stats_total: " . print_r($data_transfer, true));
             $data_transfer_formated = $this->human_filesize($data_transfer);
             array_push($content_vod_stats_view, array('Total', $hits, $viewers, $data_transfer_formated));
         }
@@ -531,8 +533,6 @@ class Stats_config_model extends CI_Model {
             }
         }
 
-        syslog(LOG_NOTICE, "SMH DEBUG : get_states_view1: " . print_r($states, true));
-
         $states_view = array();
         foreach ($states as $state) {
             $hits = 0;
@@ -548,8 +548,6 @@ class Stats_config_model extends CI_Model {
             $data_transfer_formated = $this->human_filesize($data_transfer);
             array_push($states_view, array($state[0], $state[1], $hits, $viewers, $data_transfer_formated));
         }
-
-        syslog(LOG_NOTICE, "SMH DEBUG : get_states_view2: " . print_r($states_view, true));
 
         return $states_view;
     }
@@ -598,9 +596,9 @@ class Stats_config_model extends CI_Model {
         return $locationsTotal;
     }
 
-    public function getLocations($cpid, $start_date, $end_date) {
+    public function getLocationsStates($cpid, $start_date, $end_date) {
         $this->config->select('*')
-                ->from('locations')
+                ->from('locations_state')
                 ->where('partner_id', $cpid)
                 ->where('statistics_for >=', $start_date)
                 ->where('statistics_for <=', $end_date);
@@ -655,12 +653,15 @@ class Stats_config_model extends CI_Model {
     }
 
     public function human_filesize($bytes, $decimals = 2) {
+        syslog(LOG_NOTICE, "SMH DEBUG : human_filesize1: " . print_r($bytes, true));
         $bytes_temp = $bytes;
         $labels = array('B', 'KB', 'MB', 'GB', 'TB');
 
         foreach ($labels as $label) {
+            syslog(LOG_NOTICE, "SMH DEBUG : label: " . print_r($label, true));
             if ($bytes > 1024) {
                 $bytes = $bytes / 1024;
+                syslog(LOG_NOTICE, "SMH DEBUG : human_filesize2: " . print_r($bytes, true));
             } else {
                 break;
             }
