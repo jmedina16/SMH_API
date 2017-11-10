@@ -27,10 +27,11 @@ class Stats_config_model extends CI_Model {
 
             $objPHPExcel = new PHPExcel();
             $objPHPExcel->setActiveSheetIndex(0)
-                    ->setCellValue('A1', 'Content')
-                    ->setCellValue('B1', 'Hits')
-                    ->setCellValue('C1', 'Viewers')
-                    ->setCellValue('D1', 'Data Transfer');
+                    ->setCellValue('A1', 'Account')
+                    ->setCellValue('B1', 'Content')
+                    ->setCellValue('C1', 'Hits')
+                    ->setCellValue('D1', 'Viewers')
+                    ->setCellValue('E1', 'Data Transfer');
             $i = 2;
             foreach ($childIds['childIds'] as $child) {
                 $vodStatsEntries = $this->getVodStats($child, $start_date, $end_date);
@@ -41,10 +42,11 @@ class Stats_config_model extends CI_Model {
 
                 foreach ($content_vod_stats_zoomed_view as $value) {
                     $objPHPExcel->setActiveSheetIndex(0)
-                            ->setCellValue('A' . $i, $value[0])
-                            ->setCellValue('B' . $i, $value[1])
-                            ->setCellValue('C' . $i, $value[2])
-                            ->setCellValue('D' . $i, $value[3]);
+                            ->setCellValue('A' . $i, $child)
+                            ->setCellValue('B' . $i, $value[0])
+                            ->setCellValue('C' . $i, $value[1])
+                            ->setCellValue('D' . $i, $value[2])
+                            ->setCellValue('E' . $i, $value[3]);
                     $i++;
                 }
             }
@@ -55,17 +57,17 @@ class Stats_config_model extends CI_Model {
                 foreach ($child_vod_stats_total_response as $value) {
                     $objPHPExcel->setActiveSheetIndex(0)
                             ->setCellValue('A' . $i, $value[0])
-                            ->setCellValue('B' . $i, $value[1])
-                            ->setCellValue('C' . $i, $value[2])
-                            ->setCellValue('D' . $i, $value[3]);
+                            ->setCellValue('C' . $i, $value[1])
+                            ->setCellValue('D' . $i, $value[2])
+                            ->setCellValue('E' . $i, $value[3]);
                 }
             } else {
                 $i++;
                 $objPHPExcel->setActiveSheetIndex(0)
                         ->setCellValue('A' . $i, 'Total')
-                        ->setCellValue('B' . $i, 0)
                         ->setCellValue('C' . $i, 0)
-                        ->setCellValue('D' . $i, '0.00 B');
+                        ->setCellValue('D' . $i, 0)
+                        ->setCellValue('E' . $i, '0.00 B');
             }
             $objPHPExcel->getActiveSheet()->setTitle('Vod_Content');
 
@@ -142,11 +144,11 @@ class Stats_config_model extends CI_Model {
             $i = 2;
             foreach ($childIds['childIds'] as $child) {
                 $locationEntries = $this->getLocations($child, $start_date, $end_date);
-                $cities_view = $this->get_cities_view($locationEntries);
+                $states_view = $this->get_states_view($locationEntries);
                 $countries_stats_total = $this->get_child_countries($locationEntries);
                 array_push($child_locations_total, array($countries_stats_total[1], $countries_stats_total[2], $countries_stats_total[3], $countries_stats_total[4], $countries_stats_total[5], $countries_stats_total[6]));
 
-                foreach ($cities_view as $value) {
+                foreach ($states_view as $value) {
                     $objPHPExcel->setActiveSheetIndex(2)
                             ->setCellValue('A' . $i, $child . "/" . $value[0])
                             ->setCellValue('B' . $i, $value[1])
