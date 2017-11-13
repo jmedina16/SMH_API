@@ -4378,3 +4378,10 @@ Stack trace:
 #5 [internal  in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
 [09-Nov-2017 20:46:07 America/Los_Angeles] PHP Fatal error:  Call to undefined method Stats_config_model::get_cities_view() in /var/www/vhosts/api/application/models/stats_config_model.php on line 145
 [10-Nov-2017 10:10:27 America/Los_Angeles] PHP Fatal error:  Call to a member function result_array() on boolean in /var/www/vhosts/api/application/models/stats_config_model.php on line 609
+[13-Nov-2017 04:31:14 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaClientException' with message 'Invalid partner id' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:1191
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/SMPortal.php(240): KalturaConfiguration->__construct('\xB8\nA\e\xB29`F_$\xC7\xD7\x13\x81<...')
+#1 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2693): SMPortal->get_entry_details('\xB8\nA\e\xB29`F_$\xC7\xD7\x13\x81<...', '')
+#2 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('\xB8\nA\e\xB29`F_$\xC7\xD7\x13\x81<...', NULL, NULL, NULL, NULL, 'Active', 'Pending')
+#3 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('1471081808:0 D:...', 'I-72796G1VEAR9', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Jorge', 'Medina', 'jmedina616@gmai...', '853NLG6TBL9TC', 'US', 'Pending', '34T54404S167928...', 'instant', '04:30:03 Nov 13...')
+#4 [internal function]: in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 1191
