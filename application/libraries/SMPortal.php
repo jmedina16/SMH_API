@@ -138,6 +138,7 @@ class SMPortal {
         $client->setKs($ks);
         $filter = new KalturaLiveChannelFilter();
         $filter->orderBy = '-createdAt';
+        $filter->statusEqual = KalturaEntryStatus::READY;
         $pager = null;
         $results = $client->liveChannel->listAction($filter, $pager);
         foreach ($results->objects as $r) {
