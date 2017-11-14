@@ -15,8 +15,12 @@ class Channel_config_model extends CI_Model {
 
     public function post_schedule($pid, $ks) {
         $success = array('success' => false);
+        $schedule = array();
         $live_channels = $this->smportal->get_channels($pid, $ks);
-        syslog(LOG_NOTICE, "SMH DEBUG : post_schedule: " . print_r($live_channels, true));
+        array_push($schedule, array('streams' => $live_channels));
+        //foreach ($live_channels as $channels) {
+            syslog(LOG_NOTICE, "SMH DEBUG : post_schedule: " . print_r($schedule, true));
+        //}
 
         return $success;
     }
