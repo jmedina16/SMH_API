@@ -247,6 +247,7 @@ class Stats_config_model extends CI_Model {
             $content_live_stats_total = $this->get_live_stats_total($liveStatsEntries);
 
             $states_view = $this->get_states_view($locationStatesEntries);
+            syslog(LOG_NOTICE, "SMH DEBUG : get_child_stats: " . print_r($states_view, true));
             $countries_stats_total = $this->get_states_total($locationStatesEntries);
 
             $cities_view = $this->get_cities_view($locationCitiesEntries);
