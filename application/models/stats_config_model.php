@@ -605,8 +605,8 @@ class Stats_config_model extends CI_Model {
     public function get_states_view($locationEntries) {
         $states = array();
         foreach ($locationEntries as $row) {
-            if (!$this->multi_array_search($row['region'], $states)) {
-                array_push($states, array($row['region'], $row['country']));
+            if (!$this->multi_array_search($row['region'] . "/" . $row['country'], $states)) {
+                array_push($states, $row['region'] . "/" . $row['country']);
             }
         }
 
@@ -616,14 +616,15 @@ class Stats_config_model extends CI_Model {
             $viewers = 0;
             $data_transfer = 0;
             foreach ($locationEntries as $row) {
-                if ($row['region'] == $state[0]) {
+                if (($row['region'] . "/" . $row['country']) == $state) {
                     $hits += $row['hits'];
                     $viewers += $row['viewers'];
                     $data_transfer += $row['data_transfer'];
                 }
             }
             $data_transfer_formated = $this->human_filesize($data_transfer);
-            array_push($states_view, array($state[0], $state[1], $hits, $viewers, $data_transfer_formated));
+            $state_explode = explode("/", $state);
+            array_push($states_view, array($state_explode[0], $state_explode[1], $hits, $viewers, $data_transfer_formated));
         }
 
         return $states_view;
