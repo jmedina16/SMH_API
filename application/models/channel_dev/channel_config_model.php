@@ -17,13 +17,17 @@ class Channel_config_model extends CI_Model {
         $success = array('success' => false);
         $schedule = array();
         $live_channels = $this->smportal->get_channels($pid, $ks);
-        //array_push($schedule, array('streams' => $live_channels));
         $schedule['streams'] = $live_channels;
-        //foreach ($live_channels as $channels) {
-            syslog(LOG_NOTICE, "SMH DEBUG : post_schedule: " . print_r($schedule, true));
-        //}
+        foreach ($live_channels as $channel) {
+            
+        }
+        syslog(LOG_NOTICE, "SMH DEBUG : post_schedule: " . print_r($schedule, true));
 
         return $success;
+    }
+
+    public function get_live_channel_segments($channel) {
+        $this->config = $this->load->database('kaltura', TRUE);
     }
 
     public function verfiy_ks($pid, $ks) {
