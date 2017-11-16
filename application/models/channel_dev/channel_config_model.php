@@ -19,15 +19,41 @@ class Channel_config_model extends CI_Model {
         $live_channels = $this->smportal->get_channels($pid, $ks);
         $schedule['streams'] = $live_channels;
         foreach ($live_channels as $channel) {
-            
+            $this->get_live_channel_segments($pid, $channel);
         }
-        syslog(LOG_NOTICE, "SMH DEBUG : post_schedule: " . print_r($schedule, true));
+        //syslog(LOG_NOTICE, "SMH DEBUG : post_schedule: " . print_r($schedule, true));
 
         return $success;
     }
 
-    public function get_live_channel_segments($channel) {
+    public function get_live_channel_segments($pid, $channel) {
+        $success = array('success' => false);
         $this->config = $this->load->database('kaltura', TRUE);
+        $this->config->select('*')
+                ->from('live_channel_segment')
+                ->where('partner_id', $pid)
+                ->where('channel_id', $channel);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+
+        if ($query->num_rows() > 0) {
+            $segments = array();
+            foreach ($result as $res) {
+                $name = str_replace(' ', '_', strtolower($res['name']));
+                $entry_id = $res['entry_id'];
+                $start_time = $res['start_time'];
+                $duration = $res['duration'];
+                $custom_data = json_decode($res['custom_data'], true);
+                $repeat = $custom_data['segmentConfig'][0]['repeat'];
+                $scheduled = $custom_data['segmentConfig'][0]['scheduled'];
+                array_push($segments, array('name' => $name, 'entry_id' => $entry_id, 'start_time' => $start_time, 'duration' => $duration, 'repeat' => $repeat, 'scheduled' => $scheduled));
+            }
+            syslog(LOG_NOTICE, "SMH DEBUG : get_live_channel_segments: " . print_r($segments, true));
+            $success = array('success' => true, 'live_channel_segments' => $segments);
+        }
+
+        return $success;
     }
 
     public function verfiy_ks($pid, $ks) {
