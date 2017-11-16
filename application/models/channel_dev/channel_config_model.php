@@ -18,21 +18,19 @@ class Channel_config_model extends CI_Model {
         $schedule = array();
         $live_channels = $this->smportal->get_channels($pid, $ks);
         $schedule['streams'] = $live_channels;
-        foreach ($live_channels as $channel) {
-            $this->get_live_channel_segments($pid, $channel);
-        }
-        //syslog(LOG_NOTICE, "SMH DEBUG : post_schedule: " . print_r($schedule, true));
+        $live_channel_segments = $this->get_live_channel_segments($pid, $live_channels);
+        syslog(LOG_NOTICE, "SMH DEBUG : post_schedule: " . print_r($live_channel_segments, true));
 
         return $success;
     }
 
-    public function get_live_channel_segments($pid, $channel) {
+    public function get_live_channel_segments($pid, $live_channels) {
         $success = array('success' => false);
         $this->config = $this->load->database('kaltura', TRUE);
         $this->config->select('*')
                 ->from('live_channel_segment')
                 ->where('partner_id', $pid)
-                ->where('channel_id', $channel);
+                ->where_in('channel_id', $live_channels);
 
         $query = $this->config->get();
         $result = $query->result_array();
@@ -49,7 +47,6 @@ class Channel_config_model extends CI_Model {
                 $scheduled = $custom_data['segmentConfig'][0]['scheduled'];
                 array_push($segments, array('name' => $name, 'entry_id' => $entry_id, 'start_time' => $start_time, 'duration' => $duration, 'repeat' => $repeat, 'scheduled' => $scheduled));
             }
-            syslog(LOG_NOTICE, "SMH DEBUG : get_live_channel_segments: " . print_r($segments, true));
             $success = array('success' => true, 'live_channel_segments' => $segments);
         }
 
