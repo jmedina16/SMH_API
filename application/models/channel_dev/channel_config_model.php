@@ -15,11 +15,23 @@ class Channel_config_model extends CI_Model {
 
     public function post_schedule($pid, $ks) {
         $success = array('success' => false);
-        $schedule = array();
         $live_channels = $this->smportal->get_channels($pid, $ks);
-        $schedule['streams'] = $live_channels;
-        $live_channel_segments = $this->get_live_channel_segments($pid, $live_channels);
-        syslog(LOG_NOTICE, "SMH DEBUG : post_schedule: " . print_r($live_channel_segments, true));
+        if (count($live_channels) > 0) {
+            $schedule = array();
+            $schedule['streams'] = $live_channels;
+            $playlists = array();
+            $live_channel_segments = $this->get_live_channel_segments($pid, $live_channels);
+            if ($live_channel_segments['success']) {
+                foreach ($live_channel_segments['live_channel_segments'] as $segment) {
+                    array_push($playlists, array('name' => $segment['name'], 'playOnStream' => $segment['playOnStream'], 'repeat' => $segment['repeat'], 'scheduled' => $segment['scheduled'], 'video_src' => $segment['video_src'], 'start' => $segment['start'], 'length' => $segment['length']));
+                }
+            }
+            $schedule['playlists'] = $playlists;
+            $schedule_json = json_encode($schedule, JSON_UNESCAPED_SLASHES);
+            $success = array('success' => true, 'schedule' => $schedule_json);
+        }
+
+        syslog(LOG_NOTICE, "SMH DEBUG : post_schedule: " . print_r($success, true));
 
         return $success;
     }
@@ -39,13 +51,15 @@ class Channel_config_model extends CI_Model {
             $segments = array();
             foreach ($result as $res) {
                 $name = str_replace(' ', '_', strtolower($res['name']));
-                $entry_id = $res['entry_id'];
-                $start_time = $res['start_time'];
-                $duration = $res['duration'];
+                $channel_id = $res['channel_id'];
+                $filename = $this->smportal->get_entry_filename($pid, $res['entry_id']);
+                $video_src = 'httpcache1/' . $pid . '/content/' . $filename['filename'];
+                $start = $res['start_time'];
+                $length = $res['duration'];
                 $custom_data = json_decode($res['custom_data'], true);
                 $repeat = $custom_data['segmentConfig'][0]['repeat'];
                 $scheduled = $custom_data['segmentConfig'][0]['scheduled'];
-                array_push($segments, array('name' => $name, 'entry_id' => $entry_id, 'start_time' => $start_time, 'duration' => $duration, 'repeat' => $repeat, 'scheduled' => $scheduled));
+                array_push($segments, array('name' => $name, 'playOnStream' => $channel_id, 'repeat' => $repeat, 'scheduled' => $scheduled, 'video_src' => $video_src, 'start' => $start, 'length' => $length));
             }
             $success = array('success' => true, 'live_channel_segments' => $segments);
         }
