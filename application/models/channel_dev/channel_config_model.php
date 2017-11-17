@@ -12,14 +12,15 @@ class Channel_config_model extends CI_Model {
         $this->load->library('SMPortal');
         $this->load->library('SMCipher');
     }
-    
-    public function get_schedules($pid, $ks){
-        
+
+    public function get_schedules($pid, $ks) {
+        $live_channels = $this->smportal->get_channels($pid, $ks);
+        syslog(LOG_NOTICE, "SMH DEBUG : get_schedules: " . print_r($live_channels, true));
     }
 
     public function post_schedule($pid, $ks) {
         $success = array('success' => false);
-        $live_channels = $this->smportal->get_channels($pid, $ks);
+        $live_channels = $this->smportal->get_channel_ids($pid, $ks);
         if (count($live_channels) > 0) {
             $schedule = array();
             $schedule['streams'] = $live_channels;
