@@ -14,8 +14,47 @@ class Channel_config_model extends CI_Model {
     }
 
     public function get_schedules($pid, $ks) {
+        $success = array('success' => false);
         $live_channels = $this->smportal->get_channels($pid, $ks);
+        $this->config = $this->load->database('kaltura', TRUE);
+        $segments = array();
+        foreach ($live_channels as &$channel) {
+            $live_channel_segment = $this->get_live_channel_segment($pid, $channel['id']);
+            $channel['segments'] = $live_channel_segment['live_channel_segment'];
+        }
         syslog(LOG_NOTICE, "SMH DEBUG : get_schedules: " . print_r($live_channels, true));
+    }
+
+    public function get_live_channel_segment($pid, $segment) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('live_channel_segment')
+                ->where('partner_id', $pid)
+                ->where_in('channel_id', $segment);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+
+        if ($query->num_rows() > 0) {
+            $segments = array();
+            foreach ($result as $res) {
+                $name = $res['name'];
+                $description = $res['description'];
+                $status = $res['status'];
+                $entry_id = $res['entry_id'];
+                $entry_details = $this->smportal->get_entry_details($pid, $entry_id);
+                $thumbnail = $entry_details['thumbnailUrl'];
+                $start = $res['start_time'];
+                $length = $res['duration'];
+                $custom_data = json_decode($res['custom_data'], true);
+                $repeat = $custom_data['segmentConfig'][0]['repeat'];
+                $scheduled = $custom_data['segmentConfig'][0]['scheduled'];
+                array_push($segments, array('name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'repeat' => $repeat, 'scheduled' => $scheduled, 'start' => $start, 'length' => $length));
+            }
+            $success = array('success' => true, 'live_channel_segment' => $segments);
+        }
+
+        return $success;
     }
 
     public function post_schedule($pid, $ks) {
