@@ -31,8 +31,6 @@ class Channel_config_model extends CI_Model {
             $success = array('success' => true, 'schedule' => $schedule_json);
         }
 
-        syslog(LOG_NOTICE, "SMH DEBUG : post_schedule: " . print_r($success, true));
-
         return $success;
     }
 
