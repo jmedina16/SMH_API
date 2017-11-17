@@ -130,7 +130,7 @@ class SMPortal {
         return $partner_info;
     }
 
-    function get_channels($pid, $ks) {
+    public function get_channel_ids($pid, $ks) {
         $channel_ids = array();
         $config = new KalturaConfiguration($pid);
         $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
@@ -146,6 +146,24 @@ class SMPortal {
         }
 
         return $channel_ids;
+    }
+
+    public function get_channels($pid, $ks) {
+        $channels = array();
+        $config = new KalturaConfiguration($pid);
+        $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
+        $client = new KalturaClient($config);
+        $client->setKs($ks);
+        $filter = new KalturaLiveChannelFilter();
+        $filter->orderBy = '-createdAt';
+        $filter->statusIn = '2,6,7';
+        $pager = null;
+        $results = $client->liveChannel->listAction($filter, $pager);
+        foreach ($results->objects as $r) {
+            array_push($channels, array('id' => $r->id, 'name' => $r->name, 'description' => $r->description, 'status' => $r->status, 'thumbnailUrl' => $r->thumbnailUrl, 'accessControlId' => $r->accessControlId));
+        }
+
+        return $channels;
     }
 
     public function get_player_details($pid, $uiconf) {

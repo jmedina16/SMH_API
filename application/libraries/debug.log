@@ -4411,3 +4411,13 @@ Stack trace:
 #5 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
 #6 /var/www/vhosts/api/application/libraries/REST_Controller.php(316): REST_Controller->_fire_method(Array, Array)
 # in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
+[16-Nov-2017 18:12:10 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Invalid KS "EXPIRED", Error "-1,INVALID_STR"' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(3035): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(161): KalturaLiveChannelService->listAction(Object(KalturaLiveChannelFilter), NULL)
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(17): SMPortal->get_channels('10012', 'YWM2MGNmYWExY2V...')
+#3 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(52): Channel_config_model->get_schedules('10012', 'YWM2MGNmYWExY2V...')
+#4 [internal function]: Channel_config->get_schedules_get()
+#5 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#6 /var/www/vhosts/api/application/libraries/REST_Controller.php(316): REST_Controller->_fire_method(Array, Array)
+# in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
