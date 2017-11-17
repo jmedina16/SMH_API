@@ -17,7 +17,6 @@ class Channel_config_model extends CI_Model {
         $success = array('success' => false);
         $live_channels = $this->smportal->get_channels($pid, $ks);
         $this->config = $this->load->database('kaltura', TRUE);
-        $segments = array();
         foreach ($live_channels as &$channel) {
             $live_channel_segment = $this->get_live_channel_segment($pid, $channel['id']);
             $channel['segments'] = $live_channel_segment['live_channel_segment'];
@@ -38,9 +37,11 @@ class Channel_config_model extends CI_Model {
         if ($query->num_rows() > 0) {
             $segments = array();
             foreach ($result as $res) {
+                $id = $res['id'];
                 $name = $res['name'];
                 $description = $res['description'];
                 $status = $res['status'];
+                $created_at = $res['created_at'];
                 $entry_id = $res['entry_id'];
                 $entry_details = $this->smportal->get_entry_details($pid, $entry_id);
                 $thumbnail = $entry_details['thumbnailUrl'];
@@ -49,7 +50,7 @@ class Channel_config_model extends CI_Model {
                 $custom_data = json_decode($res['custom_data'], true);
                 $repeat = $custom_data['segmentConfig'][0]['repeat'];
                 $scheduled = $custom_data['segmentConfig'][0]['scheduled'];
-                array_push($segments, array('name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'repeat' => $repeat, 'scheduled' => $scheduled, 'start' => $start, 'length' => $length));
+                array_push($segments, array('id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'repeat' => $repeat, 'scheduled' => $scheduled, 'start' => $start, 'length' => $length, 'created_at' => $created_at));
             }
             $success = array('success' => true, 'live_channel_segment' => $segments);
         }
