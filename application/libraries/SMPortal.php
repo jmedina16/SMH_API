@@ -160,7 +160,7 @@ class SMPortal {
         $pager = null;
         $results = $client->liveChannel->listAction($filter, $pager);
         foreach ($results->objects as $r) {
-            array_push($channels, array('id' => $r->id, 'name' => $r->name, 'description' => $r->description, 'status' => $r->status, 'thumbnailUrl' => $r->thumbnailUrl, 'accessControlId' => $r->accessControlId, 'partnerSortValue' => $r->partnerSortValue, 'createdAt' => $r->createdAt));
+            array_push($channels, array('id' => $r->id, 'name' => $r->name, 'description' => $r->description, 'status' => $r->status, 'thumbnailUrl' => $r->thumbnailUrl, 'accessControlId' => $r->accessControlId, 'partnerSortValue' => $r->partnerSortValue, 'createdAt' => date('Y-m-d H:i:s', $r->createdAt)));
         }
 
         return $channels;
