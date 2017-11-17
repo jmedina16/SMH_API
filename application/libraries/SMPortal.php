@@ -267,6 +267,7 @@ class SMPortal {
         $entry_info['name'] = $results->name;
         $entry_info['desc'] = $results->description;
         $entry_info['duration'] = $results->duration;
+        $entry_info['thumbnailUrl'] = $results->thumbnailUrl . '/quality/100/type/1/width/300/height/90';
         $entry_info['startDate'] = $results->startDate;
         $entry_info['endDate'] = $results->endDate;
         $entry_info['status'] = $results->status;
