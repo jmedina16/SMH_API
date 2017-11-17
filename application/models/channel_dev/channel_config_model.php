@@ -12,6 +12,10 @@ class Channel_config_model extends CI_Model {
         $this->load->library('SMPortal');
         $this->load->library('SMCipher');
     }
+    
+    public function get_schedules($pid, $ks){
+        
+    }
 
     public function post_schedule($pid, $ks) {
         $success = array('success' => false);
