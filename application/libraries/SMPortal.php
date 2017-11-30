@@ -131,34 +131,34 @@ class SMPortal {
     }
 
     public function delete_live_segment($pid, $ks, $id) {
-        $config = new KalturaConfiguration($pid);
-        $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
-        $client = new KalturaClient($config);
-        $client->setKs($ks);
-        $result = $client->liveChannelSegment->delete($id);
-        if ($result) {
-            return true;
-        } else {
-            return false;
+        $success = array('success' => false);
+        try {
+            $config = new KalturaConfiguration($pid);
+            $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
+            $client = new KalturaClient($config);
+            $client->setKs($ks);
+            $result = $client->liveChannelSegment->delete($id);
+            $success = array('success' => true);
+            return $success;
+        } catch (Exception $ex) {
+            syslog(LOG_NOTICE, "SMH DEBUG : delete_live_segment: " . $ex->getCode() . " message is " . $ex->getMessage());
+            return $success;
         }
     }
 
     public function delete_live_channel($pid, $ks, $id) {
+        $success = array('success' => false);
         try {
             $config = new KalturaConfiguration($pid);
             $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
             $client = new KalturaClient($config);
             $client->setKs($ks);
             $result = $client->liveChannel->delete($id);
-            syslog(LOG_NOTICE, "SMH DEBUG : delete_live_channel: " . $result);
-            if ($result) {
-                return true;
-            } else {
-                return false;
-            }
+            $success = array('success' => true);
+            return $success;
         } catch (Exception $ex) {
-            syslog(LOG_NOTICE, "SMH DEBUG : delete_live_channel: " . print_r($ex, true));
-            return false;
+            syslog(LOG_NOTICE, "SMH DEBUG : delete_live_channel: " . $ex->getCode() . " message is " . $ex->getMessage());
+            return $success;
         }
     }
 
