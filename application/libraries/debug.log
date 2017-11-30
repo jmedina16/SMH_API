@@ -4453,3 +4453,73 @@ Stack trace:
 #3 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('10012', NULL, NULL, NULL, NULL, 'Active', 'Pending')
 #4 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('vpinBl9VANmX1f2...', 'I-2S75BNCUA6VF', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Test', 'User', 'user2@smh.com', 'Z2NPJYZKK2RSY', 'US', 'Pending', '75615379KV82142...', 'instant', '05:14:54 Nov 29...')
 #5 [internal  in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
+[29-Nov-2017 22:38:05 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Live channel segment id [28] not found' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(2822): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(138): KalturaLiveChannelSegmentService->delete(28)
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(144): SMPortal->delete_live_segment('10012', 'ZTJmNDdkZmU2YTE...', 28)
+#3 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(82): Channel_config_model->delete_channel('10012', 'ZTJmNDdkZmU2YTE...', '0_qsgeb7kc')
+#4 [internal function]: Channel_config->delete_channel_get()
+#5 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#6 /var/www/vhosts/api/application/libraries/REST_Controller.php(316): REST_Controller->_fire_method(Array, Array)
+#7 /var/www/ in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
+[29-Nov-2017 22:39:49 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Live channel segment id [28] not found' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(2822): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(138): KalturaLiveChannelSegmentService->delete(28)
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(144): SMPortal->delete_live_segment('10012', 'ZTJmNDdkZmU2YTE...', 28)
+#3 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(82): Channel_config_model->delete_channel('10012', 'ZTJmNDdkZmU2YTE...', '0_qsgeb7kc')
+#4 [internal function]: Channel_config->delete_channel_get()
+#5 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#6 /var/www/vhosts/api/application/libraries/REST_Controller.php(316): REST_Controller->_fire_method(Array, Array)
+#7 /var/www/ in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
+[29-Nov-2017 22:43:22 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Live channel segment id [1] not found' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(2822): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(138): KalturaLiveChannelSegmentService->delete('1')
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(144): SMPortal->delete_live_segment('10012', 'ZTJmNDdkZmU2YTE...', '1')
+#3 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(82): Channel_config_model->delete_channel('10012', 'ZTJmNDdkZmU2YTE...', '0_qsgeb7kc')
+#4 [internal function]: Channel_config->delete_channel_get()
+#5 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#6 /var/www/vhosts/api/application/libraries/REST_Controller.php(316): REST_Controller->_fire_method(Array, Array)
+#7 /var/www in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
+[29-Nov-2017 22:44:42 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Live channel segment id [28] not found' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(2822): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(138): KalturaLiveChannelSegmentService->delete('28')
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(144): SMPortal->delete_live_segment('10012', 'ZTJmNDdkZmU2YTE...', '28')
+#3 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(82): Channel_config_model->delete_channel('10012', 'ZTJmNDdkZmU2YTE...', '0_kaojtqc0')
+#4 [internal function]: Channel_config->delete_channel_get()
+#5 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#6 /var/www/vhosts/api/application/libraries/REST_Controller.php(316): REST_Controller->_fire_method(Array, Array)
+#7 /var/ in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
+[29-Nov-2017 22:47:12 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Live channel segment id [18] not found' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(2822): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(138): KalturaLiveChannelSegmentService->delete('18')
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(144): SMPortal->delete_live_segment('10012', 'ZTJmNDdkZmU2YTE...', '18')
+#3 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(82): Channel_config_model->delete_channel('10012', 'ZTJmNDdkZmU2YTE...', '0_kaojtqc0')
+#4 [internal function]: Channel_config->delete_channel_get()
+#5 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#6 /var/www/vhosts/api/application/libraries/REST_Controller.php(316): REST_Controller->_fire_method(Array, Array)
+#7 /var/ in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
+[29-Nov-2017 22:55:23 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Entry id "0_2tjy6n9r" not found' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(2978): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(151): KalturaLiveChannelService->delete('0_2tjy6n9r')
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(154): SMPortal->delete_live_channel('10012', 'ZTJmNDdkZmU2YTE...', '0_2tjy6n9r')
+#3 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(82): Channel_config_model->delete_channel('10012', 'ZTJmNDdkZmU2YTE...', '0_2tjy6n9r')
+#4 [internal function]: Channel_config->delete_channel_get()
+#5 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#6 /var/www/vhosts/api/application/libraries/REST_Controller.php(316): REST_Controller->_fire_method(Array, Array)
+#7 /va in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
+[29-Nov-2017 22:58:05 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Entry id "0_8w4zlm43" not found' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(2978): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(151): KalturaLiveChannelService->delete('0_8w4zlm43')
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(154): SMPortal->delete_live_channel('10012', 'ZTJmNDdkZmU2YTE...', '0_8w4zlm43')
+#3 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(82): Channel_config_model->delete_channel('10012', 'ZTJmNDdkZmU2YTE...', '0_8w4zlm43')
+#4 [internal function]: Channel_config->delete_channel_get()
+#5 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#6 /var/www/vhosts/api/application/libraries/REST_Controller.php(316): REST_Controller->_fire_method(Array, Array)
+#7 /va in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
