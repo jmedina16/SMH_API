@@ -130,6 +130,24 @@ class SMPortal {
         return $partner_info;
     }
 
+    public function delete_live_segment($pid, $ks, $id) {
+        $config = new KalturaConfiguration($pid);
+        $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
+        $client = new KalturaClient($config);
+        $client->setKs($ks);
+        $result = $client->liveChannelSegment->delete($id);
+        syslog(LOG_NOTICE, "SMH DEBUG : delete_live_segment: " . print_r($result, true));
+    }
+    
+        public function delete_live_channel($pid, $ks, $id) {
+        $config = new KalturaConfiguration($pid);
+        $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
+        $client = new KalturaClient($config);
+        $client->setKs($ks);
+        $result = $client->liveChannel->delete($id);
+        syslog(LOG_NOTICE, "SMH DEBUG : delete_live_channel: " . print_r($result, true));
+    }
+
     public function get_channel_ids($pid, $ks) {
         $channel_ids = array();
         $config = new KalturaConfiguration($pid);
