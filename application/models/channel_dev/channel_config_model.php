@@ -145,14 +145,14 @@ class Channel_config_model extends CI_Model {
                         $this->smportal->delete_live_segment($pid, $ks, $segment['id']);
                     }
                     $delete_channel_resp = $this->smportal->delete_live_channel($pid, $ks, $cid);
-                    if ($delete_channel_resp) {
+                    if ($delete_channel_resp['success']) {
                         $success = array('success' => true);
                     } else {
                         $success = array('success' => false);
                     }
                 } else {
                     $delete_channel_resp = $this->smportal->delete_live_channel($pid, $ks, $cid);
-                    if ($delete_channel_resp) {
+                    if ($delete_channel_resp['success']) {
                         $success = array('success' => true);
                     } else {
                         $success = array('success' => false);
