@@ -106,6 +106,7 @@ class Channel_config_model extends CI_Model {
         $this->config->select('*')
                 ->from('live_channel_segment')
                 ->where('partner_id', $pid)
+                ->where('status', 2)
                 ->where_in('channel_id', $live_channels);
 
         $query = $this->config->get();
@@ -141,13 +142,23 @@ class Channel_config_model extends CI_Model {
                 $live_channel_segments = $this->get_live_channel_segments($pid, $cid);
                 if ($live_channel_segments['success']) {
                     foreach ($live_channel_segments['live_channel_segments'] as $segment) {
-                        $delete_segment_resp = $this->smportal->delete_live_segment($pid, $ks, $segment['id']);
+                        $this->smportal->delete_live_segment($pid, $ks, $segment['id']);
                     }
                     $delete_channel_resp = $this->smportal->delete_live_channel($pid, $ks, $cid);
+                    if ($delete_channel_resp) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false);
+                    }
                 } else {
-                    $success = array('success' => false);
+                    $delete_channel_resp = $this->smportal->delete_live_channel($pid, $ks, $cid);
+                    if ($delete_channel_resp) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false);
+                    }
                 }
-                syslog(LOG_NOTICE, "SMH DEBUG : delete_channel: " . print_r($live_channel_segment, true));
+                //syslog(LOG_NOTICE, "SMH DEBUG : delete_channel: " . print_r($live_channel_segment, true));
             } else {
                 $success = array('success' => false, 'message' => 'Channel Manager service not active');
             }
