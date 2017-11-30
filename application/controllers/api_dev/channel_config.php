@@ -59,4 +59,34 @@ class Channel_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code
     }
 
+    public function delete_channel_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+        $cid = $this->get('cid');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing pid'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        if (!isset($cid) || $cid == null) {
+
+            $this->response(array('error' => 'Missing cid'), 200);
+        }
+
+        $result = $this->channel_config_model->delete_channel($pid, $ks, $cid);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code
+    }
+
 }
