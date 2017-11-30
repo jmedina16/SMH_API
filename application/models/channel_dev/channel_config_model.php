@@ -15,13 +15,24 @@ class Channel_config_model extends CI_Model {
 
     public function get_schedules($pid, $ks) {
         $success = array('success' => false);
-        $live_channels = $this->smportal->get_channels($pid, $ks);
-        $this->config = $this->load->database('kaltura', TRUE);
-        foreach ($live_channels as &$channel) {
-            $live_channel_segment = $this->get_live_channel_segment($pid, $channel['id']);
-            $channel['segments'] = $live_channel_segment['live_channel_segment'];
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $live_channels = $this->smportal->get_channels($pid, $ks);
+                $this->config = $this->load->database('kaltura', TRUE);
+                foreach ($live_channels as &$channel) {
+                    $live_channel_segment = $this->get_live_channel_segment($pid, $channel['id']);
+                    $channel['segments'] = $live_channel_segment['live_channel_segment'];
+                }
+                syslog(LOG_NOTICE, "SMH DEBUG : get_schedules: " . print_r($live_channels, true));
+            } else {
+                $success = array('success' => false, 'message' => 'Channel Manager service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
         }
-        syslog(LOG_NOTICE, "SMH DEBUG : get_schedules: " . print_r($live_channels, true));
+        return $success;
     }
 
     public function get_live_channel_segment($pid, $segment) {
@@ -60,20 +71,30 @@ class Channel_config_model extends CI_Model {
 
     public function post_schedule($pid, $ks) {
         $success = array('success' => false);
-        $live_channels = $this->smportal->get_channel_ids($pid, $ks);
-        if (count($live_channels) > 0) {
-            $schedule = array();
-            $schedule['streams'] = $live_channels;
-            $playlists = array();
-            $live_channel_segments = $this->get_live_channel_segments($pid, $live_channels);
-            if ($live_channel_segments['success']) {
-                foreach ($live_channel_segments['live_channel_segments'] as $segment) {
-                    array_push($playlists, array('name' => $segment['name'], 'playOnStream' => $segment['playOnStream'], 'repeat' => $segment['repeat'], 'scheduled' => $segment['scheduled'], 'video_src' => $segment['video_src'], 'start' => $segment['start'], 'length' => $segment['length']));
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $live_channels = $this->smportal->get_channel_ids($pid, $ks);
+                if (count($live_channels) > 0) {
+                    $schedule = array();
+                    $schedule['streams'] = $live_channels;
+                    $playlists = array();
+                    $live_channel_segments = $this->get_live_channel_segments($pid, $live_channels);
+                    if ($live_channel_segments['success']) {
+                        foreach ($live_channel_segments['live_channel_segments'] as $segment) {
+                            array_push($playlists, array('name' => $segment['name'], 'playOnStream' => $segment['playOnStream'], 'repeat' => $segment['repeat'], 'scheduled' => $segment['scheduled'], 'video_src' => $segment['video_src'], 'start' => $segment['start'], 'length' => $segment['length']));
+                        }
+                    }
+                    $schedule['playlists'] = $playlists;
+                    $schedule_json = json_encode($schedule, JSON_UNESCAPED_SLASHES);
+                    $success = array('success' => true, 'schedule' => $schedule_json);
                 }
+            } else {
+                $success = array('success' => false, 'message' => 'Channel Manager service not active');
             }
-            $schedule['playlists'] = $playlists;
-            $schedule_json = json_encode($schedule, JSON_UNESCAPED_SLASHES);
-            $success = array('success' => true, 'schedule' => $schedule_json);
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
         }
 
         return $success;
@@ -93,6 +114,7 @@ class Channel_config_model extends CI_Model {
         if ($query->num_rows() > 0) {
             $segments = array();
             foreach ($result as $res) {
+                $id = $res['id'];
                 $name = str_replace(' ', '_', strtolower($res['name']));
                 $channel_id = $res['channel_id'];
                 $filename = $this->smportal->get_entry_filename($pid, $res['entry_id']);
@@ -102,11 +124,36 @@ class Channel_config_model extends CI_Model {
                 $custom_data = json_decode($res['custom_data'], true);
                 $repeat = $custom_data['segmentConfig'][0]['repeat'];
                 $scheduled = $custom_data['segmentConfig'][0]['scheduled'];
-                array_push($segments, array('name' => $name, 'playOnStream' => $channel_id, 'repeat' => $repeat, 'scheduled' => $scheduled, 'video_src' => $video_src, 'start' => $start, 'length' => $length));
+                array_push($segments, array('id' => $id, 'name' => $name, 'playOnStream' => $channel_id, 'repeat' => $repeat, 'scheduled' => $scheduled, 'video_src' => $video_src, 'start' => $start, 'length' => $length));
             }
             $success = array('success' => true, 'live_channel_segments' => $segments);
         }
 
+        return $success;
+    }
+
+    public function delete_channel($pid, $ks, $cid) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $live_channel_segments = $this->get_live_channel_segments($pid, $cid);
+                if ($live_channel_segments['success']) {
+                    foreach ($live_channel_segments['live_channel_segments'] as $segment) {
+                        $delete_segment_resp = $this->smportal->delete_live_segment($pid, $ks, $segment['id']);
+                    }
+                    $delete_channel_resp = $this->smportal->delete_live_channel($pid, $ks, $cid);
+                } else {
+                    $success = array('success' => false);
+                }
+                syslog(LOG_NOTICE, "SMH DEBUG : delete_channel: " . print_r($live_channel_segment, true));
+            } else {
+                $success = array('success' => false, 'message' => 'Channel Manager service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
         return $success;
     }
 
@@ -119,7 +166,7 @@ class Channel_config_model extends CI_Model {
         $this->_ci->curl->create("https://mediaplatform.streamingmediahosting.com/apps/services/v1.0/index.php?pid=" . $pid . "&action=get_services");
         $this->_ci->curl->get();
         $response = json_decode($this->_ci->curl->execute());
-        if ($response->social_network) {
+        if ($response->channel_manager) {
             $has_service = true;
         }
 
