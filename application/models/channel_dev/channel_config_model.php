@@ -149,6 +149,9 @@ class Channel_config_model extends CI_Model {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
                 $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $cid, $eid, $name, $desc);
+                if($add_live_segment['success']){
+                    $success = array('success' => true);
+                }
                 //syslog(LOG_NOTICE, "SMH DEBUG : delete_channel: " . print_r($live_channel_segment, true));
             } else {
                 $success = array('success' => false, 'message' => 'Channel Manager service not active');
