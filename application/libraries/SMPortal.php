@@ -131,18 +131,30 @@ class SMPortal {
     }
 
     public function add_live_segment($pid, $ks, $cid, $eid, $name, $desc) {
-        $config = new KalturaConfiguration($pid);
-        $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
-        $client = new KalturaClient($config);
-        $client->setKs($ks);
-        $liveChannelSegment = new KalturaLiveChannelSegment();
-        $liveChannelSegment->name = 'Test Segment1';
-        $liveChannelSegment->channelId = '0_uq4l7bfl';
-        $liveChannelSegment->entryId = '0_nqjntm4h';
-        $liveChannelSegment->triggerType = null;
-        $liveChannelSegment->startTime = 0;
-        $liveChannelSegment->duration = -1;
-        $result = $client->liveChannelSegment->add($liveChannelSegment);
+        $success = array('success' => false);
+        try {
+            $config = new KalturaConfiguration($pid);
+            $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
+            $client = new KalturaClient($config);
+            $client->setKs($ks);
+            $liveChannelSegment = new KalturaLiveChannelSegment();
+            $liveChannelSegment->name = $name;
+            $liveChannelSegment->description = $desc;
+            $liveChannelSegment->channelId = $cid;
+            $liveChannelSegment->entryId = $eid;
+            $liveChannelSegment->startTime = 0;
+            $liveChannelSegment->duration = -1;
+            $result = $client->liveChannelSegment->add($liveChannelSegment);
+            if ($results) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false);
+            }
+            return $success;
+        } catch (Exception $ex) {
+            syslog(LOG_NOTICE, "SMH DEBUG : delete_live_segment: " . $ex->getCode() . " message is " . $ex->getMessage());
+            return $success;
+        }
     }
 
     public function delete_live_segment($pid, $ks, $id) {
