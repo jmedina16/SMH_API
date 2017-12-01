@@ -89,4 +89,64 @@ class Channel_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code
     }
 
+    public function add_segment_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+        $cid = $this->get('cid');
+        $eid = $this->get('eid');
+        $name = $this->get('name');
+        $desc = $this->get('desc');
+        $repeat = $this->get('repeat');
+        $scheduled = $this->get('scheduled');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing pid'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        if (!isset($cid) || $cid == null) {
+
+            $this->response(array('error' => 'Missing cid'), 200);
+        }
+
+        if (!isset($eid) || $eid == null) {
+
+            $this->response(array('error' => 'Missing eid'), 200);
+        }
+
+        if (!isset($name) || $name == null) {
+
+            $this->response(array('error' => 'Missing name'), 200);
+        }
+
+        if (!isset($desc) || $desc == null) {
+
+            $this->response(array('error' => 'Missing desc'), 200);
+        }
+
+        if (!isset($repeat) || $repeat == null) {
+
+            $this->response(array('error' => 'Missing repeat'), 200);
+        }
+
+        if (!isset($scheduled) || $scheduled == null) {
+
+            $this->response(array('error' => 'Missing scheduled'), 200);
+        }
+
+        $result = $this->channel_config_model->add_segment($pid, $ks, $cid, $eid, $name, $desc, $repeat, $scheduled);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code
+    }
+
 }
