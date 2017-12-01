@@ -75,20 +75,9 @@ class Channel_config_model extends CI_Model {
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $live_channels = $this->smportal->get_channel_ids($pid, $ks);
-                if (count($live_channels) > 0) {
-                    $schedule = array();
-                    $schedule['streams'] = $live_channels;
-                    $playlists = array();
-                    $live_channel_segments = $this->get_live_channel_segments($pid, $live_channels);
-                    if ($live_channel_segments['success']) {
-                        foreach ($live_channel_segments['live_channel_segments'] as $segment) {
-                            array_push($playlists, array('name' => $segment['name'], 'playOnStream' => $segment['playOnStream'], 'repeat' => $segment['repeat'], 'scheduled' => $segment['scheduled'], 'video_src' => $segment['video_src'], 'start' => $segment['start'], 'length' => $segment['length']));
-                        }
-                    }
-                    $schedule['playlists'] = $playlists;
-                    $schedule_json = json_encode($schedule, JSON_UNESCAPED_SLASHES);
-                    $success = array('success' => true, 'schedule' => $schedule_json);
+                $schedule = $this->build_schedule($pid, $ks);
+                if ($schedule['success']) {
+                    $success = array('success' => true, 'schedule' => $schedule['schedule']);
                 }
             } else {
                 $success = array('success' => false, 'message' => 'Channel Manager service not active');
@@ -97,6 +86,26 @@ class Channel_config_model extends CI_Model {
             $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
         }
 
+        return $success;
+    }
+
+    public function build_schedule($pid, $ks) {
+        $success = array('success' => false);
+        $live_channels = $this->smportal->get_channel_ids($pid, $ks);
+        if (count($live_channels) > 0) {
+            $schedule = array();
+            $schedule['streams'] = $live_channels;
+            $playlists = array();
+            $live_channel_segments = $this->get_live_channel_segments($pid, $live_channels);
+            if ($live_channel_segments['success']) {
+                foreach ($live_channel_segments['live_channel_segments'] as $segment) {
+                    array_push($playlists, array('name' => $segment['name'], 'playOnStream' => $segment['playOnStream'], 'repeat' => $segment['repeat'], 'scheduled' => $segment['scheduled'], 'video_src' => $segment['video_src'], 'start' => $segment['start'], 'length' => $segment['length']));
+                }
+            }
+            $schedule['playlists'] = $playlists;
+            $schedule_json = json_encode($schedule, JSON_UNESCAPED_SLASHES);
+            $success = array('success' => true, 'schedule' => $schedule_json);
+        }
         return $success;
     }
 
@@ -146,7 +155,13 @@ class Channel_config_model extends CI_Model {
                     }
                     $delete_channel_resp = $this->smportal->delete_live_channel($pid, $ks, $cid);
                     if ($delete_channel_resp['success']) {
-                        $success = array('success' => true);
+                        $schedule = $this->build_schedule($pid, $ks);
+                        if ($schedule['success']) {
+                            syslog(LOG_NOTICE, "SMH DEBUG : delete_channel: " . print_r($schedule['schedule'], true));
+                            $success = array('success' => true);
+                        } else {
+                            $success = array('success' => true);
+                        }
                     } else {
                         $success = array('success' => false);
                     }
