@@ -130,6 +130,21 @@ class SMPortal {
         return $partner_info;
     }
 
+    public function add_live_segment($pid, $ks, $cid, $eid, $name, $desc) {
+        $config = new KalturaConfiguration($pid);
+        $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
+        $client = new KalturaClient($config);
+        $client->setKs($ks);
+        $liveChannelSegment = new KalturaLiveChannelSegment();
+        $liveChannelSegment->name = 'Test Segment1';
+        $liveChannelSegment->channelId = '0_uq4l7bfl';
+        $liveChannelSegment->entryId = '0_nqjntm4h';
+        $liveChannelSegment->triggerType = null;
+        $liveChannelSegment->startTime = 0;
+        $liveChannelSegment->duration = -1;
+        $result = $client->liveChannelSegment->add($liveChannelSegment);
+    }
+
     public function delete_live_segment($pid, $ks, $id) {
         $success = array('success' => false);
         try {
