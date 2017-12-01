@@ -124,11 +124,6 @@ class Channel_config extends REST_Controller {
             $this->response(array('error' => 'Missing name'), 200);
         }
 
-        if (!isset($desc) || $desc == null) {
-
-            $this->response(array('error' => 'Missing desc'), 200);
-        }
-
         if (!isset($repeat) || $repeat == null) {
 
             $this->response(array('error' => 'Missing repeat'), 200);
