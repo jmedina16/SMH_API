@@ -145,8 +145,8 @@ class SMPortal {
             $liveChannelSegment->startTime = 0;
             $liveChannelSegment->duration = -1;
             $result = $client->liveChannelSegment->add($liveChannelSegment);
-            if ($results) {
-                $success = array('success' => true);
+            if ($result) {
+                $success = array('success' => true, 'id' => $result->id);
             } else {
                 $success = array('success' => false);
             }

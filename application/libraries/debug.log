@@ -4523,3 +4523,4 @@ Stack trace:
 #5 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
 #6 /var/www/vhosts/api/application/libraries/REST_Controller.php(316): REST_Controller->_fire_method(Array, Array)
 #7 /va in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
+[30-Nov-2017 22:14:08 America/Los_Angeles] PHP Fatal error:  Call to undefined method CI_Config::where() in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 159
