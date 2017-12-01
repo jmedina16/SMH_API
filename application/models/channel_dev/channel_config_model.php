@@ -149,8 +149,24 @@ class Channel_config_model extends CI_Model {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
                 $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $cid, $eid, $name, $desc);
-                if($add_live_segment['success']){
-                    $success = array('success' => true);
+                if ($add_live_segment['success']) {
+                    $segmentConfig = array();
+                    $config = array();
+                    array_push($config, array('repeat' => $repeat, 'scheduled' => $scheduled));
+                    $segmentConfig['segmentConfig'] = $config;
+                    $data = array(
+                        'custom_data' => json_encode($segmentConfig)
+                    );
+                    $this->config = $this->load->database('kaltura', TRUE);
+                    $this->config->where('partner_id', $pid);
+                    $this->config->where('id', $add_live_segment['id']);
+                    $this->config->update('live_channel_segment', $data);
+                    $this->config->limit(1);
+                    if ($this->config->affected_rows() > 0) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false);
+                    }
                 }
                 //syslog(LOG_NOTICE, "SMH DEBUG : delete_channel: " . print_r($live_channel_segment, true));
             } else {
