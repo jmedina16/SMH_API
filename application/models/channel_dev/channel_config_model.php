@@ -150,20 +150,15 @@ class Channel_config_model extends CI_Model {
             if ($has_service) {
                 $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $cid, $eid, $name, $desc);
                 if ($add_live_segment['success']) {
-                    $segmentConfig = array();
-                    $config = array();
-                    array_push($config, array('repeat' => $repeat, 'scheduled' => $scheduled));
-                    $segmentConfig['segmentConfig'] = $config;
-                    $data = array(
-                        'custom_data' => json_encode($segmentConfig)
-                    );
-                    $this->config = $this->load->database('kaltura', TRUE);
-                    $this->config->where('partner_id', $pid);
-                    $this->config->where('id', $add_live_segment['id']);
-                    $this->config->update('live_channel_segment', $data);
-                    $this->config->limit(1);
-                    if ($this->config->affected_rows() > 0) {
-                        $success = array('success' => true);
+                    $update_live_segment_custom_data = $this->update_live_segment_custom_data($pid, $add_live_segment['id'], $repeat, $scheduled);
+                    if ($update_live_segment_custom_data['success']) {
+                        $schedule = $this->build_schedule($pid, $ks);
+                        if ($schedule['success']) {
+                            syslog(LOG_NOTICE, "SMH DEBUG : add_segment: " . print_r($schedule['schedule'], true));
+                            $success = array('success' => true);
+                        } else {
+                            $success = array('success' => true);
+                        }
                     } else {
                         $success = array('success' => false);
                     }
@@ -184,13 +179,79 @@ class Channel_config_model extends CI_Model {
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-
+                $update_live_segment = $this->smportal->update_live_segment($pid, $ks, $sid, $cid, $eid, $name, $desc);
+                if ($update_live_segment['success']) {
+                    $update_live_segment_custom_data = $this->update_live_segment_custom_data($pid, $sid, $repeat, $scheduled);
+                    if ($update_live_segment_custom_data['success']) {
+                        $schedule = $this->build_schedule($pid, $ks);
+                        if ($schedule['success']) {
+                            syslog(LOG_NOTICE, "SMH DEBUG : update_segment: " . print_r($schedule['schedule'], true));
+                            $success = array('success' => true);
+                        } else {
+                            $success = array('success' => true);
+                        }
+                    } else {
+                        $success = array('success' => false);
+                    }
+                } else {
+                    $success = array('success' => false);
+                }
                 //syslog(LOG_NOTICE, "SMH DEBUG : delete_channel: " . print_r($live_channel_segment, true));
             } else {
                 $success = array('success' => false, 'message' => 'Channel Manager service not active');
             }
         } else {
             $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+        return $success;
+    }
+
+    public function delete_segment($pid, $ks, $sid) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $update_live_segment = $this->smportal->delete_live_segment($pid, $ks, $sid);
+                if ($update_live_segment['success']) {
+                    $schedule = $this->build_schedule($pid, $ks);
+                    if ($schedule['success']) {
+                        syslog(LOG_NOTICE, "SMH DEBUG : delete_segment: " . print_r($schedule['schedule'], true));
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => true);
+                    }
+                } else {
+                    $success = array('success' => false);
+                }
+                //syslog(LOG_NOTICE, "SMH DEBUG : delete_channel: " . print_r($live_channel_segment, true));
+            } else {
+                $success = array('success' => false, 'message' => 'Channel Manager service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+        return $success;
+    }
+
+    public function update_live_segment_custom_data($pid, $sid, $repeat, $scheduled) {
+        $success = array('success' => false);
+        $segmentConfig = array();
+        $config = array();
+        array_push($config, array('repeat' => $repeat, 'scheduled' => $scheduled));
+        $segmentConfig['segmentConfig'] = $config;
+        $data = array(
+            'custom_data' => json_encode($segmentConfig)
+        );
+        $this->config = $this->load->database('kaltura', TRUE);
+        $this->config->where('partner_id', $pid);
+        $this->config->where('id', $sid);
+        $this->config->update('live_channel_segment', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
         }
         return $success;
     }
