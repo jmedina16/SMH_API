@@ -157,6 +157,33 @@ class SMPortal {
         }
     }
 
+    public function update_live_segment($pid, $ks, $sid, $cid, $eid, $name, $desc) {
+        $success = array('success' => false);
+        try {
+            $config = new KalturaConfiguration($pid);
+            $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
+            $client = new KalturaClient($config);
+            $client->setKs($ks);
+            $liveChannelSegment = new KalturaLiveChannelSegment();
+            $liveChannelSegment->name = $name;
+            $liveChannelSegment->description = $desc;
+            $liveChannelSegment->channelId = $cid;
+            $liveChannelSegment->entryId = $eid;
+            $liveChannelSegment->startTime = 0;
+            $liveChannelSegment->duration = -1;
+            $result = $client->liveChannelSegment->update($sid, $liveChannelSegment);
+            if ($result) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false);
+            }
+            return $success;
+        } catch (Exception $ex) {
+            syslog(LOG_NOTICE, "SMH DEBUG : delete_live_segment: " . $ex->getCode() . " message is " . $ex->getMessage());
+            return $success;
+        }
+    }
+
     public function delete_live_segment($pid, $ks, $id) {
         $success = array('success' => false);
         try {
