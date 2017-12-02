@@ -178,6 +178,23 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
+    public function update_segment($pid, $ks, $sid, $cid, $eid, $name, $desc, $repeat, $scheduled) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+
+                //syslog(LOG_NOTICE, "SMH DEBUG : delete_channel: " . print_r($live_channel_segment, true));
+            } else {
+                $success = array('success' => false, 'message' => 'Channel Manager service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+        return $success;
+    }
+
     public function delete_channel($pid, $ks, $cid) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
