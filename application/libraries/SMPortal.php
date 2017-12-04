@@ -133,6 +133,7 @@ class SMPortal {
     public function add_live_segment($pid, $ks, $cid, $eid, $name, $desc) {
         $success = array('success' => false);
         try {
+            $mediaType = $this->get_mediaType($eid, $pid, $ks);
             $config = new KalturaConfiguration($pid);
             $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
             $client = new KalturaClient($config);
@@ -142,7 +143,7 @@ class SMPortal {
             $liveChannelSegment->description = $desc;
             $liveChannelSegment->channelId = $cid;
             $liveChannelSegment->entryId = $eid;
-            $liveChannelSegment->startTime = 0;
+            $liveChannelSegment->startTime = ($mediaType === 1) ? 0 : -2;
             $liveChannelSegment->duration = -1;
             $result = $client->liveChannelSegment->add($liveChannelSegment);
             if ($result) {
