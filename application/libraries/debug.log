@@ -4545,4 +4545,9 @@ Stack trace:
 #3 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('10012', NULL, NULL, NULL, NULL, 'Active', 'Pending')
 #4 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('vpinBl9VANmX1f2...', 'I-2S75BNCUA6VF', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Test', 'User', 'user2@smh.com', 'Z2NPJYZKK2RSY', 'US', 'Pending', '0JE38333TY72609...', 'instant', '03:02:10 Dec 06...')
 #5 [internal  in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
-[06-Dec-2017 05:25:16 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Entry id "" not found' in /var/
+[06-Dec-2017 05:25:16 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Entry id "" not found' in /var/[08-Dec-2017 07:22:15 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaClientException' with message 'Invalid partner id' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:1191
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/SMPortal.php(346): KalturaConfiguration->__construct('\xE3vt\x85k\xBC\x9A\xFB\vR\xCFA\x15\xE2\x8C...')
+#1 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2693): SMPortal->get_entry_details('\xE3vt\x85k\xBC\x9A\xFB\vR\xCFA\x15\xE2\x8C...', '')
+#2 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('\xE3vt\x85k\xBC\x9A\xFB\vR\xCFA\x15\xE2\x8C...', NULL, NULL, NULL, NULL, 'Active', 'Pending')
+#3 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('1470671594:0 D:...', 'I-L1EPMNH8HD4R', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Jorge', 'Medina', 'jmedina616@gmai...', '853NLG6TBL9TC', 'US', 'Pending', '4UE987835A03273...', 'instant', '07:21:19 Dec 08...') in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 1191
