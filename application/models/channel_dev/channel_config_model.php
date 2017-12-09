@@ -13,7 +13,7 @@ class Channel_config_model extends CI_Model {
         $this->load->library('SMCipher');
     }
 
-    public function get_schedules($pid, $ks) {
+    public function get_channels($pid, $ks, $start, $length, $draw, $tz, $search) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
