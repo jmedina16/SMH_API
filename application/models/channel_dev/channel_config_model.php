@@ -25,7 +25,96 @@ class Channel_config_model extends CI_Model {
                     $live_channel_segment = $this->get_live_channel_segment($pid, $channel['id']);
                     $channel['segments'] = $live_channel_segment['live_channel_segment'];
                 }
-                syslog(LOG_NOTICE, "SMH DEBUG : get_schedules: " . print_r($live_channels, true));
+
+                $output = array(
+                    "orderBy" => $live_channels['orderBy'],
+                    "recordsTotal" => intval($live_channels['recordsTotal']),
+                    "recordsFiltered" => intval($live_channels['recordsFiltered']),
+                    "data" => array(),
+                );
+
+                if (isset($live_channels['draw'])) {
+                    $output["draw"] = intval($live_channels['draw']);
+                }
+
+                foreach ($live_channels['data'] as $channel) {
+                    $newDatetime = date('m/d/Y h:i A', $channel['createdAt']);
+
+                    $delete_action = '';
+                    $edit_action = '';
+                    $preview_action = '';
+
+                    $edit_arr = $channel['id'] . '\',\'' . addslashes($channel['name']) . '\',\'' . addslashes($channel['description']) . '\'';
+                    $edit_action = '<li role="presentation"><a role="menuitem" tabindex="-1" onclick="smhCM.editChannel(\'' . $edit_arr . ');">Channel</a></li>';
+
+                    $delete_arr = $channel['id'] . '\',\'' . addslashes($channel['name']);
+                    $delete_action = '<li role="presentation" style="border-top: solid 1px #f0f0f0;"><a role="menuitem" tabindex="-1" onclick="smhCM.deleteChannel(\'' . $delete_arr . '\');">Delete</a></li>';
+
+                    $preview_arr = $channel['id'] . '\',\'' . addslashes($channel['name']);
+                    $preview_action = '<li role="presentation"><a role="menuitem" tabindex="-1" onclick="smhCM.previewChannel(\'' . $preview_arr . '\');">Preview & Embed</a></li>';
+
+                    $video_count = 0;
+                    $thumbnails = '';
+
+                    $segment_ids = array();
+                    foreach ($channel['segments'] as $entry) {
+                        array_push($segment_ids, $entry['entryId']);
+                        $video_count++;
+                    }
+
+                    if (!$video_count) {
+                        $thumbnails .= '<div style="background-color: #ccc; width: 100%; height: 100%;"></div>';
+                    } else {
+                        $segment_ids_final = array_slice($segment_ids, 0, 5);
+                        $segment_ids_final_count = count($segment_ids_final);
+                        foreach ($segment_ids_final as $id) {
+                            if ($segment_ids_final_count == 1) {
+                                $thumbnails .= '<img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $id . '/quality/100/type/3/width/300/height/90" width="100%" height="90" onmouseover="smhCM.thumbRotatorStart(this)" onmouseout="smhCM.thumbRotatorEnd(this)">';
+                            } else if ($segment_ids_final_count == 2) {
+                                $thumbnails .= '<img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $id . '/quality/100/type/3/width/300/height/90" width="50%" height="90" onmouseover="smhCM.thumbRotatorStart(this)" onmouseout="smhCM.thumbRotatorEnd(this)">';
+                            } else if ($segment_ids_final_count == 3) {
+                                $thumbnails .= '<img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $id . '/quality/100/type/3/width/300/height/90" width="33.33%" height="90" onmouseover="smhCM.thumbRotatorStart(this)" onmouseout="smhCM.thumbRotatorEnd(this)">';
+                            } else if ($segment_ids_final_count == 4) {
+                                $thumbnails .= '<img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $id . '/quality/100/type/1/width/300/height/90" width="25%" height="90" onmouseover="smhCM.thumbRotatorStart(this)" onmouseout="smhCM.thumbRotatorEnd(this)">';
+                            } else if ($segment_ids_final_count == 5) {
+                                $thumbnails .= '<img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $id . '/quality/100/type/1/width/300/height/90" width="20%" height="90" onmouseover="smhCM.thumbRotatorStart(this)" onmouseout="smhCM.thumbRotatorEnd(this)">';
+                            }
+                        }
+                    }
+
+                    $actions = '<span class="dropdown header">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default"><span class="text">Edit</span></button>
+                        <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu" data-toggle="dropdown" aria-expanded="true"><span class="caret"></span></button>
+                        <ul class="dropdown-menu" id="menu" role="menu" aria-labelledby="dropdownMenu"> 
+                            ' . $edit_action . '  
+                            ' . $preview_action . '
+                            ' . $delete_action . '
+                        </ul>
+                    </div>
+                    </span>';
+
+                    $channel_list = '<div class="playlist-wrapper">
+                    <div class="play-wrapper">
+                        <a onclick="smhCM.previewChannel(\'' . $preview_arr . '\');">
+                            <i style="top: 18px;" class="play-button"></i></div>
+                            <div class="thumbnail-holder">' . $thumbnails . '</div>
+                            <div class="videos-num">' . $video_count . ' Videos</div>
+                        </a>
+                    </div>';
+
+                    $row = array();
+                    $row[] = '<input type="checkbox" class="channel-bulk" name="channel_bulk" value="' . $channel['id'] . '" />';
+                    $row[] = $channel_list;
+                    $row[] = "<div class='data-break'>" . addslashes($channel['name']) . "</div>";
+                    $row[] = "<div class='data-break'>" . $channel['id'] . "</div>";
+                    $row[] = "<div class='data-break'>" . $newDatetime . "</div>";
+                    $row[] = $actions;
+                    $output['data'][] = $row;
+                }
+                $success = $output;
+                //echo json_encode($output);
+                syslog(LOG_NOTICE, "SMH DEBUG : get_schedules: " . print_r($output, true));
             } else {
                 $success = array('success' => false, 'message' => 'Channel Manager service not active');
             }
