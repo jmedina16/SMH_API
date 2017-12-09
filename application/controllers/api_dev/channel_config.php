@@ -35,9 +35,14 @@ class Channel_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code
     }
 
-    public function get_schedules_get() {
+    public function get_channels_get() {
         $pid = $this->get('pid');
         $ks = $this->get('ks');
+        $start = $this->get('start');
+        $length = $this->get('length');
+        $draw = $this->get('draw');
+        $tz = $this->get('tz');
+        $search = $this->get('search');
 
         if (!isset($pid) || $pid == null) {
 
@@ -49,7 +54,27 @@ class Channel_config extends REST_Controller {
             $this->response(array('error' => 'Missing ks'), 200);
         }
 
-        $result = $this->channel_config_model->get_schedules($pid, $ks);
+        if (!isset($start) || $start == null) {
+
+            $this->response(array('error' => 'Missing start'), 200);
+        }
+
+        if (!isset($length) || $length == null) {
+
+            $this->response(array('error' => 'Missing length'), 200);
+        }
+
+        if (!isset($draw) || $draw == null) {
+
+            $this->response(array('error' => 'Missing draw'), 200);
+        }
+
+        if (!isset($tz) || $tz == null) {
+
+            $this->response(array('error' => 'Missing tz'), 200);
+        }
+
+        $result = $this->channel_config_model->get_channels($pid, $ks, $start, $length, $draw, $tz, $search);
 
         if (!$result) {
 
