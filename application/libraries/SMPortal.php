@@ -235,7 +235,7 @@ class SMPortal {
         return $channel_ids;
     }
 
-    public function get_channels($pid, $ks) {
+    public function get_channels($pid, $ks, $start, $length, $draw, $search) {
         $channels = array();
         $config = new KalturaConfiguration($pid);
         $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
@@ -244,13 +244,39 @@ class SMPortal {
         $filter = new KalturaLiveChannelFilter();
         $filter->orderBy = '-createdAt';
         $filter->statusIn = '2,6,7';
-        $pager = null;
+        $pager = new KalturaFilterPager();
+
+        // PAGING
+        if (isset($start) && $length != '-1') {
+            $pager->pageSize = intval($length);
+            $pager->pageIndex = floor(intval($start) / $pager->pageSize) + 1;
+        }
+
+        if (isset($search) && $search != "") {
+            $filter->freeText = $search;
+        }
+
         $results = $client->liveChannel->listAction($filter, $pager);
+
+        $output = array(
+            "orderBy" => $filter->orderBy,
+            "recordsTotal" => intval($results->totalCount),
+            "recordsFiltered" => intval($results->totalCount),
+            "data" => array(),
+        );
+
+        if (isset($draw)) {
+            $output["draw"] = intval($draw);
+        }
+
+
         foreach ($results->objects as $r) {
             array_push($channels, array('id' => $r->id, 'name' => $r->name, 'description' => $r->description, 'status' => $r->status, 'thumbnailUrl' => $r->thumbnailUrl, 'accessControlId' => $r->accessControlId, 'partnerSortValue' => $r->partnerSortValue, 'createdAt' => date('Y-m-d H:i:s', $r->createdAt)));
         }
 
-        return $channels;
+        $output["data"] = $channels;
+
+        return $output;
     }
 
     public function get_player_details($pid, $uiconf) {

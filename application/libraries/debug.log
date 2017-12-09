@@ -4551,3 +4551,12 @@ Stack trace:
 #1 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2693): SMPortal->get_entry_details('\xE3vt\x85k\xBC\x9A\xFB\vR\xCFA\x15\xE2\x8C...', '')
 #2 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('\xE3vt\x85k\xBC\x9A\xFB\vR\xCFA\x15\xE2\x8C...', NULL, NULL, NULL, NULL, 'Active', 'Pending')
 #3 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('1470671594:0 D:...', 'I-L1EPMNH8HD4R', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Jorge', 'Medina', 'jmedina616@gmai...', '853NLG6TBL9TC', 'US', 'Pending', '4UE987835A03273...', 'instant', '07:21:19 Dec 08...') in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 1191
+[08-Dec-2017 16:45:51 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Missing parameter "entryId"' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(438): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(376): KalturaBaseEntryService->get(NULL, NULL)
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(51): SMPortal->get_entry_details('10012', NULL)
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(25): Channel_config_model->get_live_channel_segment('10012', '0_4r7w45lq')
+#4 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(77): Channel_config_model->get_channels('10012', 'YzcxZWM0MTM4NmF...', '0', '10', '1', 'America/Los_Ang...', '')
+#5 [internal function]: Channel_config->get_channels_get()
+#6 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Ar in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
