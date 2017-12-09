@@ -19,7 +19,7 @@ class Channel_config_model extends CI_Model {
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $live_channels = $this->smportal->get_channels($pid, $ks);
+                $live_channels = $this->smportal->get_channels($pid, $ks, $start, $length, $draw, $search);
                 $this->config = $this->load->database('kaltura', TRUE);
                 foreach ($live_channels['data'] as &$channel) {
                     $live_channel_segment = $this->get_live_channel_segment($pid, $channel['id']);
@@ -95,26 +95,29 @@ class Channel_config_model extends CI_Model {
                     </span>';
 
                     $channel_list = '<div class="playlist-wrapper">
+                                        <div class="thumbnail-holder">' . $thumbnails . '</div>
+                                        <div class="videos-num">' . $video_count . ' Videos</div>
+                                    </div>';
+
+                    $channel_thumbnail = '<div class="entries-wrapper">
                     <div class="play-wrapper">
-                        <a onclick="smhCM.previewChannel(\'' . $preview_arr . '\');">
+                        <a onclick="smhCM.previewEmbed(\'' . $preview_arr . '\');">
                             <i style="top: 18px;" class="play-button"></i></div>
-                            <div class="thumbnail-holder">' . $thumbnails . '</div>
-                            <div class="videos-num">' . $video_count . ' Videos</div>
+                            <div class="thumbnail-holder"><img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $channel['id'] . '/quality/100/type/1/width/300/height/90" width="150" height="110"></div>
                         </a>
                     </div>';
 
                     $row = array();
                     $row[] = '<input type="checkbox" class="channel-bulk" name="channel_bulk" value="' . $channel['id'] . '" />';
-                    $row[] = $channel_list;
+                    $row[] = $channel_thumbnail;
                     $row[] = "<div class='data-break'>" . addslashes($channel['name']) . "</div>";
                     $row[] = "<div class='data-break'>" . $channel['id'] . "</div>";
+                    $row[] = $channel_list;
                     $row[] = "<div class='data-break'>" . $newDatetime . "</div>";
                     $row[] = $actions;
                     $output['data'][] = $row;
                 }
                 $success = $output;
-                //echo json_encode($output);
-                syslog(LOG_NOTICE, "SMH DEBUG : get_schedules: " . print_r($output, true));
             } else {
                 $success = array('success' => false, 'message' => 'Channel Manager service not active');
             }
