@@ -4610,3 +4610,41 @@ Stack trace:
 #4 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(258): Channel_config_model->build_schedule('10012', 'MjU1ZWE0YjI3Nzl...')
 #5 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(144): Channel_config_model->add_channel('10012', 'MjU1ZWE0YjI3Nzl...', '0_w2gavc9v,0_2u...', 'Test Channel 2', 'Testing')
 #6 [internal function]: Channel_config->add in /var/www/vhosts/api/application/libraries/SMPortal.php on line 59
+[14-Dec-2017 19:01:49 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'Exception' with message 'String could not be parsed as XML' in /var/www/vhosts/api/application/libraries/SMPortal.php:59
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/SMPortal.php(59): SimpleXMLElement->__construct('')
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(392): SMPortal->impersonate('10012')
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(145): SMPortal->get_entry_details('10012', '0_w2gavc9v')
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(25): Channel_config_model->get_live_channel_segment('10012', '0_cdh1r76l')
+#4 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(77): Channel_config_model->get_channels('10012', 'NDNkNWVjYjQ4MDY...', '0', '10', '1', 'America/Los_Ang...', '')
+#5 [internal function]: Channel_config->get_channels_get()
+#6 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#7 /var/www/vhosts/api/application/l in /var/www/vhosts/api/application/libraries/SMPortal.php on line 59
+[14-Dec-2017 19:01:50 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaClientException' with message 'Operation timed out after 120001 milliseconds with 0 bytes received' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:357
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(2558): KalturaClientBase->doQueue()
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(454): KalturaFlavorAssetService->getFlavorAssetsWithParams('0_w2gavc9v')
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(223): SMPortal->get_entry_filename('10012', '0_w2gavc9v')
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(382): Channel_config_model->get_live_channel_segments('10012', '0_cdh1r76l')
+#4 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(107): Channel_config_model->delete_channel('10012', 'MjU1ZWE0YjI3Nzl...', '0_cdh1r76l')
+#5 [internal function]: Channel_config->delete_channel_get()
+#6 /var/www/vhosts/api/application/libraries/REST_C in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 357
+[14-Dec-2017 19:05:24 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaClientException' with message 'Operation timed out after 120000 milliseconds with 0 bytes received' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:357
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(437): KalturaClientBase->doQueue()
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(399): KalturaBaseEntryService->get('0_nqjntm4h', NULL)
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(145): SMPortal->get_entry_details('10012', '0_nqjntm4h')
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(25): Channel_config_model->get_live_channel_segment('10012', '0_4r7w45lq')
+#4 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(77): Channel_config_model->get_channels('10012', 'NDNkNWVjYjQ4MDY...', '0', '10', '1', 'America/Los_Ang...', '')
+#5 [internal function]: Channel_config->get_channels_get()
+#6 /var/www/vhosts/api/application/libraries/REST_ in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 357
+[14-Dec-2017 19:18:37 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'Exception' with message 'String could not be parsed as XML' in /var/www/vhosts/api/application/libraries/SMPortal.php:59
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/SMPortal.php(59): SimpleXMLElement->__construct('')
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(392): SMPortal->impersonate('10012')
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(144): SMPortal->get_entry_details('10012', '0_w2gavc9v')
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(25): Channel_config_model->get_live_channel_segment('10012', '0_cdh1r76l')
+#4 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(77): Channel_config_model->get_channels('10012', 'NDNkNWVjYjQ4MDY...', '0', '10', '1', 'America/Los_Ang...', '')
+#5 [internal function]: Channel_config->get_channels_get()
+#6 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#7 /var/www/vhosts/api/application/l in /var/www/vhosts/api/application/libraries/SMPortal.php on line 59
