@@ -191,8 +191,11 @@ class Channel_config_model extends CI_Model {
             $playlists = array();
             $live_channel_segments = $this->get_live_channel_segments($pid, $live_channels);
             if ($live_channel_segments['success']) {
+                $plist_num = 1;
+                $time = time();
                 foreach ($live_channel_segments['live_channel_segments'] as $segment) {
-                    array_push($playlists, array('name' => $segment['name'], 'playOnStream' => $segment['playOnStream'], 'repeat' => $segment['repeat'], 'scheduled' => $segment['scheduled'], 'video_src' => $segment['video_src'], 'start' => $segment['start'], 'length' => $segment['length']));
+                    array_push($playlists, array('name' => 'pl' . $plist_num, 'playOnStream' => $segment['playOnStream'], 'repeat' => true, 'scheduled' => $time, 'video_src' => $segment['video_src'], 'start' => $segment['start'], 'length' => $segment['length']));
+                    $plist_num++;
                 }
             }
             $schedule['playlists'] = $playlists;
@@ -218,16 +221,14 @@ class Channel_config_model extends CI_Model {
             $segments = array();
             foreach ($result as $res) {
                 $id = $res['id'];
-                $name = str_replace(' ', '_', strtolower($res['name']));
                 $channel_id = $res['channel_id'];
                 $filename = $this->smportal->get_entry_filename($pid, $res['entry_id']);
                 $video_src = 'httpcache1/' . $pid . '/content/' . $filename['filename'];
                 $start = $res['start_time'];
                 $length = $res['duration'];
                 $custom_data = json_decode($res['custom_data'], true);
-                $repeat = $custom_data['segmentConfig'][0]['repeat'];
-                $scheduled = $custom_data['segmentConfig'][0]['scheduled'];
-                array_push($segments, array('id' => $id, 'name' => $name, 'playOnStream' => $channel_id, 'repeat' => $repeat, 'scheduled' => $scheduled, 'video_src' => $video_src, 'start' => $start, 'length' => $length));
+                $sortValue = $custom_data['segmentConfig'][0]['sortValue'];
+                array_push($segments, array('id' => $id, 'playOnStream' => $channel_id, 'video_src' => $video_src, 'start' => $start, 'length' => $length, 'sortValue' => $sortValue));
             }
             $success = array('success' => true, 'live_channel_segments' => $segments);
         }
@@ -265,22 +266,6 @@ class Channel_config_model extends CI_Model {
                 } else {
                     $success = array('success' => false);
                 }
-//                $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $cid, $eid, $name, $desc);
-//                if ($add_live_segment['success']) {
-//                    $update_live_segment_custom_data = $this->update_live_segment_custom_data($pid, $add_live_segment['id'], $repeat, $scheduled);
-//                    if ($update_live_segment_custom_data['success']) {
-//                        $schedule = $this->build_schedule($pid, $ks);
-//                        if ($schedule['success']) {
-//                            syslog(LOG_NOTICE, "SMH DEBUG : add_segment: " . print_r($schedule['schedule'], true));
-//                            $success = array('success' => true);
-//                        } else {
-//                            $success = array('success' => true);
-//                        }
-//                    } else {
-//                        $success = array('success' => false);
-//                    }
-//                }
-                //syslog(LOG_NOTICE, "SMH DEBUG : delete_channel: " . print_r($live_channel_segment, true));
             } else {
                 $success = array('success' => false, 'message' => 'Channel Manager service not active');
             }
