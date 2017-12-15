@@ -37,7 +37,9 @@ class Channel_config_model extends CI_Model {
                     $output["draw"] = intval($live_channels['draw']);
                 }
 
+                
                 foreach ($live_channels['data'] as $channel) {
+                    $row = array();
                     $newDatetime = date('m/d/Y h:i A', $channel['createdAt']);
 
                     $delete_action = '';
@@ -107,16 +109,18 @@ class Channel_config_model extends CI_Model {
                         </a>
                     </div>';
 
-                    $row = array();
                     $row[] = '<input type="checkbox" class="channel-bulk" name="channel_bulk" value="' . $channel['id'] . '" />';
                     $row[] = $channel_thumbnail;
                     $row[] = "<div class='data-break'>" . addslashes($channel['name']) . "</div>";
                     $row[] = "<div class='data-break'>" . $channel['id'] . "</div>";
                     $row[] = $channel_list;
                     $row[] = "<div class='data-break'>" . $newDatetime . "</div>";
-                    $row[] = $actions;
+                    $row[] = $actions; 
+                    $output['data'][] = $row;
                 }
-                $output['data'][] = $row;
+                
+                syslog(LOG_NOTICE, "SMH DEBUG : get_channels: " . print_r($output, true));
+                
                 $success = $output;
             } else {
                 $success = array('success' => false, 'message' => 'Channel Manager service not active');
