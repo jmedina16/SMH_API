@@ -4648,3 +4648,22 @@ Stack trace:
 #5 [internal function]: Channel_config->get_channels_get()
 #6 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
 #7 /var/www/vhosts/api/application/l in /var/www/vhosts/api/application/libraries/SMPortal.php on line 59
+[14-Dec-2017 21:04:03 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'Exception' with message 'String could not be parsed as XML' in /var/www/vhosts/api/application/libraries/SMPortal.php:59
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/SMPortal.php(59): SimpleXMLElement->__construct('')
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(392): SMPortal->impersonate('10012')
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(147): SMPortal->get_entry_details('10012', '0_48xd4zz1')
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(25): Channel_config_model->get_live_channel_segment('10012', '0_4r7w45lq')
+#4 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(77): Channel_config_model->get_channels('10012', 'NDNkNWVjYjQ4MDY...', '0', '10', '1', 'America/Los_Ang...', '')
+#5 [internal function]: Channel_config->get_channels_get()
+#6 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#7 /var/www/vhosts/api/application/l in /var/www/vhosts/api/application/libraries/SMPortal.php on line 59
+[14-Dec-2017 21:04:27 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaClientException' with message 'Operation timed out after 120001 milliseconds with 0 bytes received' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:357
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(3034): KalturaClientBase->doQueue()
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(282): KalturaLiveChannelService->listAction(Object(KalturaLiveChannelFilter), Object(KalturaFilterPager))
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(22): SMPortal->get_channels('10012', 'NDNkNWVjYjQ4MDY...', '0', '10', '1', '')
+#3 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(77): Channel_config_model->get_channels('10012', 'NDNkNWVjYjQ4MDY...', '0', '10', '1', 'America/Los_Ang...', '')
+#4 [internal function]: Channel_config->get_channels_get()
+#5 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#6 /var/www/vhosts/api/a in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 357
