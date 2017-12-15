@@ -37,31 +37,27 @@ class Channel_config_model extends CI_Model {
                     $output["draw"] = intval($live_channels['draw']);
                 }
 
-
-                syslog(LOG_NOTICE, "SMH DEBUG : get_channels: " . print_r($live_channels['data'], true));
-                foreach ($live_channels['data'] as $channel) {
-                    syslog(LOG_NOTICE, "SMH DEBUG : get_channels: " . print_r($channel, true));
-                    $row = array();
-                    $newDatetime = date('m/d/Y h:i A', $channel['createdAt']);
+                foreach ($live_channels['data'] as $channel_segment) {
+                    $newDatetime = date('m/d/Y h:i A', $channel_segment['createdAt']);
 
                     $delete_action = '';
                     $edit_action = '';
                     $preview_action = '';
 
-                    $edit_arr = $channel['id'] . '\',\'' . addslashes($channel['name']) . '\',\'' . addslashes($channel['description']) . '\'';
+                    $edit_arr = $channel_segment['id'] . '\',\'' . addslashes($channel_segment['name']) . '\',\'' . addslashes($channel_segment['description']) . '\'';
                     $edit_action = '<li role="presentation"><a role="menuitem" tabindex="-1" onclick="smhCM.editChannel(\'' . $edit_arr . ');">Channel</a></li>';
 
-                    $delete_arr = $channel['id'] . '\',\'' . addslashes($channel['name']);
+                    $delete_arr = $channel_segment['id'] . '\',\'' . addslashes($channel_segment['name']);
                     $delete_action = '<li role="presentation" style="border-top: solid 1px #f0f0f0;"><a role="menuitem" tabindex="-1" onclick="smhCM.deleteChannel(\'' . $delete_arr . '\');">Delete</a></li>';
 
-                    $preview_arr = $channel['id'] . '\',\'' . addslashes($channel['name']);
+                    $preview_arr = $channel_segment['id'] . '\',\'' . addslashes($channel_segment['name']);
                     $preview_action = '<li role="presentation"><a role="menuitem" tabindex="-1" onclick="smhCM.previewChannel(\'' . $preview_arr . '\');">Preview & Embed</a></li>';
 
                     $video_count = 0;
                     $thumbnails = '';
 
                     $segment_ids = array();
-                    foreach ($channel['segments'] as $entry) {
+                    foreach ($channel_segment['segments'] as $entry) {
                         array_push($segment_ids, $entry['entryId']);
                         $video_count++;
                     }
@@ -107,14 +103,15 @@ class Channel_config_model extends CI_Model {
                     <div class="play-wrapper">
                         <a onclick="smhCM.previewEmbed(\'' . $preview_arr . '\');">
                             <i style="top: 18px;" class="play-button"></i></div>
-                            <div class="thumbnail-holder"><img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $channel['id'] . '/quality/100/type/1/width/300/height/90" width="150" height="110"></div>
+                            <div class="thumbnail-holder"><img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $channel_segment['id'] . '/quality/100/type/1/width/300/height/90" width="150" height="110"></div>
                         </a>
                     </div>';
 
-                    $row[] = '<input type="checkbox" class="channel-bulk" name="channel_bulk" value="' . $channel['id'] . '" />';
+                    $row = array();
+                    $row[] = '<input type="checkbox" class="channel-bulk" name="channel_bulk" value="' . $channel_segment['id'] . '" />';
                     $row[] = $channel_thumbnail;
-                    $row[] = "<div class='data-break'>" . addslashes($channel['name']) . "</div>";
-                    $row[] = "<div class='data-break'>" . $channel['id'] . "</div>";
+                    $row[] = "<div class='data-break'>" . addslashes($channel_segment['name']) . "</div>";
+                    $row[] = "<div class='data-break'>" . $channel_segment['id'] . "</div>";
                     $row[] = $channel_list;
                     $row[] = "<div class='data-break'>" . $newDatetime . "</div>";
                     $row[] = $actions;
@@ -247,7 +244,7 @@ class Channel_config_model extends CI_Model {
                 $add_live_channel = $this->smportal->add_live_channel($pid, $ks, $name, $desc);
                 if ($add_live_channel['success']) {
                     $success = array('success' => true);
-                    $live_segments = explode(",", $eids);
+                    $live_segments = explode(";", $eids);
                     $sort_value = 1;
                     foreach ($live_segments as $segment) {
                         $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $add_live_channel['id'], $segment);
