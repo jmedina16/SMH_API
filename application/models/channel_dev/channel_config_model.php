@@ -23,7 +23,7 @@ class Channel_config_model extends CI_Model {
                 $this->config = $this->load->database('kaltura', TRUE);
                 foreach ($live_channels['data'] as &$channel) {
                     $live_channel_segment = $this->get_live_channel_segment($pid, $channel['id']);
-                    syslog(LOG_NOTICE, "SMH DEBUG : get_channels " . print_r($live_channel_segment,true));
+                    syslog(LOG_NOTICE, "SMH DEBUG : get_channels " . print_r($live_channel_segment, true));
                     $channel['segments'] = $live_channel_segment['live_channel_segment'];
                 }
 
@@ -235,27 +235,51 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function add_segment($pid, $ks, $cid, $eid, $name, $desc, $repeat, $scheduled) {
+    public function add_channel($pid, $ks, $eids, $name, $desc) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $cid, $eid, $name, $desc);
-                if ($add_live_segment['success']) {
-                    $update_live_segment_custom_data = $this->update_live_segment_custom_data($pid, $add_live_segment['id'], $repeat, $scheduled);
-                    if ($update_live_segment_custom_data['success']) {
-                        $schedule = $this->build_schedule($pid, $ks);
-                        if ($schedule['success']) {
-                            syslog(LOG_NOTICE, "SMH DEBUG : add_segment: " . print_r($schedule['schedule'], true));
-                            $success = array('success' => true);
+                $add_live_channel = $this->smportal->add_live_channel($pid, $ks, $name, $desc);
+                if ($add_live_channel['success']) {
+                    $success = array('success' => true);
+                    $live_segments = explode(",", $eids);
+                    $sort_value = 1;
+                    foreach ($live_segments as $segment) {
+                        $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $add_live_channel['id'], $segment);
+                        if ($add_live_segment['success']) {
+                            $this->update_live_segment_custom_data($pid, $add_live_segment['id'], $sort_value);
+                            $sort_value++;
                         } else {
-                            $success = array('success' => true);
+                            $success = array('success' => false);
                         }
-                    } else {
-                        $success = array('success' => false);
                     }
+                    $schedule = $this->build_schedule($pid, $ks);
+                    if ($schedule['success']) {
+                        syslog(LOG_NOTICE, "SMH DEBUG : add_segment: " . print_r($schedule['schedule'], true));
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => true);
+                    }
+                } else {
+                    $success = array('success' => false);
                 }
+//                $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $cid, $eid, $name, $desc);
+//                if ($add_live_segment['success']) {
+//                    $update_live_segment_custom_data = $this->update_live_segment_custom_data($pid, $add_live_segment['id'], $repeat, $scheduled);
+//                    if ($update_live_segment_custom_data['success']) {
+//                        $schedule = $this->build_schedule($pid, $ks);
+//                        if ($schedule['success']) {
+//                            syslog(LOG_NOTICE, "SMH DEBUG : add_segment: " . print_r($schedule['schedule'], true));
+//                            $success = array('success' => true);
+//                        } else {
+//                            $success = array('success' => true);
+//                        }
+//                    } else {
+//                        $success = array('success' => false);
+//                    }
+//                }
                 //syslog(LOG_NOTICE, "SMH DEBUG : delete_channel: " . print_r($live_channel_segment, true));
             } else {
                 $success = array('success' => false, 'message' => 'Channel Manager service not active');
@@ -327,11 +351,11 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function update_live_segment_custom_data($pid, $sid, $repeat, $scheduled) {
+    public function update_live_segment_custom_data($pid, $sid, $sort_value) {
         $success = array('success' => false);
         $segmentConfig = array();
         $config = array();
-        array_push($config, array('repeat' => $repeat, 'scheduled' => $scheduled));
+        array_push($config, array('sortValue' => $sort_value));
         $segmentConfig['segmentConfig'] = $config;
         $data = array(
             'custom_data' => json_encode($segmentConfig)
