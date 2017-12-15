@@ -23,7 +23,6 @@ class Channel_config_model extends CI_Model {
                 $this->config = $this->load->database('kaltura', TRUE);
                 foreach ($live_channels['data'] as &$channel) {
                     $live_channel_segment = $this->get_live_channel_segment($pid, $channel['id']);
-                    syslog(LOG_NOTICE, "SMH DEBUG : get_channels " . print_r($live_channel_segment, true));
                     $channel['segments'] = $live_channel_segment['live_channel_segment'];
                 }
 
@@ -116,8 +115,8 @@ class Channel_config_model extends CI_Model {
                     $row[] = $channel_list;
                     $row[] = "<div class='data-break'>" . $newDatetime . "</div>";
                     $row[] = $actions;
-                    $output['data'][] = $row;
                 }
+                $output['data'][] = $row;
                 $success = $output;
             } else {
                 $success = array('success' => false, 'message' => 'Channel Manager service not active');
