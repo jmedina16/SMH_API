@@ -4601,3 +4601,12 @@ Stack trace:
 #4 [internal function]: Channel_config->get_channels_get()
 #5 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
 #6 /var/www/vhosts/api/a in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 357
+[14-Dec-2017 18:59:30 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'Exception' with message 'String could not be parsed as XML' in /var/www/vhosts/api/application/libraries/SMPortal.php:59
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/SMPortal.php(59): SimpleXMLElement->__construct('')
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(448): SMPortal->impersonate('10012')
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(223): SMPortal->get_entry_filename('10012', '0_145r9r82')
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(192): Channel_config_model->get_live_channel_segments('10012', Array)
+#4 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(258): Channel_config_model->build_schedule('10012', 'MjU1ZWE0YjI3Nzl...')
+#5 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(144): Channel_config_model->add_channel('10012', 'MjU1ZWE0YjI3Nzl...', '0_w2gavc9v,0_2u...', 'Test Channel 2', 'Testing')
+#6 [internal function]: Channel_config->add in /var/www/vhosts/api/application/libraries/SMPortal.php on line 59

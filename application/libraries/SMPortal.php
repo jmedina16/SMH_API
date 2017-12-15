@@ -130,20 +130,43 @@ class SMPortal {
         return $partner_info;
     }
 
-    public function add_live_segment($pid, $ks, $cid, $eid, $name, $desc) {
+    public function add_live_channel($pid, $ks, $name, $desc) {
         $success = array('success' => false);
         try {
-            $mediaType = $this->get_mediaType($eid, $pid, $ks);
+            $time = time();
+            $config = new KalturaConfiguration($pid);
+            $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
+            $client = new KalturaClient($config);
+            $client->setKs($ks);
+            $liveChannel  = new KalturaLiveChannel();
+            $liveChannel->name = $name;
+            $liveChannel->description = $desc;
+            $liveChannel->startDate = $time;
+            $liveChannel->repeat = KalturaNullableBoolean::TRUE_VALUE;
+            $result = $client->liveChannel->add($liveChannel);
+            if ($result) {
+                $success = array('success' => true, 'id' => $result->id);
+            } else {
+                $success = array('success' => false);
+            }
+            return $success;
+        } catch (Exception $ex) {
+            syslog(LOG_NOTICE, "SMH DEBUG : add_live_channel: " . $ex->getCode() . " message is " . $ex->getMessage());
+            return $success;
+        }
+    }
+
+    public function add_live_segment($pid, $ks, $cid, $eid) {
+        $success = array('success' => false);
+        try {
             $config = new KalturaConfiguration($pid);
             $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
             $client = new KalturaClient($config);
             $client->setKs($ks);
             $liveChannelSegment = new KalturaLiveChannelSegment();
-            $liveChannelSegment->name = $name;
-            $liveChannelSegment->description = $desc;
             $liveChannelSegment->channelId = $cid;
             $liveChannelSegment->entryId = $eid;
-            $liveChannelSegment->startTime = ($mediaType === 1) ? 0 : -2;
+            $liveChannelSegment->startTime = 0;
             $liveChannelSegment->duration = -1;
             $result = $client->liveChannelSegment->add($liveChannelSegment);
             if ($result) {
@@ -153,7 +176,7 @@ class SMPortal {
             }
             return $success;
         } catch (Exception $ex) {
-            syslog(LOG_NOTICE, "SMH DEBUG : delete_live_segment: " . $ex->getCode() . " message is " . $ex->getMessage());
+            syslog(LOG_NOTICE, "SMH DEBUG : add_live_segment: " . $ex->getCode() . " message is " . $ex->getMessage());
             return $success;
         }
     }
