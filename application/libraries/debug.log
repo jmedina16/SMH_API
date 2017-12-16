@@ -4707,3 +4707,7 @@ Stack trace:
 #6 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
 #7 /var/www/vhosts/api/application/l in /var/www/vhosts/api/application/libraries/SMPortal.php on line 59
 [15-Dec-2017 18:59:37 America/Los_Angeles] PHP Fatal error:  Unsupported operand types in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 221
+[15-Dec-2017 20:00:45 America/Los_Angeles] PHP Fatal error:  Unsupported operand types in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 224
+[15-Dec-2017 20:39:10 America/Los_Angeles] PHP Fatal error:  Call to a member function result_array() on boolean in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 140
+[15-Dec-2017 20:39:15 America/Los_Angeles] PHP Fatal error:  Call to a member function result_array() on boolean in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 140
+[15-Dec-2017 20:39:27 America/Los_Angeles] PHP Fatal error:  Call to a member function result_array() on boolean in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 140
