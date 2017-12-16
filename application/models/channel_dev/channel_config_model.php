@@ -193,12 +193,16 @@ class Channel_config_model extends CI_Model {
             if ($live_channel_segments['success']) {
                 $plist_num = 1;
                 $time = time();
+                $unixtime_to_date = date('n/j/Y H:i', $time);
+                $datetime = strtotime($unixtime_to_date);
+                $newDatetime = date('Y-m-d H:i:s', $datetime);
                 foreach ($live_channel_segments['live_channel_segments'] as $segment) {
-                    array_push($playlists, array('name' => 'pl' . $plist_num, 'playOnStream' => $segment['playOnStream'], 'repeat' => true, 'scheduled' => $time, 'video_src' => $segment['video_src'], 'start' => $segment['start'], 'length' => $segment['length']));
+                    array_push($playlists, array('name' => 'pl' . $plist_num, 'playOnStream' => $segment['playOnStream'], 'repeat' => true, 'scheduled' => $newDatetime, 'video_src' => $segment['video_src'], 'start' => $segment['start'], 'length' => $segment['length']));
                     $plist_num++;
                 }
             }
             $schedule['playlists'] = $playlists;
+            syslog(LOG_NOTICE, "SMH DEBUG : build_schedule " . print_r($schedule, true));
             $schedule_json = json_encode($schedule, JSON_UNESCAPED_SLASHES);
             $success = array('success' => true, 'schedule' => $schedule_json);
         }
