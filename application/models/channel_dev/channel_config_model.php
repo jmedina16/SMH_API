@@ -197,16 +197,48 @@ class Channel_config_model extends CI_Model {
                 $datetime = strtotime($unixtime_to_date);
                 $newDatetime = date('Y-m-d H:i:s', $datetime);
                 foreach ($live_channel_segments['live_channel_segments'] as $segment) {
-                    array_push($playlists, array('name' => 'pl' . $plist_num, 'playOnStream' => $segment['playOnStream'], 'repeat' => true, 'scheduled' => $newDatetime, 'video_src' => $segment['video_src'], 'start' => $segment['start'], 'length' => $segment['length']));
-                    $plist_num++;
+//                    array_push($playlists, array('name' => 'pl' . $plist_num, 'playOnStream' => $segment['playOnStream'], 'repeat' => true, 'scheduled' => $newDatetime, 'video_src' => $segment['video_src'], 'start' => $segment['start'], 'length' => $segment['length']));
+//                    $plist_num++;
+
+                    if ($this->multi_array_search($segment['playOnStream'], $playlists)) {
+                        foreach ($playlists as &$playlist) {
+                            if ($playlist['playOnStream'] == $segment['playOnStream']) {
+                                //$video_src = array('video_src' => $segment['video_src'], 'start' => $segment['start'], 'length' => $segment['length']);
+                                //array_push($playlist['video_srcs'][$segment['sortValue']], $video_src);
+                                $playlist['video_srcs'][$segment['sortValue']] = array('video_src' => $segment['video_src'], 'start' => $segment['start'], 'length' => $segment['length']);
+                            }
+                        }
+                    } else {
+                        $video_src = array();
+                        $video_src[$segment['sortValue']] = array('video_src' => $segment['video_src'], 'start' => $segment['start'], 'length' => $segment['length']);
+                        //array_push($video_src[$segment['sortValue']], array('video_src' => $segment['video_src'], 'start' => $segment['start'], 'length' => $segment['length']));
+                        array_push($playlists, array('name' => 'pl' . $plist_num, 'playOnStream' => $segment['playOnStream'], 'repeat' => true, 'scheduled' => $newDatetime, 'video_srcs' => $video_src));
+                        $plist_num++;
+                    }
                 }
             }
+            usort($playlists, function($a, $b) {
+                return $a['video_srcs'] - $b['video_srcs'];
+            });
             $schedule['playlists'] = $playlists;
             syslog(LOG_NOTICE, "SMH DEBUG : build_schedule " . print_r($schedule, true));
             $schedule_json = json_encode($schedule, JSON_UNESCAPED_SLASHES);
             $success = array('success' => true, 'schedule' => $schedule_json);
         }
         return $success;
+    }
+
+    public function multi_array_search($search_for, $search_in) {
+        foreach ($search_in as $element) {
+            if (($element === $search_for)) {
+                return true;
+            } elseif (is_array($element)) {
+                $result = $this->multi_array_search($search_for, $element);
+                if ($result == true)
+                    return true;
+            }
+        }
+        return false;
     }
 
     public function get_live_channel_segments($pid, $live_channels) {
@@ -250,7 +282,7 @@ class Channel_config_model extends CI_Model {
                 if ($add_live_channel['success']) {
                     $success = array('success' => true);
                     $live_segments = explode(";", $eids);
-                    $sort_value = 1;
+                    $sort_value = 0;
                     foreach ($live_segments as $segment) {
                         $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $add_live_channel['id'], $segment);
                         if ($add_live_segment['success']) {
