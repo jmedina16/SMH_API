@@ -206,6 +206,7 @@ class Channel_config_model extends CI_Model {
                                 //$video_src = array('video_src' => $segment['video_src'], 'start' => $segment['start'], 'length' => $segment['length']);
                                 //array_push($playlist['video_srcs'][$segment['sortValue']], $video_src);
                                 $playlist['video_srcs'][$segment['sortValue']] = array('video_src' => $segment['video_src'], 'start' => $segment['start'], 'length' => $segment['length']);
+                                syslog(LOG_NOTICE, "SMH DEBUG : sortValue " . print_r($playlist,true));
                             }
                         }
                     } else {
@@ -217,9 +218,12 @@ class Channel_config_model extends CI_Model {
                     }
                 }
             }
-            usort($playlists, function($a, $b) {
-                return $a['video_srcs'] - $b['video_srcs'];
-            });
+
+            foreach ($playlists as &$playlist) {
+                usort($playlist, function($a, $b) {
+                    return $a['video_srcs'] - $b['video_srcs'];
+                });
+            }
             $schedule['playlists'] = $playlists;
             syslog(LOG_NOTICE, "SMH DEBUG : build_schedule " . print_r($schedule, true));
             $schedule_json = json_encode($schedule, JSON_UNESCAPED_SLASHES);
