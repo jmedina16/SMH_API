@@ -43,6 +43,12 @@ class Channel_config_model extends CI_Model {
                     $delete_action = '';
                     $edit_action = '';
                     $preview_action = '';
+                    $status = 'Go Live';
+
+                    if ($channel_segment['status'] === 2) {
+                        $live_status = '<i class="fa fa-circle" style="color:#FF0000; font-size: 11px;"></i> LIVE';
+                        $status = 'Go Off Air';
+                    }
 
                     $edit_arr = $channel_segment['id'] . '\',\'' . addslashes($channel_segment['name']) . '\',\'' . addslashes($channel_segment['description']) . '\'';
                     $edit_action = '<li role="presentation"><a role="menuitem" tabindex="-1" onclick="smhCM.editChannel(\'' . $edit_arr . ');">Channel</a></li>';
@@ -52,6 +58,9 @@ class Channel_config_model extends CI_Model {
 
                     $preview_arr = $channel_segment['id'] . '\',\'' . addslashes($channel_segment['name']);
                     $preview_action = '<li role="presentation"><a role="menuitem" tabindex="-1" onclick="smhCM.previewChannel(\'' . $preview_arr . '\');">Preview & Embed</a></li>';
+
+                    $status_arr = $channel_segment['id'] . '\',\'' . addslashes($channel_segment['name']);
+                    $status_action = '<li role="presentation"><a role="menuitem" tabindex="-1" onclick="smhCM.updateStatus(\'' . $status_arr . '\');">' . $status . '</a></li>';
 
                     $video_count = 0;
                     $thumbnails = '';
@@ -89,6 +98,7 @@ class Channel_config_model extends CI_Model {
                         <ul class="dropdown-menu" id="menu" role="menu" aria-labelledby="dropdownMenu"> 
                             ' . $edit_action . '  
                             ' . $preview_action . '
+                            ' . $status_action . '
                             ' . $delete_action . '
                         </ul>
                     </div>
@@ -98,10 +108,6 @@ class Channel_config_model extends CI_Model {
                                         <div class="thumbnail-holder">' . $thumbnails . '</div>
                                         <div class="videos-num">' . $video_count . ' Videos</div>
                                     </div>';
-
-                    if ($channel_segment['status'] === 2) {
-                        $live_status = '<i class="fa fa-circle" style="color:#FF0000; font-size: 11px;"></i> LIVE';
-                    }
 
                     $channel_thumbnail = '<div class="livestream-wrapper">
                     <div class="play-wrapper">
