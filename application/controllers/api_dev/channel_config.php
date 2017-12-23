@@ -38,6 +38,30 @@ class Channel_config extends REST_Controller {
     public function get_channels_get() {
         $pid = $this->get('pid');
         $ks = $this->get('ks');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing pid'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        $result = $this->channel_config_model->get_channels($pid, $ks);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code
+    }
+
+    public function get_channelsX_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
         $start = $this->get('start');
         $length = $this->get('length');
         $draw = $this->get('draw');
