@@ -138,7 +138,7 @@ class SMPortal {
             $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
             $client = new KalturaClient($config);
             $client->setKs($ks);
-            $liveChannel  = new KalturaLiveChannel();
+            $liveChannel = new KalturaLiveChannel();
             $liveChannel->name = $name;
             $liveChannel->description = $desc;
             $liveChannel->startDate = $time;
@@ -292,12 +292,11 @@ class SMPortal {
             $output["draw"] = intval($draw);
         }
 
-
         foreach ($results->objects as $r) {
             $channels[$r->partnerSortValue] = array('id' => $r->id, 'name' => $r->name, 'description' => $r->description, 'status' => $r->status, 'thumbnailUrl' => $r->thumbnailUrl, 'accessControlId' => $r->accessControlId, 'partnerSortValue' => $r->partnerSortValue, 'createdAt' => $r->createdAt);
             //array_push($channels, array('id' => $r->id, 'name' => $r->name, 'description' => $r->description, 'status' => $r->status, 'thumbnailUrl' => $r->thumbnailUrl, 'accessControlId' => $r->accessControlId, 'partnerSortValue' => $r->partnerSortValue, 'createdAt' => $r->createdAt));
         }
-        
+
         ksort($channels);
         $output["data"] = $channels;
 
