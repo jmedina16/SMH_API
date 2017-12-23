@@ -23,12 +23,15 @@ class Channel_config_model extends CI_Model {
                 $data = array();
                 $channels = array();
                 $channels['channels'] = array();
-                $channels['data'] = array();
+                $data['data'] = array();
                 $this->config = $this->load->database('kaltura', TRUE);
                 foreach ($live_channels['data'] as $channel) {
                     $live_channel_segment = $this->get_live_channel_segment($pid, $channel['id']);
+                    syslog(LOG_NOTICE, "SMH DEBUG : get_live_channel_segment: " . print_r($live_channel_segment, true));
                     if ($live_channel_segment['success']) {
-                        array_push($channels['data'], array('channel_id' => $channel['id'], 'text' => $live_channel_segment['name'], 'start_date' => $live_channel_segment['start_date'], 'end_date' => $live_channel_segment['end_date']));
+                        foreach ($live_channel_segment['live_channel_segment'] as $segment) {
+                            array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $segment['start_date'], 'end_date' => $segment['end_date']));
+                        }
                     }
                     array_push($channels['channels'], array('key' => $channel['id'], 'label' => '<div class="channel_wrapper" title="' . $channel['name'] . '"><div class="channel-play-wrapper"><a class="channel-link" onclick="smhCM.previewEmbed();"><i class="play-button"></i><div class="channel_thumb"><img src="https://mediaplatform.streamingmediahosting.com/p/' . $pid . '/sp/' . $pid . '00/thumbnail/entry_id/' . $channel['id'] . '/quality/100/type/1/width/100/height/60" width="100" height="60"></div><div class="channel-status"><i class="fa fa-circle" style="color:#FF0000; font-size: 11px;"></i> LIVE</div></a></div><div class="channel_title">' . $channel['name'] . '</div><div class="clear"></div><div class="channel_tools"><div class="channel_option1"><i class="fa fa-pencil-square-o"></i></div><div class="channel_option2" onclick="smhCM.deleteChannel(\'' . $channel['id'] . '\', \'' . $channel['name'] . '\');"><i class="fa fa-trash-o"></i></div></div></div>'));
                 }
@@ -40,9 +43,10 @@ class Channel_config_model extends CI_Model {
 //                }
 //                syslog(LOG_NOTICE, "SMH DEBUG : get_channels: " . print_r($channels, true));
                 $data['collections'] = $channels;
+                //syslog(LOG_NOTICE, "SMH DEBUG : get_channels: " . print_r($data, true));
                 header('Content-Type: application/json');
                 $success = json_encode($data, JSON_UNESCAPED_SLASHES);
-                syslog(LOG_NOTICE, "SMH DEBUG : get_channels: " . $success);
+//                syslog(LOG_NOTICE, "SMH DEBUG : get_channels: " . $success);
 //                $this->config = $this->load->database('kaltura', TRUE);
 //                foreach ($live_channels['data'] as &$channel) {
 //                    $live_channel_segment = $this->get_live_channel_segment($pid, $channel['id']);
@@ -208,9 +212,8 @@ class Channel_config_model extends CI_Model {
                 $custom_data = json_decode($res['custom_data'], true);
                 $start_date = $custom_data['segmentConfig'][0]['start_date'];
                 $end_date = $custom_data['segmentConfig'][0]['end_date'];
-                $segments[$sortValue] = array('id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'created_at' => $created_at);
+                array_push($segments, array('id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'created_at' => $created_at));
             }
-            ksort($segments);
             $success = array('success' => true, 'live_channel_segment' => $segments);
         }
 
