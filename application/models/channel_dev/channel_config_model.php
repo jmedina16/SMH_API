@@ -13,7 +13,39 @@ class Channel_config_model extends CI_Model {
         $this->load->library('SMCipher');
     }
 
-    public function get_channels($pid, $ks, $start, $length, $draw, $tz, $search) {
+    public function get_channels($pid, $ks) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $live_channels = $this->smportal->get_channels($pid, $ks, null, null, null, null);
+                $data = array();
+                $channels = array();
+                $channels['channels'] = array();
+                foreach ($live_channels['data'] as $channel) {
+                   array_push($channels['channels'], array('value' => $channel['id'], 'label' => $channel['name'])); 
+                }
+                $data['collections'] = $channels;
+                $success = json_encode($data);
+                
+//                $this->config = $this->load->database('kaltura', TRUE);
+//                foreach ($live_channels['data'] as &$channel) {
+//                    $live_channel_segment = $this->get_live_channel_segment($pid, $channel['id']);
+//                    $channel['segments'] = $live_channel_segment['live_channel_segment'];
+//                }
+
+
+            } else {
+                $success = array('success' => false, 'message' => 'Channel Manager service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+        return $success;
+    }
+
+    public function get_channelsX($pid, $ks, $start, $length, $draw, $tz, $search) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
