@@ -26,6 +26,8 @@ class Channel_config_model extends CI_Model {
                 foreach ($live_channels['data'] as $channel) {
                     array_push($channels['channels'], array('key' => $channel['id'], 'label' => '<div class="channel_wrapper" title="' . $channel['name'] . '"><div class="channel-play-wrapper"><a class="channel-link" onclick="smhCM.previewEmbed();"><i class="play-button"></i><div class="channel_thumb"><img src="https://mediaplatform.streamingmediahosting.com/p/' . $pid . '/sp/' . $pid . '00/thumbnail/entry_id/' . $channel['id'] . '/quality/100/type/1/width/100/height/60" width="100" height="60"></div><div class="channel-status"><i class="fa fa-circle" style="color:#FF0000; font-size: 11px;"></i> LIVE</div></a></div><div class="channel_title">' . $channel['name'] . '</div><div class="clear"></div><div class="channel_tools"><div class="channel_option1"><i class="fa fa-pencil-square-o"></i></div><div class="channel_option2" onclick="smhCM.deleteChannel(\'' . $channel['id'] . '\', \'' . $channel['name'] . '\');"><i class="fa fa-trash-o"></i></div></div></div>'));
                 }
+
+//                syslog(LOG_NOTICE, "SMH DEBUG : get_channels: " . print_r($channels, true));
                 $data['collections'] = $channels;
                 header('Content-Type: application/json');
                 $success = json_encode($data, JSON_UNESCAPED_SLASHES);
