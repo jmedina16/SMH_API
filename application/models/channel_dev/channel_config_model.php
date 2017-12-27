@@ -28,18 +28,16 @@ class Channel_config_model extends CI_Model {
                 foreach ($live_channels['data'] as $channel) {
                     $live_status = 'Off Air';
                     $live_channel_segment = $this->get_live_channel_segment($pid, $channel['id']);
-                    syslog(LOG_NOTICE, "SMH DEBUG : get_live_channel_segment: " . print_r($live_channel_segment, true));
                     if ($live_channel_segment['success']) {
                         foreach ($live_channel_segment['live_channel_segment'] as $segment) {
                             array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $segment['start_date'], 'end_date' => $segment['end_date']));
                         }
                     }
                     $preview_arr = $channel['id'] . '\',\'' . htmlspecialchars(addslashes($channel['name']), ENT_QUOTES);
-                    syslog(LOG_NOTICE, "SMH DEBUG : get_channels: " . $channel['status']);
                     if ($channel['status'] === 2) {
                         $live_status = '<i class="fa fa-circle" style="color:#FF0000; font-size: 11px;"></i> LIVE';
                     }
-                    array_push($channels['channels'], array('key' => $channel['id'], 'label' => '<div class="channel_wrapper" title="' . $channel['name'] . '"><div class="channel-play-wrapper"><a class="channel-link" onclick="smhCM.previewEmbed(\'' . $preview_arr . '\');"><i class="play-button"></i><div class="channel_thumb"><img src="https://mediaplatform.streamingmediahosting.com/p/' . $pid . '/sp/' . $pid . '00/thumbnail/entry_id/' . $channel['id'] . '/quality/100/type/1/width/100/height/60" width="100" height="60"></div><div class="channel-status"><i class="fa fa-circle" style="color:#FF0000; font-size: 11px;"></i> LIVE</div></a></div><div class="channel_title">' . $channel['name'] . '</div><div class="clear"></div><div class="channel_tools"><div class="channel_option1"><i class="fa fa-pencil-square-o"></i></div><div class="channel_option2" onclick="smhCM.deleteChannel(\'' . $channel['id'] . '\', \'' . $channel['name'] . '\');"><i class="fa fa-trash-o"></i></div></div></div>'));
+                    array_push($channels['channels'], array('key' => $channel['id'], 'label' => '<div class="channel_wrapper" title="' . $channel['name'] . '"><div class="channel-play-wrapper"><a class="channel-link" onclick="smhCM.previewEmbed(\'' . $preview_arr . '\');"><i class="play-button"></i><div class="channel_thumb"><img src="https://mediaplatform.streamingmediahosting.com/p/' . $pid . '/sp/' . $pid . '00/thumbnail/entry_id/' . $channel['id'] . '/quality/100/type/1/width/100/height/60" width="100" height="60"></div><div class="channel-status">' . $live_status . '</div></a></div><div class="channel_title">' . $channel['name'] . '</div><div class="clear"></div><div class="channel_tools"><div class="channel_option1"><i class="fa fa-pencil-square-o"></i></div><div class="channel_option2" onclick="smhCM.deleteChannel(\'' . $channel['id'] . '\', \'' . $channel['name'] . '\');"><i class="fa fa-trash-o"></i></div></div></div>'));
                 }
 
 
