@@ -26,7 +26,7 @@ class Channel_config_model extends CI_Model {
                 $data['data'] = array();
                 array_push($channels['channels'], array('key' => 0, 'label' => '<div class="channel_wrapper" title="No Channel Found"><div style="color: #fff; font-size: 17px;">No Channels Found</div></div>'));
                 $this->config = $this->load->database('kaltura', TRUE);
-                if (count($live_channels['data']) === 0) {
+                if (count($live_channels['data']) > 0) {
                     $channels['channels'] = array();
                     $data['data'] = array();
                     foreach ($live_channels['data'] as $channel) {
