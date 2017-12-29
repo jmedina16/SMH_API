@@ -34,7 +34,7 @@ class Channel_config_model extends CI_Model {
                         $live_channel_segment = $this->get_live_channel_segment($pid, $channel['id']);
                         if ($live_channel_segment['success']) {
                             foreach ($live_channel_segment['live_channel_segment'] as $segment) {
-                                array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $segment['start_date'], 'end_date' => $segment['end_date']));
+                                array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $segment['start_date'], 'end_date' => $segment['end_date'], 'rec_type' => 'day_1___', 'event_pid' => 0, 'event_length' => 600));
                             }
                         }
                         $preview_arr = $channel['id'] . '\',\'' . htmlspecialchars(addslashes($channel['name']), ENT_QUOTES);
