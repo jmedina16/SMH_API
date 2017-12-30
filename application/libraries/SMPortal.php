@@ -293,7 +293,7 @@ class SMPortal {
         }
 
         foreach ($results->objects as $r) {
-            $channels[$r->partnerSortValue] = array('id' => $r->id, 'name' => $r->name, 'description' => $r->description, 'tags' => $r->tags, 'referenceId' => $r->referenceId, 'categories' => $r->categories, 'status' => $r->status, 'thumbnailUrl' => $r->thumbnailUrl, 'accessControlId' => $r->accessControlId, 'partnerSortValue' => $r->partnerSortValue, 'createdAt' => $r->createdAt);
+            $channels[$r->partnerSortValue] = array('id' => $r->id, 'name' => $r->name, 'description' => $r->description, 'tags' => $r->tags, 'referenceId' => $r->referenceId, 'categories' => $r->categories, 'status' => $r->status, 'pushPublishEnabled' => $r->pushPublishEnabled, 'thumbnailUrl' => $r->thumbnailUrl, 'accessControlId' => $r->accessControlId, 'partnerSortValue' => $r->partnerSortValue, 'createdAt' => $r->createdAt);
             //array_push($channels, array('id' => $r->id, 'name' => $r->name, 'description' => $r->description, 'status' => $r->status, 'thumbnailUrl' => $r->thumbnailUrl, 'accessControlId' => $r->accessControlId, 'partnerSortValue' => $r->partnerSortValue, 'createdAt' => $r->createdAt));
         }
 
