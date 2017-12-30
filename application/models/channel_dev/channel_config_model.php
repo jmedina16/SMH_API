@@ -13,13 +13,13 @@ class Channel_config_model extends CI_Model {
         $this->load->library('SMCipher');
     }
 
-    public function get_channels($pid, $ks) {
+    public function get_channels($pid, $ks, $category, $ac) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $live_channels = $this->smportal->get_channels($pid, $ks, null, null, null, null);
+                $live_channels = $this->smportal->get_channels($pid, $ks, null, null, null, null, $category, $ac);
                 $data = array();
                 $channels = array();
                 $channels['channels'] = array();
