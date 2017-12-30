@@ -258,7 +258,7 @@ class SMPortal {
         return $channel_ids;
     }
 
-    public function get_channels($pid, $ks, $start, $length, $draw, $search) {
+    public function get_channels($pid, $ks, $start, $length, $draw, $search, $category, $ac) {
         $channels = array();
         $config = new KalturaConfiguration($pid);
         $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
@@ -277,6 +277,15 @@ class SMPortal {
 
         if (isset($search) && $search != "") {
             $filter->freeText = $search;
+        }
+
+        //access control profiles
+        if (isset($ac) && $ac != "") {
+            $filter->accessControlIdIn = $ac;
+        }
+
+        if (isset($category) && $category != "" && $category != undefined) {
+            $filter->categoriesIdsMatchOr = $category;
         }
 
         $results = $client->liveChannel->listAction($filter, $pager);
