@@ -95,7 +95,6 @@ class Channel_config_model extends CI_Model {
                 }
 
                 foreach ($live_channel_segments['live_channel_segment'] as $channel_segment) {
-                    $newDatetime = date('m/d/Y h:i A', $channel_segment['createdAt']);
                     $delete_action = '';
                     $edit_action = '';
                     $preview_action = '';
@@ -136,8 +135,8 @@ class Channel_config_model extends CI_Model {
                     $row[] = '<input type="checkbox" class="channel-bulk" name="channel_bulk" value="' . $channel_segment['id'] . '" />';
                     $row[] = $channel_thumbnail;
                     $row[] = "<div class='data-break'>" . addslashes($channel_segment['name']) . "</div>";
-                    $row[] = "<div class='data-break'>" . $channel_segment['entryId'] . "</div>";
-                    $row[] = "<div class='data-break'>" . $newDatetime . "</div>";
+                    $row[] = "<div class='data-break'>" . $channel_segment['start_date'] . "</div>";
+                    $row[] = "<div class='data-break'>" . $channel_segment['end_date'] . "</div>";
                     $row[] = $actions;
                     $output['data'][] = $row;
                 }
