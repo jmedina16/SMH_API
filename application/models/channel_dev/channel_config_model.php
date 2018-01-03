@@ -74,42 +74,31 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function get_channelsX($pid, $ks, $start, $length, $draw, $tz, $search) {
+    public function get_channel_entries($pid, $ks, $start, $length, $draw, $tz, $cid, $search) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $live_channels = $this->smportal->get_channels($pid, $ks, $start, $length, $draw, $search);
                 $this->config = $this->load->database('kaltura', TRUE);
-                foreach ($live_channels['data'] as &$channel) {
-                    $live_channel_segment = $this->get_live_channel_segment($pid, $channel['id']);
-                    $channel['segments'] = $live_channel_segment['live_channel_segment'];
-                }
+                $live_channel_segments = $this->get_live_channel_segment($pid, $cid);
 
                 $output = array(
-                    "orderBy" => $live_channels['orderBy'],
-                    "recordsTotal" => intval($live_channels['recordsTotal']),
-                    "recordsFiltered" => intval($live_channels['recordsFiltered']),
+                    "orderBy" => '-createdAt',
+                    "recordsTotal" => intval(count($live_channel_segments['live_channel_segment'])),
+                    "recordsFiltered" => intval(count($live_channel_segments['live_channel_segment'])),
                     "data" => array(),
                 );
 
-                if (isset($live_channels['draw'])) {
-                    $output["draw"] = intval($live_channels['draw']);
+                if (isset($draw)) {
+                    $output["draw"] = intval($draw);
                 }
 
-                foreach ($live_channels['data'] as $channel_segment) {
+                foreach ($live_channel_segments['live_channel_segment'] as $channel_segment) {
                     $newDatetime = date('m/d/Y h:i A', $channel_segment['createdAt']);
-                    $live_status = 'Off Air';
                     $delete_action = '';
                     $edit_action = '';
                     $preview_action = '';
-                    $status = 'Go Live';
-
-                    if ($channel_segment['status'] === 2) {
-                        $live_status = '<i class="fa fa-circle" style="color:#FF0000; font-size: 11px;"></i> LIVE';
-                        $status = 'Go Off Air';
-                    }
 
                     $edit_arr = $channel_segment['id'] . '\',\'' . addslashes($channel_segment['name']) . '\',\'' . addslashes($channel_segment['description']) . '\'';
                     $edit_action = '<li role="presentation"><a role="menuitem" tabindex="-1" onclick="smhCM.editChannel(\'' . $edit_arr . ');">Channel</a></li>';
@@ -120,37 +109,8 @@ class Channel_config_model extends CI_Model {
                     $preview_arr = $channel_segment['id'] . '\',\'' . addslashes($channel_segment['name']);
                     $preview_action = '<li role="presentation"><a role="menuitem" tabindex="-1" onclick="smhCM.previewChannel(\'' . $preview_arr . '\');">Preview & Embed</a></li>';
 
-                    $status_arr = $channel_segment['id'] . '\',\'' . addslashes($channel_segment['name']);
-                    $status_action = '<li role="presentation"><a role="menuitem" tabindex="-1" onclick="smhCM.updateStatus(\'' . $status_arr . '\');">' . $status . '</a></li>';
-
                     $video_count = 0;
                     $thumbnails = '';
-
-                    $segment_ids = array();
-                    foreach ($channel_segment['segments'] as $entry) {
-                        array_push($segment_ids, $entry['entryId']);
-                        $video_count++;
-                    }
-
-                    if (!$video_count) {
-                        $thumbnails .= '<div style="background-color: #ccc; width: 100%; height: 100%;"></div>';
-                    } else {
-                        $segment_ids_final = array_slice($segment_ids, 0, 5);
-                        $segment_ids_final_count = count($segment_ids_final);
-                        foreach ($segment_ids_final as $id) {
-                            if ($segment_ids_final_count == 1) {
-                                $thumbnails .= '<img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $id . '/quality/100/type/3/width/300/height/90" width="100%" height="90" onmouseover="smhCM.thumbRotatorStart(this)" onmouseout="smhCM.thumbRotatorEnd(this)">';
-                            } else if ($segment_ids_final_count == 2) {
-                                $thumbnails .= '<img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $id . '/quality/100/type/3/width/300/height/90" width="50%" height="90" onmouseover="smhCM.thumbRotatorStart(this)" onmouseout="smhCM.thumbRotatorEnd(this)">';
-                            } else if ($segment_ids_final_count == 3) {
-                                $thumbnails .= '<img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $id . '/quality/100/type/3/width/300/height/90" width="33.33%" height="90" onmouseover="smhCM.thumbRotatorStart(this)" onmouseout="smhCM.thumbRotatorEnd(this)">';
-                            } else if ($segment_ids_final_count == 4) {
-                                $thumbnails .= '<img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $id . '/quality/100/type/1/width/300/height/90" width="25%" height="90" onmouseover="smhCM.thumbRotatorStart(this)" onmouseout="smhCM.thumbRotatorEnd(this)">';
-                            } else if ($segment_ids_final_count == 5) {
-                                $thumbnails .= '<img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $id . '/quality/100/type/1/width/300/height/90" width="20%" height="90" onmouseover="smhCM.thumbRotatorStart(this)" onmouseout="smhCM.thumbRotatorEnd(this)">';
-                            }
-                        }
-                    }
 
                     $actions = '<span class="dropdown header">
                     <div class="btn-group">
@@ -159,23 +119,16 @@ class Channel_config_model extends CI_Model {
                         <ul class="dropdown-menu" id="menu" role="menu" aria-labelledby="dropdownMenu"> 
                             ' . $edit_action . '  
                             ' . $preview_action . '
-                            ' . $status_action . '
                             ' . $delete_action . '
                         </ul>
                     </div>
                     </span>';
 
-                    $channel_list = '<div class="playlist-wrapper">
-                                        <div class="thumbnail-holder">' . $thumbnails . '</div>
-                                        <div class="videos-num">' . $video_count . ' Videos</div>
-                                    </div>';
-
                     $channel_thumbnail = '<div class="livestream-wrapper">
                     <div class="play-wrapper">
                         <a onclick="smhCM.previewEmbed(\'' . $preview_arr . '\');">
-                            <i style="top: 18px;" class="play-button"></i></div>
-                            <div class="thumbnail-holder"><img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $channel_segment['id'] . '/quality/100/type/1/width/300/height/90" width="150" height="110"></div>
-                            <div class="status">' . $live_status . '</div>
+                            <i style="top: -6px; left:29%;" class="play-button"></i></div>
+                            <div class="thumbnail-holder"><img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $channel_segment['entryId'] . '/quality/100/type/1/width/100/height/60" width="100" height="60"></div>
                         </a>
                     </div>';
 
@@ -183,8 +136,7 @@ class Channel_config_model extends CI_Model {
                     $row[] = '<input type="checkbox" class="channel-bulk" name="channel_bulk" value="' . $channel_segment['id'] . '" />';
                     $row[] = $channel_thumbnail;
                     $row[] = "<div class='data-break'>" . addslashes($channel_segment['name']) . "</div>";
-                    $row[] = "<div class='data-break'>" . $channel_segment['id'] . "</div>";
-                    $row[] = $channel_list;
+                    $row[] = "<div class='data-break'>" . $channel_segment['entryId'] . "</div>";
                     $row[] = "<div class='data-break'>" . $newDatetime . "</div>";
                     $row[] = $actions;
                     $output['data'][] = $row;
