@@ -134,7 +134,7 @@ class Channel_config_model extends CI_Model {
                     $row = array();
                     $row[] = '<input type="checkbox" class="channel-bulk" name="channel_bulk" value="' . $channel_segment['id'] . '" />';
                     $row[] = $channel_thumbnail;
-                    $row[] = "<div class='data-break'>" . addslashes($channel_segment['name']) . "</div>";
+                    $row[] = addslashes($channel_segment['name']);
                     $row[] = "<div class='data-break'>" . $channel_segment['start_date'] . "</div>";
                     $row[] = "<div class='data-break'>" . $channel_segment['end_date'] . "</div>";
                     $row[] = $actions;
