@@ -62,13 +62,14 @@ class Channel_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code
     }
 
-    public function get_channelsX_get() {
+    public function get_channel_entries_get() {
         $pid = $this->get('pid');
         $ks = $this->get('ks');
         $start = $this->get('start');
         $length = $this->get('length');
         $draw = $this->get('draw');
         $tz = $this->get('tz');
+        $cid = $this->get('cid');
         $search = $this->get('search');
 
         if (!isset($pid) || $pid == null) {
@@ -101,7 +102,12 @@ class Channel_config extends REST_Controller {
             $this->response(array('error' => 'Missing tz'), 200);
         }
 
-        $result = $this->channel_config_model->get_channelsX($pid, $ks, $start, $length, $draw, $tz, $search);
+        if (!isset($cid) || $cid == null) {
+
+            $this->response(array('error' => 'Missing cid'), 200);
+        }
+
+        $result = $this->channel_config_model->get_channel_entries($pid, $ks, $start, $length, $draw, $tz, $cid, $search);
 
         if (!$result) {
 
