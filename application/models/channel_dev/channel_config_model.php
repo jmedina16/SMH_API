@@ -127,7 +127,7 @@ class Channel_config_model extends CI_Model {
                     $channel_thumbnail = '<div class="livestream-wrapper">
                     <div class="play-wrapper">
                         <a onclick="smhCM.previewEmbed(\'' . $preview_arr . '\');">
-                            <i style="top: -6px; left:29%;" class="play-button"></i></div>
+                            <i style="top: -6px; left:43%;" class="play-button"></i></div>
                             <div class="thumbnail-holder"><img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $channel_segment['entryId'] . '/quality/100/type/1/width/100/height/60" width="100" height="60"></div>
                         </a>
                     </div>';
