@@ -101,7 +101,7 @@ class Channel_config extends REST_Controller {
             $this->response(array('error' => 'Missing tz'), 200);
         }
 
-        $result = $this->channel_config_model->get_channels($pid, $ks, $start, $length, $draw, $tz, $search);
+        $result = $this->channel_config_model->get_channelsX($pid, $ks, $start, $length, $draw, $tz, $search);
 
         if (!$result) {
 
