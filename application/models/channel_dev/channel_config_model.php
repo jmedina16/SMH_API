@@ -97,19 +97,12 @@ class Channel_config_model extends CI_Model {
                 foreach ($live_channel_segments['live_channel_segment'] as $channel_segment) {
                     $delete_action = '';
                     $edit_action = '';
-                    $preview_action = '';
 
                     $edit_arr = $channel_segment['id'] . '\',\'' . addslashes($channel_segment['name']) . '\',\'' . addslashes($channel_segment['description']) . '\'';
-                    $edit_action = '<li role="presentation"><a role="menuitem" tabindex="-1" onclick="smhCM.editChannel(\'' . $edit_arr . ');">Channel</a></li>';
+                    $edit_action = '<li role="presentation"><a role="menuitem" tabindex="-1" onclick="smhCM.editProgram(\'' . $edit_arr . ');">Program</a></li>';
 
-                    $delete_arr = $channel_segment['id'] . '\',\'' . addslashes($channel_segment['name']);
-                    $delete_action = '<li role="presentation" style="border-top: solid 1px #f0f0f0;"><a role="menuitem" tabindex="-1" onclick="smhCM.deleteChannel(\'' . $delete_arr . '\');">Delete</a></li>';
-
-                    $preview_arr = $channel_segment['id'] . '\',\'' . addslashes($channel_segment['name']);
-                    $preview_action = '<li role="presentation"><a role="menuitem" tabindex="-1" onclick="smhCM.previewChannel(\'' . $preview_arr . '\');">Preview & Embed</a></li>';
-
-                    $video_count = 0;
-                    $thumbnails = '';
+                    $delete_arr = $channel_segment['id'] . '\',\'' . addslashes($channel_segment['name']) . '\',\'' . $cid;
+                    $delete_action = '<li role="presentation" style="border-top: solid 1px #f0f0f0;"><a role="menuitem" tabindex="-1" onclick="smhCM.deleteProgram(\'' . $delete_arr . '\');">Delete</a></li>';
 
                     $actions = '<span class="dropdown header">
                     <div class="btn-group">
@@ -117,18 +110,13 @@ class Channel_config_model extends CI_Model {
                         <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu" data-toggle="dropdown" aria-expanded="true"><span class="caret"></span></button>
                         <ul class="dropdown-menu" id="menu" role="menu" aria-labelledby="dropdownMenu"> 
                             ' . $edit_action . '  
-                            ' . $preview_action . '
                             ' . $delete_action . '
                         </ul>
                     </div>
                     </span>';
 
                     $channel_thumbnail = '<div class="livestream-wrapper">
-                    <div class="play-wrapper">
-                        <a onclick="smhCM.previewEmbed(\'' . $preview_arr . '\');">
-                            <i style="top: -6px; left:43%;" class="play-button"></i></div>
-                            <div class="thumbnail-holder"><img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $channel_segment['entryId'] . '/quality/100/type/1/width/100/height/60" width="100" height="60"></div>
-                        </a>
+                        <img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $channel_segment['entryId'] . '/quality/100/type/1/width/100/height/60" width="100" height="60">
                     </div>';
 
                     $row = array();
