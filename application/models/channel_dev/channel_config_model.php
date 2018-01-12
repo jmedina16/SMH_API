@@ -34,7 +34,16 @@ class Channel_config_model extends CI_Model {
                         $live_channel_segment = $this->get_live_channel_segment($pid, $channel['id']);
                         if ($live_channel_segment['success']) {
                             foreach ($live_channel_segment['live_channel_segment'] as $segment) {
-                                array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $segment['start_date'], 'end_date' => $segment['end_date'], 'rec_type' => 'day_1___', 'event_pid' => 0, 'event_length' => 600));
+                                $tz_from = 'UTC';
+                                $tz_to = 'America/Los_Angeles';
+                                $start_dt = new DateTime($segment['start_date'], new DateTimeZone($tz_from));
+                                $start_dt->setTimeZone(new DateTimeZone($tz_to));
+                                $start_date = $start_dt->format('Y-m-d H:i:s');
+                                $end_dt = new DateTime($segment['end_date'], new DateTimeZone($tz_from));
+                                $end_dt->setTimeZone(new DateTimeZone($tz_to));
+                                $end_date = $end_dt->format('Y-m-d H:i:s');
+                                //array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => 'day_1___', 'event_pid' => 0, 'event_length' => 600));
+                                array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date));
                             }
                         }
                         $thumbnail_url = str_replace("http://mediaplatform.streamingmediahosting.com", "", $channel['thumbnailUrl']);
@@ -119,12 +128,21 @@ class Channel_config_model extends CI_Model {
                         <img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $channel_segment['entryId'] . '/quality/100/type/1/width/100/height/60" width="100" height="60">
                     </div>';
 
+                    $tz_from = 'UTC';
+                    $tz_to = 'America/Los_Angeles';
+                    $start_dt = new DateTime($channel_segment['start_date'], new DateTimeZone($tz_from));
+                    $start_dt->setTimeZone(new DateTimeZone($tz_to));
+                    $start_date = $start_dt->format('Y-m-d h:i:s A');
+                    $end_dt = new DateTime($channel_segment['end_date'], new DateTimeZone($tz_from));
+                    $end_dt->setTimeZone(new DateTimeZone($tz_to));
+                    $end_date = $end_dt->format('Y-m-d h:i:s A');
+
                     $row = array();
                     $row[] = '<input type="checkbox" class="channel-bulk" name="channel_bulk" value="' . $channel_segment['id'] . '" />';
                     $row[] = $channel_thumbnail;
                     $row[] = addslashes($channel_segment['name']);
-                    $row[] = "<div class='data-break'>" . $channel_segment['start_date'] . "</div>";
-                    $row[] = "<div class='data-break'>" . $channel_segment['end_date'] . "</div>";
+                    $row[] = "<div class='data-break'>" . $start_date . "</div>";
+                    $row[] = "<div class='data-break'>" . $end_date . "</div>";
                     $row[] = $actions;
                     $output['data'][] = $row;
                 }
