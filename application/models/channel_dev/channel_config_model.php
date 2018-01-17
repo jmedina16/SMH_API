@@ -335,7 +335,7 @@ class Channel_config_model extends CI_Model {
 
         $segmentConfig = array();
         $config = array();
-        array_push($config, array('start_date' => $start_date, 'end_date' => $end_date, 'repeat' => $repeat, 'rec_type' => $rec_type, 'event_length' => $event_length));
+        array_push($config, array('start_date' => $start_date, 'end_date' => $end_date, 'repeat' => (bool) $repeat, 'rec_type' => $rec_type, 'event_length' => (int) $event_length));
         $segmentConfig['segmentConfig'] = $config;
         $data = array(
             'custom_data' => json_encode($segmentConfig)
