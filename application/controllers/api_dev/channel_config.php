@@ -155,6 +155,8 @@ class Channel_config extends REST_Controller {
         $start_date = $this->get('start_date');
         $end_date = $this->get('end_date');
         $repeat = $this->get('repeat');
+        $rec_type = $this->get('rec_type');
+        $event_length = $this->get('event_length');
 
         if (!isset($pid) || $pid == null) {
 
@@ -191,7 +193,12 @@ class Channel_config extends REST_Controller {
             $this->response(array('error' => 'Missing repeat'), 200);
         }
 
-        $result = $this->channel_config_model->add_program($pid, $ks, $cid, $eid, $start_date, $end_date, $repeat);
+        if (!isset($event_length) || $event_length == null) {
+
+            $this->response(array('error' => 'Missing event_length'), 200);
+        }
+
+        $result = $this->channel_config_model->add_program($pid, $ks, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
 
         if (!$result) {
 
