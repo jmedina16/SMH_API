@@ -295,7 +295,7 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function add_program($pid, $ks, $cid, $eid, $start_date, $end_date, $repeat) {
+    public function add_program($pid, $ks, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
@@ -303,7 +303,7 @@ class Channel_config_model extends CI_Model {
             if ($has_service) {
                 $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $cid, $eid);
                 if ($add_live_segment['success']) {
-                    $add_custom_data = $this->update_live_segment_custom_data($pid, $add_live_segment['id'], $start_date, $end_date, $repeat);
+                    $add_custom_data = $this->update_live_segment_custom_data($pid, $add_live_segment['id'], $start_date, $end_date, $repeat, $rec_type, $event_length);
                     if ($add_custom_data['success']) {
                         $success = array('success' => true);
                     } else {
@@ -321,7 +321,7 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function update_live_segment_custom_data($pid, $sid, $start_date, $end_date, $repeat) {
+    public function update_live_segment_custom_data($pid, $sid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
         $success = array('success' => false);
 
         $tz_from = 'America/Los_Angeles';
@@ -335,7 +335,7 @@ class Channel_config_model extends CI_Model {
 
         $segmentConfig = array();
         $config = array();
-        array_push($config, array('start_date' => $start_date, 'end_date' => $end_date, 'repeat' => $repeat));
+        array_push($config, array('start_date' => $start_date, 'end_date' => $end_date, 'repeat' => $repeat, 'rec_type' => $rec_type, 'event_length' => $event_length));
         $segmentConfig['segmentConfig'] = $config;
         $data = array(
             'custom_data' => json_encode($segmentConfig)
