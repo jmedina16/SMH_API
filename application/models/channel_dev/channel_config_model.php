@@ -42,7 +42,7 @@ class Channel_config_model extends CI_Model {
                                 $end_dt = new DateTime($segment['end_date'], new DateTimeZone($tz_from));
                                 $end_dt->setTimeZone(new DateTimeZone($tz_to));
                                 $end_date = $end_dt->format('Y-m-d H:i:s');
-                                array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => '2018-01-20 23:00', 'end_date' => '2018-01-31 23:00', 'rec_type' => 'week_1___2,6#6', 'event_pid' => 0, 'event_length' => 300));
+                                array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => '2018-02-12 23:35:00', 'end_date' => '2018-04-09 23:35:00', 'rec_type' => 'month_1_1_2_#2', 'event_pid' => 0, 'event_length' => 300));
                                 //array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => 'day_1___', 'event_pid' => 0, 'event_length' => 600));
                                 //array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date));
                             }
