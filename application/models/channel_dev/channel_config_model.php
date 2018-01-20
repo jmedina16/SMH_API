@@ -42,8 +42,9 @@ class Channel_config_model extends CI_Model {
                                 $end_dt = new DateTime($segment['end_date'], new DateTimeZone($tz_from));
                                 $end_dt->setTimeZone(new DateTimeZone($tz_to));
                                 $end_date = $end_dt->format('Y-m-d H:i:s');
+                                array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => '2018-01-20 23:00', 'end_date' => '2018-01-31 23:00', 'rec_type' => 'week_1___2,6#6', 'event_pid' => 0, 'event_length' => 300));
                                 //array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => 'day_1___', 'event_pid' => 0, 'event_length' => 600));
-                                array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date));
+                                //array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date));
                             }
                         }
                         $thumbnail_url = str_replace("http://mediaplatform.streamingmediahosting.com", "", $channel['thumbnailUrl']);
