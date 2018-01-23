@@ -304,9 +304,14 @@ class Channel_config_model extends CI_Model {
             if ($has_service) {
                 $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $cid, $eid);
                 if ($add_live_segment['success']) {
-                    $add_custom_data = $this->update_live_segment_custom_data($pid, $add_live_segment['id'], $start_date, $end_date, $repeat, $rec_type, $event_length);
+                    $add_custom_data = $this->add_live_segment_custom_data($pid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
                     if ($add_custom_data['success']) {
-                        $success = array('success' => true);
+                        $add_live_segment_id = $this->add_live_segment_id($pid, $add_live_segment['id'], $add_custom_data['id']);
+                        if ($add_live_segment_id['success']) {
+                            $success = array('success' => true);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not add custom data id');
+                        }
                     } else {
                         $success = array('success' => false, 'message' => 'Could not add custom data');
                     }
@@ -322,21 +327,11 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function update_live_segment_custom_data($pid, $sid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
+    public function add_live_segment_id($pid, $sid, $pcid) {
         $success = array('success' => false);
-
-        $tz_from = 'America/Los_Angeles';
-        $tz_to = 'UTC';
-        $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
-        $start_dt->setTimeZone(new DateTimeZone($tz_to));
-        $start_date = $start_dt->format('Y-m-d H:i:s');
-        $end_dt = new DateTime($end_date, new DateTimeZone($tz_from));
-        $end_dt->setTimeZone(new DateTimeZone($tz_to));
-        $end_date = $end_dt->format('Y-m-d H:i:s');
-
         $segmentConfig = array();
         $config = array();
-        array_push($config, array('start_date' => $start_date, 'end_date' => $end_date, 'repeat' => (bool) $repeat, 'rec_type' => $rec_type, 'event_length' => (int) $event_length));
+        array_push($config, array('pcid' => $pcid));
         $segmentConfig['segmentConfig'] = $config;
         $data = array(
             'custom_data' => json_encode($segmentConfig)
@@ -348,6 +343,40 @@ class Channel_config_model extends CI_Model {
         $this->config->limit(1);
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function add_live_segment_custom_data($pid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
+        $success = array('success' => false);
+
+        $tz_from = 'America/Los_Angeles';
+        $tz_to = 'UTC';
+        $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
+        $start_dt->setTimeZone(new DateTimeZone($tz_to));
+        $start_date = $start_dt->format('Y-m-d H:i:s');
+        $end_dt = new DateTime($end_date, new DateTimeZone($tz_from));
+        $end_dt->setTimeZone(new DateTimeZone($tz_to));
+        $end_date = $end_dt->format('Y-m-d H:i:s');
+
+        $data = array(
+            'partner_id' => $pid,
+            'channel_id' => $cid,
+            'entry_id' => $eid,
+            'start_date' => $start_date,
+            'end_date' => $end_date,
+            'repeat' => (bool) $repeat,
+            'rec_type' => $rec_type,
+            'event_pid' => 0,
+            'event_length' => (int) $event_length
+        );
+        $this->config = $this->load->database('ch', TRUE);
+        $this->config->insert('program_config', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true, 'id' => $this->config->insert_id());
         } else {
             $success = array('success' => false);
         }
