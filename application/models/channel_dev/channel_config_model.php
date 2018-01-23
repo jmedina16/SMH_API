@@ -42,9 +42,9 @@ class Channel_config_model extends CI_Model {
                                 $end_dt = new DateTime($segment['end_date'], new DateTimeZone($tz_from));
                                 $end_dt->setTimeZone(new DateTimeZone($tz_to));
                                 $end_date = $end_dt->format('Y-m-d H:i:s');
-                                array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => '2018-02-19 23:35:00', 'end_date' => '2018-05-22 23:35:00', 'rec_type' => 'month_2_1_3_#2', 'event_pid' => 0, 'event_length' => 300));
+                                //array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => '2018-02-19 23:35:00', 'end_date' => '2018-05-22 23:35:00', 'rec_type' => 'month_2_1_3_#2', 'event_pid' => 0, 'event_length' => 300));
                                 //array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => 'day_1___', 'event_pid' => 0, 'event_length' => 600));
-                                //array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date));
+                                array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $segment['rec_type'], 'event_pid' => $segment['event_pid'], 'event_length' => $segment['event_length']));
                             }
                         }
                         $thumbnail_url = str_replace("http://mediaplatform.streamingmediahosting.com", "", $channel['thumbnailUrl']);
@@ -158,13 +158,14 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function get_live_channel_segment($pid, $segment) {
+    public function get_live_channel_segment($pid, $cid) {
         $success = array('success' => false);
+        $this->config = $this->load->database('ch', TRUE);
         $this->config->select('*')
-                ->from('live_channel_segment')
+                ->from('program_config')
                 ->where('partner_id', $pid)
                 ->where('status', 2)
-                ->where_in('channel_id', $segment);
+                ->where('channel_id', $cid);
 
         $query = $this->config->get();
         $result = $query->result_array();
@@ -180,10 +181,12 @@ class Channel_config_model extends CI_Model {
                 $status = $res['status'];
                 $created_at = $res['created_at'];
                 $thumbnail = $entry_details['thumbnailUrl'];
-                $custom_data = json_decode($res['custom_data'], true);
-                $start_date = $custom_data['segmentConfig'][0]['start_date'];
-                $end_date = $custom_data['segmentConfig'][0]['end_date'];
-                array_push($segments, array('id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'created_at' => $created_at));
+                $start_date = $res['start_date'];
+                $end_date = $res['end_date'];
+                $rec_type = $res['rec_type'];
+                $event_pid = $res['event_pid'];
+                $event_length = $res['event_length'];
+                array_push($segments, array('id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $rec_type, 'event_pid' => $event_pid, 'event_length' => $event_length, 'created_at' => $created_at));
             }
             $success = array('success' => true, 'live_channel_segment' => $segments);
         }
@@ -296,6 +299,37 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
+    public function delete_program($pid, $ks, $sid) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $delete_live_segment = $this->smportal->delete_live_segment($pid, $ks, $sid);
+                if ($delete_live_segment['success']) {
+                    $get_program_config_id = $this->get_program_config_id($pid, $sid);
+                    if ($get_program_config_id['success']) {
+                        $update_program_config_status = $this->update_program_config_status($pid, $get_program_config_id['id'], 3);
+                        if ($update_program_config_status['success']) {
+                            $success = array('success' => true);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not add custom data id');
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not add custom data');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not delete live segment');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Channel Manager service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+        return $success;
+    }
+
     public function add_program($pid, $ks, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
@@ -349,6 +383,47 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
+    public function update_program_config_status($pid, $pcid, $status) {
+        $success = array('success' => false);
+        $data = array(
+            'status' => $status
+        );
+        $this->config = $this->load->database('ch', TRUE);
+        $this->config->where('partner_id', $pid);
+        $this->config->where('id', $pcid);
+        $this->config->update('program_config', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function get_program_config_id($pid, $sid) {
+        $success = array('success' => false);
+        $this->config = $this->load->database('kaltura', TRUE);
+        $this->config->select('*')
+                ->from('live_channel_segment')
+                ->where('partner_id', $pid)
+                ->where('id', $sid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+
+        if ($query->num_rows() > 0) {
+            $segments = array();
+            foreach ($result as $res) {
+                $custom_data = json_decode($res['custom_data'], true);
+                $pcid = $custom_data['segmentConfig'][0]['pcid'];
+            }
+            $success = array('success' => true, 'pcid' => $pcid);
+        }
+
+        return $success;
+    }
+
     public function add_live_segment_custom_data($pid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
         $success = array('success' => false);
 
@@ -365,12 +440,14 @@ class Channel_config_model extends CI_Model {
             'partner_id' => $pid,
             'channel_id' => $cid,
             'entry_id' => $eid,
+            'status' => 1,
             'start_date' => $start_date,
             'end_date' => $end_date,
             'repeat' => (bool) $repeat,
             'rec_type' => $rec_type,
             'event_pid' => 0,
-            'event_length' => (int) $event_length
+            'event_length' => (int) $event_length,
+            'created_at' => date('Y-m-d H:i:s')
         );
         $this->config = $this->load->database('ch', TRUE);
         $this->config->insert('program_config', $data);
