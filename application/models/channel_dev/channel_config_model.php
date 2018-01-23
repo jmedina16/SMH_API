@@ -175,7 +175,7 @@ class Channel_config_model extends CI_Model {
             foreach ($result as $res) {
                 $entry_id = $res['entry_id'];
                 $entry_details = $this->smportal->get_entry_details($pid, $entry_id);
-                $id = $res['id'];
+                $id = $res['live_segment_id'];
                 $name = $entry_details['name'];
                 $description = $entry_details['desc'];
                 $status = $res['status'];
@@ -309,14 +309,14 @@ class Channel_config_model extends CI_Model {
                 if ($delete_live_segment['success']) {
                     $get_program_config_id = $this->get_program_config_id($pid, $sid);
                     if ($get_program_config_id['success']) {
-                        $update_program_config_status = $this->update_program_config_status($pid, $get_program_config_id['id'], 3);
+                        $update_program_config_status = $this->update_program_config_status($pid, $get_program_config_id['pcid'], 3);
                         if ($update_program_config_status['success']) {
                             $success = array('success' => true);
                         } else {
-                            $success = array('success' => false, 'message' => 'Could not add custom data id');
+                            $success = array('success' => false, 'message' => 'Could not delete program config');
                         }
                     } else {
-                        $success = array('success' => false, 'message' => 'Could not add custom data');
+                        $success = array('success' => false, 'message' => 'Could not get program config id');
                     }
                 } else {
                     $success = array('success' => false, 'message' => 'Could not delete live segment');
@@ -338,7 +338,7 @@ class Channel_config_model extends CI_Model {
             if ($has_service) {
                 $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $cid, $eid);
                 if ($add_live_segment['success']) {
-                    $add_custom_data = $this->add_live_segment_custom_data($pid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
+                    $add_custom_data = $this->add_live_segment_custom_data($pid, $add_live_segment['id'], $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
                     if ($add_custom_data['success']) {
                         $add_live_segment_id = $this->add_live_segment_id($pid, $add_live_segment['id'], $add_custom_data['id']);
                         if ($add_live_segment_id['success']) {
@@ -424,7 +424,7 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function add_live_segment_custom_data($pid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
+    public function add_live_segment_custom_data($pid, $sid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
         $success = array('success' => false);
 
         $tz_from = 'America/Los_Angeles';
@@ -438,9 +438,10 @@ class Channel_config_model extends CI_Model {
 
         $data = array(
             'partner_id' => $pid,
+            'live_segment_id' => $sid,
             'channel_id' => $cid,
             'entry_id' => $eid,
-            'status' => 1,
+            'status' => 2,
             'start_date' => $start_date,
             'end_date' => $end_date,
             'repeat' => (bool) $repeat,
