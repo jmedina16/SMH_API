@@ -385,7 +385,9 @@ class Channel_config_model extends CI_Model {
         } else {
             $programs = $this->get_program_dates($pid, $cid, $start_date, $end_date);
             if (count($programs['repeat_programs'] > 0)) {
-                $collision = $this->when_api->process_programs($start_date, $end_date, $programs['repeat_programs']);
+                $collision = $this->when_api->process_rec_programs($start_date, $end_date, $programs['repeat_programs']);
+            } else if (count($programs['nonrepeat_programs'] > 0)) {
+                $collision = $this->when_api->process_non_rec_programs($start_date, $end_date, $programs['repeat_programs']);
             }
             syslog(LOG_NOTICE, "SMH DEBUG : collision_detection: " . print_r($programs, true));
         }
@@ -400,11 +402,13 @@ class Channel_config_model extends CI_Model {
                 ->where('partner_id', $pid)
                 ->where('channel_id', $cid)
                 ->where('status', 2)
-                ->where('start_date <=', $start_date)
-                ->where('end_date >=', $end_date);
+                ->where('start_date <=', $end_date)
+                ->where('end_date >=', $start_date);
 
         $query = $this->config->get();
         $result = $query->result_array();
+        
+        syslog(LOG_NOTICE, "SMH DEBUG : get_program_dates: " . print_r($this->config->last_query(), true));
 
         if ($query->num_rows() > 0) {
             $programs_repeat = array();
