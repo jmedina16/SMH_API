@@ -4,7 +4,7 @@ include dirname(__FILE__) . '/when/When.php';
 
 class When_api {
 
-    public function process_programs($start_date, $end_date, $repeat_programs) {
+    public function process_rec_programs($start_date, $end_date, $repeat_programs) {
         $success = array('collision' => false);
         foreach ($repeat_programs as $program) {
             $program_start_date = $program['start_date'];
