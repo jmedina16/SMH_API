@@ -26,7 +26,7 @@ class When_api {
             if ($type === 'day') {
                 $occurrences = $this->day($program_start_date, $program_end_date, $end_date, $count, $event_length, $extra);
             } else if ($type === 'week') {
-                $occurrences = $this->week($program_start_date, $program_end_date, $count, $event_length, $days, $extra);
+                $occurrences = $this->week($program_start_date, $program_end_date, $end_date, $count, $event_length, $days, $extra);
             } else if ($type === 'month') {
                 $occurrences = $this->month($program_start_date, $program_end_date, $count, $event_length, $day, $count2, $extra);
             } else if ($type === 'year') {
@@ -101,7 +101,7 @@ class When_api {
         return $programs;
     }
 
-    public function week($start_date, $end_date, $count, $event_length, $days, $extra) {
+    public function week($program_start_date, $program_end_date, $end_date, $count, $event_length, $days, $extra) {
         $days_explode = array_map('intval', explode(',', $days));
         $days_arr = array();
         foreach ($days_explode as $day) {
@@ -123,28 +123,29 @@ class When_api {
         }
 
         $r = new When();
-        if ($end_date === '9999-02-01 08:00:00') {
-            $r->startDate(new DateTime($start_date))
+        if ($program_end_date === '9999-02-01 08:00:00') {
+            syslog(LOG_NOTICE, "SMH DEBUG : week: end_date: " . print_r($end_date, true));
+            $r->startDate(new DateTime($program_start_date))
                     ->freq("weekly")
                     ->interval($count)
-                    ->count(10)
+                    ->until(new DateTime($end_date . ' +1 day'))
                     ->byday($days_arr)
                     ->generateOccurrences();
         } else {
             if ($extra) {
-                $r->startDate(new DateTime($start_date))
+                $r->startDate(new DateTime($program_start_date))
                         ->freq("weekly")
                         ->interval($count)
                         ->count($extra)
                         ->byday($days_arr)
-                        ->until(new DateTime($end_date))
+                        ->until(new DateTime($program_start_date))
                         ->generateOccurrences();
             } else {
-                $r->startDate(new DateTime($start_date))
+                $r->startDate(new DateTime($program_start_date))
                         ->freq("weekly")
                         ->interval($count)
                         ->byday($days_arr)
-                        ->until(new DateTime($end_date))
+                        ->until(new DateTime($program_end_date))
                         ->generateOccurrences();
             }
         }
