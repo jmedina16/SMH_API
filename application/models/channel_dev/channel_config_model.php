@@ -337,7 +337,12 @@ class Channel_config_model extends CI_Model {
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $this->collision_detection($pid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
+                $collision = $this->collision_detection($pid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
+                if ($collision['collision']) {
+                    $success = array('success' => true, 'collision' => true);
+                } else {
+                    $success = array('success' => true, 'collision' => false);
+                }
 //                $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $cid, $eid);
 //                if ($add_live_segment['success']) {
 //                    $add_custom_data = $this->add_live_segment_custom_data($pid, $add_live_segment['id'], $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
@@ -364,6 +369,7 @@ class Channel_config_model extends CI_Model {
     }
 
     public function collision_detection($pid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
+        $collision = array('collision' => false);
         $repeat = ($repeat === 'true') ? true : false;
         $tz_from = 'America/Los_Angeles';
         $tz_to = 'UTC';
@@ -379,10 +385,11 @@ class Channel_config_model extends CI_Model {
         } else {
             $programs = $this->get_program_dates($pid, $cid, $start_date, $end_date);
             if (count($programs['repeat_programs'] > 0)) {
-                $this->when_api->process_rec_programs($start_date, $end_date, $programs['repeat_programs']);
+                $collision = $this->when_api->process_programs($start_date, $end_date, $programs['repeat_programs']);
             }
             syslog(LOG_NOTICE, "SMH DEBUG : collision_detection: " . print_r($programs, true));
         }
+        return $collision;
     }
 
     public function get_program_dates($pid, $cid, $start_date, $end_date) {
