@@ -4,7 +4,8 @@ include dirname(__FILE__) . '/when/When.php';
 
 class When_api {
 
-    public function process_rec_programs($start_date, $end_date, $repeat_programs) {
+    public function process_programs($start_date, $end_date, $repeat_programs) {
+        $success = array('collision' => false);
         foreach ($repeat_programs as $program) {
             $program_start_date = $program['start_date'];
             $program_end_date = $program['end_date'];
@@ -36,15 +37,15 @@ class When_api {
             foreach ($occurrences as $occurrence) {
                 $occurrence_start_date = $occurrence['start_date'];
                 $occurrence_end_date = $occurrence['end_date'];
-                $test = $this->datesOverlap($start_date, $end_date, $occurrence_start_date, $occurrence_end_date);
-                syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs2: " . print_r($test, true));
-                print_r($test);
-                if ($test) {
+                $collision = $this->datesOverlap($start_date, $end_date, $occurrence_start_date, $occurrence_end_date);
+                syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs2: " . print_r($collision, true));
+                if ($collision) {
+                    $success = array('collision' => true);
                     break;
                 }
-                echo '<br>';
             }
         }
+        return $success;
     }
 
     public function day($start_date, $end_date, $count, $event_length, $extra) {
