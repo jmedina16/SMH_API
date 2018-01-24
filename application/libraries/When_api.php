@@ -24,7 +24,7 @@ class When_api {
             syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs: end_date: " . print_r($end_date, true));
 
             if ($type === 'day') {
-                $occurrences = $this->day($program_start_date, $program_end_date, $count, $event_length, $extra);
+                $occurrences = $this->day($program_start_date, $program_end_date, $end_date, $count, $event_length, $extra);
             } else if ($type === 'week') {
                 $occurrences = $this->week($program_start_date, $program_end_date, $count, $event_length, $days, $extra);
             } else if ($type === 'month') {
@@ -63,27 +63,27 @@ class When_api {
         return $success;
     }
 
-    public function day($start_date, $end_date, $count, $event_length, $extra) {
+    public function day($program_start_date, $program_end_date, $end_date, $count, $event_length, $extra) {
         $r = new When();
-        if ($end_date === '9999-02-01 08:00:00') {
-            $r->startDate(new DateTime($start_date))
+        if ($program_end_date === '9999-02-01 08:00:00') {
+            $r->startDate(new DateTime($program_start_date))
                     ->freq("daily")
                     ->interval($count)
-                    ->count(10)
+                    ->until(new DateTime($end_date))
                     ->generateOccurrences();
         } else {
             if ($extra) {
-                $r->startDate(new DateTime($start_date))
+                $r->startDate(new DateTime($program_start_date))
                         ->freq("daily")
                         ->interval($count)
                         ->count($extra)
-                        ->until(new DateTime($end_date))
+                        ->until(new DateTime($program_end_date))
                         ->generateOccurrences();
             } else {
-                $r->startDate(new DateTime($start_date))
+                $r->startDate(new DateTime($program_start_date))
                         ->freq("daily")
                         ->interval($count)
-                        ->until(new DateTime($end_date))
+                        ->until(new DateTime($program_end_date))
                         ->generateOccurrences();
             }
         }

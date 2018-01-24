@@ -4853,3 +4853,4 @@ Stack trace:
 #5 [internal  in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
 [22-Jan-2018 16:43:53 America/Los_Angeles] PHP Fatal error:  Call to undefined method Channel_config_model::update_live_segment_custom_data() in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 307
 [23-Jan-2018 16:01:10 America/Los_Angeles] PHP Fatal error:  Call to undefined method Channel_config_model::get() in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 366
+[23-Jan-2018 20:20:58 America/Los_Angeles] PHP Fatal error:  Call to undefined function until() in /var/www/vhosts/api/application/libraries/When_api.php on line 71
