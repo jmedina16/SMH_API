@@ -69,7 +69,7 @@ class When_api {
             $r->startDate(new DateTime($program_start_date))
                     ->freq("daily")
                     ->interval($count)
-                    ->until(new DateTime($end_date))
+                    ->until(new DateTime($end_date . ' +1 day'))
                     ->generateOccurrences();
         } else {
             if ($extra) {
@@ -138,7 +138,7 @@ class When_api {
                         ->interval($count)
                         ->count($extra)
                         ->byday($days_arr)
-                        ->until(new DateTime($program_start_date))
+                        ->until(new DateTime($program_end_date))
                         ->generateOccurrences();
             } else {
                 $r->startDate(new DateTime($program_start_date))
