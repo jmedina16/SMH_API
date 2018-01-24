@@ -11,6 +11,7 @@ class Channel_config_model extends CI_Model {
         $this->_ci->load->library("curl");
         $this->load->library('SMPortal');
         $this->load->library('SMCipher');
+        $this->load->library('when_api');
     }
 
     public function get_channels($pid, $ks, $category, $ac, $search) {
@@ -363,6 +364,7 @@ class Channel_config_model extends CI_Model {
     }
 
     public function collision_detection($pid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
+        $repeat = ($repeat === 'true') ? true : false;
         $tz_from = 'America/Los_Angeles';
         $tz_to = 'UTC';
         $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
@@ -372,13 +374,13 @@ class Channel_config_model extends CI_Model {
         $end_dt->setTimeZone(new DateTimeZone($tz_to));
         $end_date = $end_dt->format('Y-m-d H:i:s');
 
-        syslog(LOG_NOTICE, "SMH DEBUG : collision_detection: " . gettype($repeat));
-
         if ($repeat) {
-            syslog(LOG_NOTICE, "SMH DEBUG : collision_detection: is_true");
+            
         } else {
-            syslog(LOG_NOTICE, "SMH DEBUG : collision_detection: is_false");
             $programs = $this->get_program_dates($pid, $cid, $start_date, $end_date);
+            if (count($programs['repeat_programs'] > 0)) {
+                $this->when_api->process_rec_programs($start_date, $end_date, $programs['repeat_programs']);
+            }
             syslog(LOG_NOTICE, "SMH DEBUG : collision_detection: " . print_r($programs, true));
         }
     }
@@ -391,7 +393,8 @@ class Channel_config_model extends CI_Model {
                 ->where('partner_id', $pid)
                 ->where('channel_id', $cid)
                 ->where('status', 2)
-                ->where('start_date >=', $start_date);
+                ->where('start_date <=', $start_date)
+                ->where('end_date >=', $end_date);
 
         $query = $this->config->get();
         $result = $query->result_array();
