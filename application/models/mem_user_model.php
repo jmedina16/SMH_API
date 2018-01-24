@@ -1,7 +1,6 @@
 <?php
 
 //error_reporting(0);
-
 //ini_set('display_errors', 'On');
 //ini_set('log_errors', true);
 //ini_set('error_log', dirname(__FILE__) . '/debug.log');
@@ -77,7 +76,6 @@ class Mem_user_model extends CI_Model {
             foreach ($users_res as $user) {
                 $status = '';
                 $destroy_session = '';
-                $isLoggedIn = '';
                 $status_data = $valid['pid'] . ',\'' . $user['email'] . '\',\'' . $user['first_name'] . ' ' . $user['last_name'] . '\',' . $user['status'] . ',' . $user['user_id'];
                 if ($user['status'] == 1) {
                     $status = '<div class="alert alert-success">Active</div>';
@@ -96,7 +94,6 @@ class Mem_user_model extends CI_Model {
                 $session_data = $valid["pid"] . "," . $user["user_id"] . ",\"" . $user["first_name"] . " " . $user["last_name"] . "\"";
 
                 if ($user['logged_in']) {
-                    $isLoggedIn = "<i class='fa fa-check-square-o' style='color: #676a6c; width: 100%; text-align: center;'></i>";
                     $destroy_session = "<li role='presentation'><a role='menuitem' tabindex='-1' onclick='smhMEM.destroySession(" . $session_data . ");'>Destroy Session</a></li>";
                 }
 
@@ -122,7 +119,8 @@ class Mem_user_model extends CI_Model {
                 $row[] = "<div class='data-break'>" . $user['last_name'] . "</div>";
                 $row[] = "<div class='data-break'>" . $user['email'] . "</div>";
                 $row[] = "<div class='data-break'><a onclick='smhMEM.viewDetails(\"" . $user['user_details'] . "\");'>View Details <i class='fa fa-external-link' style='width: 100%; text-align: center; display: inline; font-size: 12px;'></i></a></div>";
-                $row[] = "<div class='data-break'>" . $isLoggedIn . "</div>";
+                $row[] = "<div class='data-break'>" . $user['last_login'] . "</div>";
+                $row[] = "<div class='data-break'>" . $user['last_logout'] . "</div>";
                 $row[] = "<div class='data-break'>" . $user['created_at'] . "</div>";
                 $row[] = $actions;
                 $output['data'][] = $row;
@@ -406,7 +404,12 @@ class Mem_user_model extends CI_Model {
                             $userId = $userHash['user_id'];
                         }
                         if (crypt($this->accounts->escape_str($pswd), $hash) == $hash) {
-                            $success = $this->create_auth_key($un, $userId, $sm_ak, $type, $entryId);
+                            $update_last_login = $this->update_last_login($pid, $userId);
+                            if ($update_last_login['success']) {
+                                $success = $this->create_auth_key($un, $userId, $sm_ak, $type, $entryId);
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not update last login');
+                            }
                         } else {
                             $success = array('success' => false, 'au' => false);
                         }
@@ -435,7 +438,12 @@ class Mem_user_model extends CI_Model {
                                 $userId = $userHash['user_id'];
                             }
                             if (crypt($this->accounts->escape_str($pswd), $hash) == $hash) {
-                                $success = $this->create_auth_key($un, $userId, $sm_ak, $type, $entryId);
+                                $update_last_login = $this->update_last_login($pid, $userId);
+                                if ($update_last_login['success']) {
+                                    $success = $this->create_auth_key($un, $userId, $sm_ak, $type, $entryId);
+                                } else {
+                                    $success = array('success' => false, 'message' => 'Could not update last login');
+                                }
                             } else {
                                 $success = array('success' => false, 'au' => false);
                             }
@@ -448,6 +456,46 @@ class Mem_user_model extends CI_Model {
                 }
             }
         }
+        return $success;
+    }
+
+    public function update_last_login($pid, $userId) {
+        $success = array('success' => false);
+
+        $data = array(
+            'last_login' => date("Y-m-d H:i:s"),
+        );
+
+        $this->accounts->where('partner_id', $pid);
+        $this->accounts->where('user_id', $userId);
+        $this->accounts->update('user', $data);
+        $this->accounts->limit(1);
+        if ($this->accounts->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+
+        return $success;
+    }
+
+    public function update_last_logout($pid, $userId) {
+        $success = array('success' => false);
+
+        $data = array(
+            'last_logout' => date("Y-m-d H:i:s"),
+        );
+
+        $this->accounts->where('partner_id', $pid);
+        $this->accounts->where('user_id', $userId);
+        $this->accounts->update('user', $data);
+        $this->accounts->limit(1);
+        if ($this->accounts->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+
         return $success;
     }
 
@@ -1729,7 +1777,12 @@ class Mem_user_model extends CI_Model {
         $this->accounts->update('user', $data);
         $this->accounts->limit(1);
         if ($this->accounts->affected_rows() > 0) {
-            $success = array('success' => true);
+            $update_last_logout = $this->update_last_logout($pid, $uid);
+            if ($update_last_logout['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Could not update last logout');
+            }
         } else {
             $success = array('success' => false);
         }
