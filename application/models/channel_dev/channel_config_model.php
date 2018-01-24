@@ -384,11 +384,19 @@ class Channel_config_model extends CI_Model {
             
         } else {
             $programs = $this->get_program_dates($pid, $cid, $start_date, $end_date);
+            $rec_collision = array('collision' => false);
+            $non_rec_collision = array('collision' => false);
             if (count($programs['repeat_programs'] > 0)) {
-                $collision = $this->when_api->process_rec_programs($start_date, $end_date, $programs['repeat_programs']);
-            } else if (count($programs['nonrepeat_programs'] > 0)) {
-                $collision = $this->when_api->process_non_rec_programs($start_date, $end_date, $programs['repeat_programs']);
+                $rec_collision = $this->when_api->process_rec_programs($start_date, $end_date, $programs['repeat_programs']);
+            } 
+            if (count($programs['nonrepeat_programs'] > 0)) {
+                $non_rec_collision = $this->when_api->process_non_rec_programs($start_date, $end_date, $programs['nonrepeat_programs']);
             }
+            if ($rec_collision['collision'] || $non_rec_collision['collision']) {
+                $collision = array('collision' => true);
+            }
+            syslog(LOG_NOTICE, "SMH DEBUG : rec_collision: " . print_r($rec_collision, true));
+            syslog(LOG_NOTICE, "SMH DEBUG : non_rec_collision: " . print_r($non_rec_collision, true));
             syslog(LOG_NOTICE, "SMH DEBUG : collision_detection: " . print_r($programs, true));
         }
         return $collision;
@@ -407,7 +415,7 @@ class Channel_config_model extends CI_Model {
 
         $query = $this->config->get();
         $result = $query->result_array();
-        
+
         syslog(LOG_NOTICE, "SMH DEBUG : get_program_dates: " . print_r($this->config->last_query(), true));
 
         if ($query->num_rows() > 0) {
