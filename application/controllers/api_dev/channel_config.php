@@ -154,7 +154,7 @@ class Channel_config extends REST_Controller {
         $eid = $this->get('eid');
         $start_date = $this->get('start_date');
         $end_date = $this->get('end_date');
-        $repeat = ($this->get('repeat') === 'true') ? true : false;
+        $repeat = $this->get('repeat');
         $rec_type = $this->get('rec_type');
         $event_length = $this->get('event_length');
 
