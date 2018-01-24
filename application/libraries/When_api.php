@@ -48,6 +48,21 @@ class When_api {
         return $success;
     }
 
+    public function process_non_rec_programs($start_date, $end_date, $non_repeat_programs) {
+        $success = array('collision' => false);
+        foreach ($non_repeat_programs as $program) {
+            $program_start_date = $program['start_date'];
+            $program_end_date = $program['end_date'];
+            $collision = $this->datesOverlap($start_date, $end_date, $program_start_date, $program_end_date);
+            syslog(LOG_NOTICE, "SMH DEBUG : process_non_rec_programs: " . print_r($collision, true));
+            if ($collision) {
+                $success = array('collision' => true);
+                break;
+            }
+        }
+        return $success;
+    }
+
     public function day($start_date, $end_date, $count, $event_length, $extra) {
         $r = new When();
         if ($end_date === '9999-02-01 08:00:00') {
