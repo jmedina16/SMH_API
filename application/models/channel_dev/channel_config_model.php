@@ -373,7 +373,7 @@ class Channel_config_model extends CI_Model {
         syslog(LOG_NOTICE, "SMH DEBUG : collision_detection1: end_date: " . print_r($end_date, true));
         $collision = array('collision' => false);
         $repeat = ($repeat === 'true') ? true : false;
-        $tz_from = 'America/Los_Angeles';
+        $tz_from = 'America/New_York';
         $tz_to = 'UTC';
         $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
 
@@ -407,7 +407,7 @@ class Channel_config_model extends CI_Model {
 //            if ($month <= 11 && $day = 4) {
 //                $start_dt->add(new DateInterval('PT1H'));
 //            }
-            $start_dt->add(new DateInterval('PT1H'));
+            //$start_dt->add(new DateInterval('PT1H'));
         }
 
         syslog(LOG_NOTICE, "SMH DEBUG : collision_detection: month: " . print_r($month, true));
