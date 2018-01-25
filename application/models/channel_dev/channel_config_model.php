@@ -369,6 +369,7 @@ class Channel_config_model extends CI_Model {
     }
 
     public function collision_detection($pid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
+        date_default_timezone_set("UTC");
         syslog(LOG_NOTICE, "SMH DEBUG : collision_detection1: start_date: " . print_r($start_date, true));
         syslog(LOG_NOTICE, "SMH DEBUG : collision_detection1: end_date: " . print_r($end_date, true));
         $collision = array('collision' => false);
@@ -376,6 +377,13 @@ class Channel_config_model extends CI_Model {
         $tz_from = 'America/Los_Angeles';
         $tz_to = 'UTC';
         $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
+        
+        $test = gmdate('Y-m-d H:i:s', strtotime($start_date));
+        $bleh_dt = new DateTime($test, new DateTimeZone($tz_from));
+        $bleh_dt->setTimeZone(new DateTimeZone($tz_to));
+        $bleh_date = $bleh_dt->format('Y-m-d H:i:s');
+        syslog(LOG_NOTICE, "SMH DEBUG : collision_detectionXXX: start_date: " . print_r($bleh_date, true));
+        
         $start_dt->setTimeZone(new DateTimeZone($tz_to));
         $start_date = $start_dt->format('Y-m-d H:i:s');
         $end_dt = new DateTime($end_date, new DateTimeZone($tz_from));
