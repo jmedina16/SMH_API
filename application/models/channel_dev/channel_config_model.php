@@ -392,10 +392,10 @@ class Channel_config_model extends CI_Model {
         syslog(LOG_NOTICE, "SMH DEBUG : collision_detection2: start_date: " . print_r($start_date, true));
         syslog(LOG_NOTICE, "SMH DEBUG : collision_detection2: end_date: " . print_r($end_date, true));
 
+        $programs = $this->get_program_dates($pid, $cid, $start_date, $end_date);
         if ($repeat) {
             
         } else {
-            $programs = $this->get_program_dates($pid, $cid, $start_date, $end_date);
             $rec_collision = array('collision' => false);
             $non_rec_collision = array('collision' => false);
             if (count($programs['repeat_programs'] > 0)) {
@@ -409,8 +409,8 @@ class Channel_config_model extends CI_Model {
             }
             syslog(LOG_NOTICE, "SMH DEBUG : rec_collision: " . print_r($rec_collision, true));
             syslog(LOG_NOTICE, "SMH DEBUG : non_rec_collision: " . print_r($non_rec_collision, true));
-            syslog(LOG_NOTICE, "SMH DEBUG : collision_detection: " . print_r($programs, true));
         }
+        syslog(LOG_NOTICE, "SMH DEBUG : collision_detection: " . print_r($programs, true));
         return $collision;
     }
 
