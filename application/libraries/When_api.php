@@ -190,10 +190,10 @@ class When_api {
                         ->count(10)
                         ->generateOccurrences();
             } else {
-                $r->startDate(new DateTime($program_start_date, new DateTimeZone('UTC')))
+                $r->startDate(new DateTime($program_start_date, new DateTimeZone('America/Los_Angeles')))
                         ->freq("monthly")
                         ->interval($count)
-                        ->until(new DateTime($end_date . ' +1 month', new DateTimeZone('UTC')))
+                        ->until(new DateTime($end_date . ' +1 month'))
                         ->generateOccurrences();
             }
         } else {
