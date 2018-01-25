@@ -517,9 +517,12 @@ class Channel_config_model extends CI_Model {
         $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
         $start_dt->setTimeZone(new DateTimeZone($tz_to));
         $start_date = $start_dt->format('Y-m-d H:i:s');
-        $end_dt = new DateTime($end_date, new DateTimeZone($tz_from));
-        $end_dt->setTimeZone(new DateTimeZone($tz_to));
-        $end_date = $end_dt->format('Y-m-d H:i:s');
+
+        if ($end_date !== '9999-02-01 00:00:00') {
+            $end_dt = new DateTime($end_date, new DateTimeZone($tz_from));
+            $end_dt->setTimeZone(new DateTimeZone($tz_to));
+            $end_date = $end_dt->format('Y-m-d H:i:s');
+        }
 
         $data = array(
             'partner_id' => $pid,
