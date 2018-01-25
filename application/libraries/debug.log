@@ -4892,3 +4892,19 @@ Stack trace:
 #4 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('vpinBl9VANmX1f2...', 'I-GVGLAVFLP465', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Test', 'User', 'user2@smh.com', 'Z2NPJYZKK2RSY', 'US', 'Pending', '0P485068J249621...', 'instant', '08:29:34 Jan 24...')
 #5 [internal  in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
 [25-Jan-2018 00:42:58 UTC] PHP Fatal error:  Call to a member function setTimeZone() on null in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 382
+[25-Jan-2018 01:00:43 UTC] PHP Fatal error:  Uncaught exception 'Exception' with message 'DateTimeZone::__construct(): Unknown or bad timezone (UTC-6)' in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php:383
+Stack trace:
+#0 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(383): DateTimeZone->__construct('UTC-6')
+#1 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(340): Channel_config_model->collision_detection('10012', '0_ys3tjiru', '0_sxllsn8w', '2018-05-02 03:0...', '2018-05-02 03:0...', 'false', '', '55')
+#2 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(201): Channel_config_model->add_program('10012', 'YzU1NjA5MGQ3MWQ...', '0_ys3tjiru', '0_sxllsn8w', '2018-05-02 03:0...', '2018-05-02 03:0...', 'false', '', '55')
+#3 [internal function]: Channel_config->add_program_get()
+#4 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#5 /var/www/vhosts/api/application/libraries/REST_Controller.php(316): RES in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 383
+[24-Jan-2018 17:57:08 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'Exception' with message 'DateTimeZone::__construct(): Unknown or bad timezone (UTC+3)' in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php:383
+Stack trace:
+#0 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(383): DateTimeZone->__construct('UTC+3')
+#1 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(340): Channel_config_model->collision_detection('10012', '0_ys3tjiru', '0_sxllsn8w', '2018-02-02 03:0...', '2018-02-02 03:0...', 'false', '', '55')
+#2 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(201): Channel_config_model->add_program('10012', 'YzU1NjA5MGQ3MWQ...', '0_ys3tjiru', '0_sxllsn8w', '2018-02-02 03:0...', '2018-02-02 03:0...', 'false', '', '55')
+#3 [internal function]: Channel_config->add_program_get()
+#4 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#5 /var/www/vhosts/api/application/libraries/REST_Controller.php(316): RES in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 383
