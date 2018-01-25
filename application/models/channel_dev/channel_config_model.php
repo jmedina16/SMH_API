@@ -369,6 +369,8 @@ class Channel_config_model extends CI_Model {
     }
 
     public function collision_detection($pid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
+        syslog(LOG_NOTICE, "SMH DEBUG : collision_detection1: start_date: " . print_r($start_date, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : collision_detection1: end_date: " . print_r($end_date, true));
         $collision = array('collision' => false);
         $repeat = ($repeat === 'true') ? true : false;
         $tz_from = 'America/Los_Angeles';
@@ -380,6 +382,9 @@ class Channel_config_model extends CI_Model {
         $end_dt->setTimeZone(new DateTimeZone($tz_to));
         $end_date = $end_dt->format('Y-m-d H:i:s');
 
+        syslog(LOG_NOTICE, "SMH DEBUG : collision_detection2: start_date: " . print_r($start_date, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : collision_detection2: end_date: " . print_r($end_date, true));
+
         if ($repeat) {
             
         } else {
@@ -388,7 +393,7 @@ class Channel_config_model extends CI_Model {
             $non_rec_collision = array('collision' => false);
             if (count($programs['repeat_programs'] > 0)) {
                 $rec_collision = $this->when_api->process_rec_programs($start_date, $end_date, $programs['repeat_programs']);
-            } 
+            }
             if (count($programs['nonrepeat_programs'] > 0)) {
                 $non_rec_collision = $this->when_api->process_non_rec_programs($start_date, $end_date, $programs['nonrepeat_programs']);
             }
