@@ -28,7 +28,7 @@ class When_api {
             } else if ($type === 'week') {
                 $occurrences = $this->week($program_start_date, $program_end_date, $end_date, $count, $event_length, $days, $extra);
             } else if ($type === 'month') {
-                $occurrences = $this->month($program_start_date, $program_end_date, $count, $event_length, $day, $count2, $extra);
+                $occurrences = $this->month($program_start_date, $program_end_date, $end_date, $count, $event_length, $day, $count2, $extra);
             } else if ($type === 'year') {
                 $occurrences = $this->year($program_start_date, $program_end_date, $count, $event_length, $day, $count2, $extra);
             }
@@ -163,7 +163,7 @@ class When_api {
         return $programs;
     }
 
-    public function month($start_date, $end_date, $count, $event_length, $day, $count2, $extra) {
+    public function month($program_start_date, $program_end_date, $end_date, $count, $event_length, $day, $count2, $extra) {
         $r = new When();
         $on = '';
         if ($day === 0) {
@@ -181,52 +181,52 @@ class When_api {
         } else if ($day === 6) {
             $on = $count2 . 'SA';
         }
-        if ($end_date === '9999-02-01 08:00:00') {
+        if ($program_end_date === '9999-02-01 08:00:00') {
             if ($day) {
-                $r->startDate(new DateTime($start_date))
+                $r->startDate(new DateTime($program_start_date))
                         ->freq("monthly")
                         ->byday($on)
                         ->interval($count)
                         ->count(10)
                         ->generateOccurrences();
             } else {
-                $r->startDate(new DateTime($start_date))
+                $r->startDate(new DateTime($program_start_date, new DateTimeZone('UTC')))
                         ->freq("monthly")
                         ->interval($count)
-                        ->count(10)
+                        ->until(new DateTime($end_date . ' +1 month', new DateTimeZone('UTC')))
                         ->generateOccurrences();
             }
         } else {
             if ($extra) {
                 if ($day) {
-                    $r->startDate(new DateTime($start_date))
+                    $r->startDate(new DateTime($program_start_date))
                             ->freq("monthly")
                             ->byday($on)
                             ->interval($count)
                             ->count($extra)
-                            ->until(new DateTime($end_date))
+                            ->until(new DateTime($program_end_date))
                             ->generateOccurrences();
                 } else {
-                    $r->startDate(new DateTime($start_date))
+                    $r->startDate(new DateTime($program_start_date))
                             ->freq("monthly")
                             ->interval($count)
                             ->count($extra)
-                            ->until(new DateTime($end_date))
+                            ->until(new DateTime($program_end_date))
                             ->generateOccurrences();
                 }
             } else {
                 if ($day) {
-                    $r->startDate(new DateTime($start_date))
+                    $r->startDate(new DateTime($program_start_date))
                             ->freq("monthly")
                             ->byday($on)
                             ->interval($count)
-                            ->until(new DateTime($end_date))
+                            ->until(new DateTime($program_end_date))
                             ->generateOccurrences();
                 } else {
-                    $r->startDate(new DateTime($start_date))
+                    $r->startDate(new DateTime($program_start_date))
                             ->freq("monthly")
                             ->interval($count)
-                            ->until(new DateTime($end_date))
+                            ->until(new DateTime($program_end_date))
                             ->generateOccurrences();
                 }
             }
