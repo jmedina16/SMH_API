@@ -373,55 +373,20 @@ class Channel_config_model extends CI_Model {
         syslog(LOG_NOTICE, "SMH DEBUG : collision_detection1: end_date: " . print_r($end_date, true));
         $collision = array('collision' => false);
         $repeat = ($repeat === 'true') ? true : false;
-        $tz_from = 'America/New_York';
+        $tz_from = 'America/Los_Angeles';
         $tz_to = 'UTC';
         $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
-
-//        $bleh_dt = new DateTime($start_date, new DateTimeZone($tz_from));
-//        syslog(LOG_NOTICE, "SMH DEBUG : collision_detectionXXXZ: start_date: " . print_r($bleh_dt, true));
-//        syslog(LOG_NOTICE, "SMH DEBUG : collision_detectionXXX0: start_date: " . print_r($bleh_dt->getOffset(), true));
-//        $bleh_dt->setTimeZone(new DateTimeZone($tz_to));
-//        
-//        syslog(LOG_NOTICE, "SMH DEBUG : collision_detectionXXX1: start_date: " . print_r($bleh_dt->getOffset(), true));
-//        $bleh_date = $bleh_dt->format('Y-m-d H:i:s');
-//        syslog(LOG_NOTICE, "SMH DEBUG : collision_detectionXXX2: start_date: " . print_r($bleh_date, true));
-//        
-//        syslog(LOG_NOTICE, "SMH DEBUG : collision_detectionDST: " . print_r(date("I"), true));
-
-
         $start_dt->setTimeZone(new DateTimeZone($tz_to));
-
-        $month = (int) $start_dt->format('m');
-        $day = (int) $start_dt->format('d');
-        $hour = (int) $start_dt->format('H');
-//        if ($month >= 3 && $day >= 11 && $hour >= 9) {
-//            $start_dt->add(new DateInterval('PT1H'));
-//        }
-//        if ($month <= 11 && $day <= 4 && $hour <= 9) {
-//            $start_dt->add(new DateInterval('PT1H'));
-//        }
-        if (($month >= 3 && $day >= 11) && ($month <= 11)) {
-//            if ($month >= 3 && $day >= 11) {
-//                $start_dt->add(new DateInterval('PT1H'));
-//            }
-//            if ($month <= 11 && $day = 4) {
-//                $start_dt->add(new DateInterval('PT1H'));
-//            }
-            //$start_dt->add(new DateInterval('PT1H'));
+        if (date("I", strtotime($start_date))) {
+            $start_dt->add(new DateInterval('PT1H'));
         }
-
-        syslog(LOG_NOTICE, "SMH DEBUG : collision_detection: month: " . print_r($month, true));
-        syslog(LOG_NOTICE, "SMH DEBUG : collision_detection: day: " . print_r($day, true));
-        syslog(LOG_NOTICE, "SMH DEBUG : collision_detection: hour: " . print_r($hour, true));
-
-
         $start_date = $start_dt->format('Y-m-d H:i:s');
-
-
-
 
         $end_dt = new DateTime($end_date, new DateTimeZone($tz_from));
         $end_dt->setTimeZone(new DateTimeZone($tz_to));
+        if (date("I", strtotime($end_date))) {
+            $end_dt->add(new DateInterval('PT1H'));
+        }
         $end_date = $end_dt->format('Y-m-d H:i:s');
 
         syslog(LOG_NOTICE, "SMH DEBUG : collision_detection2: start_date: " . print_r($start_date, true));
