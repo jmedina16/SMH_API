@@ -7,25 +7,8 @@ class When_api {
     public function process_rec_programs($start_date, $end_date, $repeat_programs) {
         $success = array('collision' => false);
         foreach ($repeat_programs as $program) {
-
-            $tz_from = 'UTC';
-            $tz_to = 'America/New_York';
-
-            $program_start_dt = new DateTime($program['start_date'], new DateTimeZone($tz_from));
-            $program_start_dt->setTimeZone(new DateTimeZone($tz_to));
-            $program_start_date = $program_start_dt->format('Y-m-d H:i:s');
-
-            if ($program['end_date'] === '9999-02-01 08:00:00') {
-                $program_end_date = $program['end_date'];
-            } else {
-                $program_end_dt = new DateTime($program['end_date'], new DateTimeZone($tz_from));
-                $program_end_dt->setTimeZone(new DateTimeZone($tz_to));
-                $program_end_date = $program_end_dt->format('Y-m-d H:i:s');
-            }
-
-
-
-
+            $program_start_date = $program['start_date'];
+            $program_end_date = $program['end_date'];
             $rec_arr = explode("_", $program['rec_type']);
             $type = $rec_arr[0];
             $count = (int) $rec_arr[1];
@@ -204,7 +187,7 @@ class When_api {
                         ->freq("monthly")
                         ->byday($on)
                         ->interval($count)
-                        ->count(10)
+                        ->until(new DateTime($end_date . ' +1 month'))
                         ->generateOccurrences();
             } else {
                 $r->startDate(new DateTime($program_start_date))
