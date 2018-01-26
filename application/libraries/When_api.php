@@ -28,16 +28,16 @@ class When_api {
             syslog(LOG_NOTICE, "SMH DEBUG : program_end_date: " . print_r($program_end_date, true));
 
             $start_dt = new DateTime($program_start_date);
+            $program_start_year = $start_dt->format('Y');
             $program_start_month = $start_dt->format('m');
 
             $start_date_mod = new DateTime($start_date);
             $start_day = $start_date_mod->format('d');
-            $start_year = $start_date_mod->format('Y');
             $start_hour = $start_date_mod->format('H');
             $start_mintue = $start_date_mod->format('i');
             $start_second = $start_date_mod->format('s');
 
-            $new_start_date = $start_year . "-" . $program_start_month . "-" . $start_day . " " . $start_hour . ":" . $start_mintue . ":" . $start_second;
+            $new_start_date = $program_start_year . "-" . $program_start_month . "-" . $start_day . " " . $start_hour . ":" . $start_mintue . ":" . $start_second;
             
             syslog(LOG_NOTICE, "SMH DEBUG : new_start_date: " . print_r($new_start_date, true));
 
@@ -57,7 +57,7 @@ class When_api {
                 $occurrence_start_date = $occurrence['start_date'];
                 $occurrence_end_date = $occurrence['end_date'];
 
-                $collision = $this->datesOverlap($occurrence_start_date, $occurrence_end_date, $start_date, $end_date);
+                $collision = $this->datesOverlap($occurrence_start_date, $occurrence_end_date, $program_start_date, $program_end_date);
                 syslog(LOG_NOTICE, "SMH DEBUG : process_non_rec_programs_a: " . print_r($collision, true));
                 if ($collision) {
                     $success = array('collision' => true);
