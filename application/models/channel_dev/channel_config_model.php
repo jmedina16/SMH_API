@@ -409,13 +409,14 @@ class Channel_config_model extends CI_Model {
             if (count($programs['nonrepeat_programs'] > 0)) {
                 $non_rec_collision = $this->when_api->process_non_rec_programs_b($start_date, $end_date, $programs['nonrepeat_programs']);
             }
-            if ($rec_collision['collision'] || $non_rec_collision['collision']) {
-                $collision = array('collision' => true);
-            }
-            syslog(LOG_NOTICE, "SMH DEBUG : rec_collision: " . print_r($rec_collision, true));
-            syslog(LOG_NOTICE, "SMH DEBUG : non_rec_collision: " . print_r($non_rec_collision, true));
         }
+        if ($rec_collision['collision'] || $non_rec_collision['collision']) {
+            $collision = array('collision' => true);
+        }
+        syslog(LOG_NOTICE, "SMH DEBUG : rec_collision: " . print_r($rec_collision, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : non_rec_collision: " . print_r($non_rec_collision, true));
         syslog(LOG_NOTICE, "SMH DEBUG : collision_detection: " . print_r($programs, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : collision: " . print_r($collision, true));
         return $collision;
     }
 
