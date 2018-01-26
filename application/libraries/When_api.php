@@ -27,28 +27,27 @@ class When_api {
             syslog(LOG_NOTICE, "SMH DEBUG : program_start_date: " . print_r($program_start_date, true));
             syslog(LOG_NOTICE, "SMH DEBUG : program_end_date: " . print_r($program_end_date, true));
 
-            $start_dt = new DateTime($program_start_date);
-            $program_start_year = $start_dt->format('Y');
-            $program_start_month = $start_dt->format('m');
-
-            $start_date_mod = new DateTime($start_date);
-            $start_day = $start_date_mod->format('d');
-            $start_hour = $start_date_mod->format('H');
-            $start_mintue = $start_date_mod->format('i');
-            $start_second = $start_date_mod->format('s');
-
-            $new_start_date = $program_start_year . "-" . $program_start_month . "-" . $start_day . " " . $start_hour . ":" . $start_mintue . ":" . $start_second;
-
-            syslog(LOG_NOTICE, "SMH DEBUG : new_start_date: " . print_r($new_start_date, true));
+//            $start_dt = new DateTime($program_start_date);
+//            $program_start_year = $start_dt->format('Y');
+//            $program_start_month = $start_dt->format('m');
+//
+//            $start_date_mod = new DateTime($start_date);
+//            $start_day = $start_date_mod->format('d');
+//            $start_hour = $start_date_mod->format('H');
+//            $start_mintue = $start_date_mod->format('i');
+//            $start_second = $start_date_mod->format('s');
+//
+//            $new_start_date = $program_start_year . "-" . $program_start_month . "-" . $start_day . " " . $start_hour . ":" . $start_mintue . ":" . $start_second;
+//            syslog(LOG_NOTICE, "SMH DEBUG : new_start_date: " . print_r($new_start_date, true));
 
             if ($type === 'day') {
-                $occurrences = $this->day($new_start_date, $end_date, $program_end_date, $count, $event_length, $extra);
+                $occurrences = $this->day($start_date, $end_date, $program_start_date, $program_end_date, $count, $event_length, $extra);
             } else if ($type === 'week') {
-                $occurrences = $this->week($program_start_date, $program_end_date, $end_date, $count, $event_length, $days, $extra);
+                $occurrences = $this->week($start_date, $end_date, $program_start_date, $program_end_date, $count, $event_length, $days, $extra);
             } else if ($type === 'month') {
-                $occurrences = $this->month($program_start_date, $program_end_date, $end_date, $count, $event_length, $day, $count2, $extra);
+                $occurrences = $this->month($start_date, $end_date, $program_start_date, $program_end_date, $count, $event_length, $day, $count2, $extra);
             } else if ($type === 'year') {
-                $occurrences = $this->year($program_start_date, $program_end_date, $end_date, $count, $event_length, $day, $count2, $extra);
+                $occurrences = $this->year($start_date, $end_date, $program_start_date, $program_end_date, $count, $event_length, $day, $count2, $extra);
             }
 
             syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs1: " . print_r($occurrences, true));
@@ -94,7 +93,7 @@ class When_api {
             } else if ($type === 'month') {
                 $occurrences = $this->month($program_start_date, $program_end_date, $start_date, $end_date, $count, $event_length, $day, $count2, $extra);
             } else if ($type === 'year') {
-                $occurrences = $this->year($program_start_date, $program_end_date, $end_date, $count, $event_length, $day, $count2, $extra);
+                $occurrences = $this->year($program_start_date, $program_end_date, $start_date, $end_date, $count, $event_length, $day, $count2, $extra);
             }
             syslog(LOG_NOTICE, "SMH DEBUG : type: " . print_r($type, true));
             syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs1: " . print_r($occurrences, true));
@@ -341,7 +340,7 @@ class When_api {
         return $programs;
     }
 
-    public function year($program_start_date, $program_end_date, $end_date, $count, $event_length, $day, $count2, $extra) {
+    public function year($program_start_date, $program_end_date, $start_date, $end_date, $count, $event_length, $day, $count2, $extra) {
         $r = new When();
         $on = '';
         if ($day === 0) {
@@ -360,6 +359,16 @@ class When_api {
             $on = $count2 . 'SA';
         }
 
+        $start_date_mod = new DateTime($start_date . ' -1 day');
+        //$start_date_mod->modify('first day of this month');
+        $new_start_date = $start_date_mod->format('Y-m-d 00:00:00');
+        syslog(LOG_NOTICE, "SMH DEBUG : day: new_start_date: " . print_r($new_start_date, true));
+
+        $end_date_mod = new DateTime($end_date . ' +1 day');
+        //$end_date_mod->modify('last day of this month');
+        $new_end_date = $end_date_mod->format('Y-m-d 00:00:00');
+        syslog(LOG_NOTICE, "SMH DEBUG : day: new_end_date: " . print_r($new_end_date, true));
+
         syslog(LOG_NOTICE, "SMH DEBUG : year: " . print_r($program_end_date, true));
         if ($program_end_date === '9999-02-01 00:00:00') {
             if ($day) {
@@ -372,15 +381,13 @@ class When_api {
                         ->freq("yearly")
                         ->byday($on)
                         ->bymonth($month)
-                        ->interval($count)
-                        ->until(new DateTime($end_date . ' +1 year'))
-                        ->generateOccurrences();
+                        ->interval($count);
+                $occurrences = $r->getOccurrencesBetween(new DateTime($new_start_date), new DateTime($new_end_date));
             } else {
                 $r->startDate(new DateTime($program_start_date))
                         ->freq("yearly")
-                        ->interval($count)
-                        ->until(new DateTime($end_date . ' +1 year'))
-                        ->generateOccurrences();
+                        ->interval($count);
+                $occurrences = $r->getOccurrencesBetween(new DateTime($new_start_date), new DateTime($new_end_date));
             }
         } else {
             if ($extra) {
@@ -393,15 +400,15 @@ class When_api {
                             ->bymonth($month)
                             ->interval($count)
                             ->count($extra)
-                            ->until(new DateTime($program_end_date))
-                            ->generateOccurrences();
+                            ->until(new DateTime($program_end_date));
+                    $occurrences = $r->getOccurrencesBetween(new DateTime($new_start_date), new DateTime($new_end_date));
                 } else {
                     $r->startDate(new DateTime($program_start_date))
                             ->freq("yearly")
                             ->interval($count)
                             ->count($extra)
-                            ->until(new DateTime($program_end_date))
-                            ->generateOccurrences();
+                            ->until(new DateTime($program_end_date));
+                    $occurrences = $r->getOccurrencesBetween(new DateTime($new_start_date), new DateTime($new_end_date));
                 }
             } else {
                 if ($day) {
@@ -412,20 +419,20 @@ class When_api {
                             ->byday($on)
                             ->bymonth($month)
                             ->interval($count)
-                            ->until(new DateTime($program_end_date))
-                            ->generateOccurrences();
+                            ->until(new DateTime($program_end_date));
+                    $occurrences = $r->getOccurrencesBetween(new DateTime($new_start_date), new DateTime($new_end_date));
                 } else {
                     $r->startDate(new DateTime($program_start_date))
                             ->freq("yearly")
                             ->interval($count)
-                            ->until(new DateTime($program_end_date))
-                            ->generateOccurrences();
+                            ->until(new DateTime($program_end_date));
+                    $occurrences = $r->getOccurrencesBetween(new DateTime($new_start_date), new DateTime($new_end_date));
                 }
             }
         }
 
         $programs = array();
-        foreach ($r->occurrences as $occurr) {
+        foreach ($occurrences as $occurr) {
             $start_date = $occurr->format('Y-m-d H:i:s');
 
             $dateinsec = strtotime($start_date);

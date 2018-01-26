@@ -4947,3 +4947,24 @@ Stack trace:
 #2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(403): When_api->process_non_rec_programs_a('2018-01-25 23:0...', '9999-02-01 00:0...', 'day_1___#no', '55', Array)
 #3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(340): Channel_config_model->collision_detection('10012', '0_ys3tjiru', '0_sxllsn8w', '2018-01-25 03:0...', '9999-02-01 00:0...', 'true', 'day_1___#no', '55')
 #4 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(201): Channel_config_model->add_program('10012', 'ODFmOTJlMzg3Yjd...', '0_ys3tjiru', '0_sxllsn8w', ' in /var/www/vhosts/api/application/libraries/when/When.php on line 646
+[25-Jan-2018 23:10:21 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'Exception' with message 'DateTime::__construct(): Failed to parse time string (2 +1 day) at position 0 (2): Unexpected character' in /var/www/vhosts/api/application/libraries/When_api.php:138
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/When_api.php(138): DateTime->__construct('2 +1 day')
+#1 /var/www/vhosts/api/application/libraries/When_api.php(45): When_api->day('2018-03-08 23:0...', '9999-02-01 00:0...', '2018-03-02 23:0...', 2, 55, 0)
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(403): When_api->process_non_rec_programs_a('2018-01-08 23:0...', '9999-02-01 00:0...', 'day_2___#no', '55', Array)
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(340): Channel_config_model->collision_detection('10012', '0_ys3tjiru', '0_sxllsn8w', '2018-01-08 03:0...', '9999-02-01 00:0...', 'true', 'day_2___#no', '55')
+#4 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(201): Channel_config_model->add_program('10 in /var/www/vhosts/api/application/libraries/When_api.php on line 138
+[25-Jan-2018 23:16:51 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'Exception' with message 'DateTime::__construct(): Failed to parse time string (2 +1 day) at position 0 (2): Unexpected character' in /var/www/vhosts/api/application/libraries/When_api.php:138
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/When_api.php(138): DateTime->__construct('2 +1 day')
+#1 /var/www/vhosts/api/application/libraries/When_api.php(45): When_api->day(NULL, '9999-02-01 00:0...', '2018-03-02 23:0...', 2, 55, 0)
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(403): When_api->process_non_rec_programs_a('2018-01-08 23:0...', '9999-02-01 00:0...', 'day_2___#no', '55', Array)
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(340): Channel_config_model->collision_detection('10012', '0_ys3tjiru', '0_sxllsn8w', '2018-01-08 03:0...', '9999-02-01 00:0...', 'true', 'day_2___#no', '55')
+#4 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(201): Channel_config_model->add_program('10012', 'ODFmOTJlM in /var/www/vhosts/api/application/libraries/When_api.php on line 138
+[25-Jan-2018 23:46:58 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'Exception' with message 'DateTime::__construct(): Failed to parse time string (1 +1 day) at position 0 (1): Unexpected character' in /var/www/vhosts/api/application/libraries/When_api.php:208
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/When_api.php(208): DateTime->__construct('1 +1 day')
+#1 /var/www/vhosts/api/application/libraries/When_api.php(47): When_api->week('2018-03-02 23:0...', '2018-03-02 23:0...', '9999-02-01 00:0...', 1, 55, '1,5', 0)
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(403): When_api->process_non_rec_programs_a('2018-01-01 23:0...', '9999-02-01 00:0...', 'week_1___1,5#no', '55', Array)
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(340): Channel_config_model->collision_detection('10012', '0_ys3tjiru', '0_sxllsn8w', '2018-01-01 03:0...', '9999-02-01 00:0...', 'true', 'week_1___1,5#no', '55')
+#4 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(201): Channel_config_model- in /var/www/vhosts/api/application/libraries/When_api.php on line 208
