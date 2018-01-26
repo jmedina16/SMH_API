@@ -299,14 +299,18 @@ class When_api {
                             ->byday($on)
                             ->interval($count)
                             ->count($extra)
-                            ->until(new DateTime($program_end_date));
+                            ->until(new DateTime($program_end_date . " +1 day"));
                     $occurrences = $r->getOccurrencesBetween(new DateTime($new_start_date), new DateTime($new_end_date));
                 } else {
+                    syslog(LOG_NOTICE, "SMH DEBUG : month: program_start_date: " . print_r($program_start_date, true));
+                    syslog(LOG_NOTICE, "SMH DEBUG : month: count: " . print_r($count, true));
+                    syslog(LOG_NOTICE, "SMH DEBUG : month: extra: " . print_r($extra, true));
+                    syslog(LOG_NOTICE, "SMH DEBUG : month: program_end_date: " . print_r($program_end_date, true));
                     $r->startDate(new DateTime($program_start_date))
                             ->freq("monthly")
                             ->interval($count)
                             ->count($extra)
-                            ->until(new DateTime($program_end_date));
+                            ->until(new DateTime($program_end_date . " +1 day"));
                     $occurrences = $r->getOccurrencesBetween(new DateTime($new_start_date), new DateTime($new_end_date));
                 }
             } else {
