@@ -202,12 +202,12 @@ class When_api {
         $start_date_mod = new DateTime($start_date . ' -1 day');
         //$start_date_mod->modify('first day of this month');
         $new_start_date = $start_date_mod->format('Y-m-d 00:00:00');
-        syslog(LOG_NOTICE, "SMH DEBUG : day: new_start_date: " . print_r($new_start_date, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : week: new_start_date: " . print_r($new_start_date, true));
 
         $end_date_mod = new DateTime($end_date . ' +1 day');
         //$end_date_mod->modify('last day of this month');
         $new_end_date = $end_date_mod->format('Y-m-d 00:00:00');
-        syslog(LOG_NOTICE, "SMH DEBUG : day: new_end_date: " . print_r($new_end_date, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : week: new_end_date: " . print_r($new_end_date, true));
 
         $r = new When();
         if ($program_end_date === '9999-02-01 00:00:00') {
@@ -271,54 +271,25 @@ class When_api {
         $start_date_mod = new DateTime($start_date . ' -1 day');
         //$start_date_mod->modify('first day of this month');
         $new_start_date = $start_date_mod->format('Y-m-d 00:00:00');
-        syslog(LOG_NOTICE, "SMH DEBUG : day: new_start_date: " . print_r($new_start_date, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : month: new_start_date: " . print_r($new_start_date, true));
 
         $end_date_mod = new DateTime($end_date . ' +1 day');
         //$end_date_mod->modify('last day of this month');
         $new_end_date = $end_date_mod->format('Y-m-d 00:00:00');
-        syslog(LOG_NOTICE, "SMH DEBUG : day: new_end_date: " . print_r($new_end_date, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : month: new_end_date: " . print_r($new_end_date, true));
 
         if ($program_end_date === '9999-02-01 00:00:00') {
-            if ($extra) {
-                if ($day) {
-                    $r->startDate(new DateTime($program_start_date))
-                            ->freq("monthly")
-                            ->byday($on)
-                            ->count($extra)
-                            ->interval($count);
-                    $occurrences = $r->getOccurrencesBetween(new DateTime($new_start_date), new DateTime($new_end_date));
-                } else {
-                    syslog(LOG_NOTICE, "SMH DEBUG : month: program_start_date: " . print_r($program_start_date, true));
-                    syslog(LOG_NOTICE, "SMH DEBUG : month: count: " . print_r($count, true));
-                    syslog(LOG_NOTICE, "SMH DEBUG : month: extra: " . print_r($extra, true));
-                    syslog(LOG_NOTICE, "SMH DEBUG : month: program_end_date: " . print_r($program_end_date, true));
-                    $test = new DateTime($program_end_date);
-                    syslog(LOG_NOTICE, "SMH DEBUG : month: test: " . print_r($test, true));
-                    $r->startDate(new DateTime($program_start_date))
-                            ->freq("monthly")
-                            ->count($extra)
-                            ->interval($count);
-                    $occurrences = $r->getOccurrencesBetween(new DateTime($new_start_date), new DateTime($new_end_date));
-                }
+            if ($day) {
+                $r->startDate(new DateTime($program_start_date))
+                        ->freq("monthly")
+                        ->byday($on)
+                        ->interval($count);
+                $occurrences = $r->getOccurrencesBetween(new DateTime($new_start_date), new DateTime($new_end_date));
             } else {
-                if ($day) {
-                    $r->startDate(new DateTime($program_start_date))
-                            ->freq("monthly")
-                            ->byday($on)
-                            ->interval($count);
-                    $occurrences = $r->getOccurrencesBetween(new DateTime($new_start_date), new DateTime($new_end_date));
-                } else {
-                    syslog(LOG_NOTICE, "SMH DEBUG : month: program_start_date: " . print_r($program_start_date, true));
-                    syslog(LOG_NOTICE, "SMH DEBUG : month: count: " . print_r($count, true));
-                    syslog(LOG_NOTICE, "SMH DEBUG : month: extra: " . print_r($extra, true));
-                    syslog(LOG_NOTICE, "SMH DEBUG : month: program_end_date: " . print_r($program_end_date, true));
-                    $test = new DateTime($program_end_date);
-                    syslog(LOG_NOTICE, "SMH DEBUG : month: test: " . print_r($test, true));
-                    $r->startDate(new DateTime($program_start_date))
-                            ->freq("monthly")
-                            ->interval($count);
-                    $occurrences = $r->getOccurrencesBetween(new DateTime($new_start_date), new DateTime($new_end_date));
-                }
+                $r->startDate(new DateTime($program_start_date))
+                        ->freq("monthly")
+                        ->interval($count);
+                $occurrences = $r->getOccurrencesBetween(new DateTime($new_start_date), new DateTime($new_end_date));
             }
         } else {
             if ($extra) {
