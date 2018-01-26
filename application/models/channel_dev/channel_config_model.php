@@ -337,6 +337,11 @@ class Channel_config_model extends CI_Model {
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
+                if ($end_date !== '9999-02-01 00:00:00') {
+                    $end_date_mod = new DateTime($end_date);
+                    $end_date_mod->add(new DateInterval('PT' . $event_length . 'S'));
+                    $end_date = $end_date_mod->format('Y-m-d h:i:s A');
+                }
                 $collision = $this->collision_detection($pid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
                 if ($collision['collision']) {
                     $success = array('success' => true, 'collision' => true);
