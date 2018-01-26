@@ -382,27 +382,32 @@ class Channel_config_model extends CI_Model {
         }
         $start_date = $start_dt->format('Y-m-d H:i:s');
 
-        $end_dt = new DateTime($end_date, new DateTimeZone($tz_from));
-        $end_dt->setTimeZone(new DateTimeZone($tz_to));
-        if (date("I", strtotime($end_date))) {
-            $end_dt->add(new DateInterval('PT1H'));
+        if ($end_date !== '9999-02-01 00:00:00') {
+            $end_dt = new DateTime($end_date, new DateTimeZone($tz_from));
+            $end_dt->setTimeZone(new DateTimeZone($tz_to));
+            if (date("I", strtotime($end_date))) {
+                $end_dt->add(new DateInterval('PT1H'));
+            }
+            $end_date = $end_dt->format('Y-m-d H:i:s');
         }
-        $end_date = $end_dt->format('Y-m-d H:i:s');
+
 
         syslog(LOG_NOTICE, "SMH DEBUG : collision_detection2: start_date: " . print_r($start_date, true));
         syslog(LOG_NOTICE, "SMH DEBUG : collision_detection2: end_date: " . print_r($end_date, true));
 
         $programs = $this->get_program_dates($pid, $cid, $start_date, $end_date);
+        $rec_collision = array('collision' => false);
+        $non_rec_collision = array('collision' => false);
         if ($repeat) {
-            
+            if (count($programs['nonrepeat_programs'] > 0)) {
+                $non_rec_collision = $this->when_api->process_non_rec_programs_a($start_date, $end_date, $rec_type, $event_length, $programs['nonrepeat_programs']);
+            }
         } else {
-            $rec_collision = array('collision' => false);
-            $non_rec_collision = array('collision' => false);
             if (count($programs['repeat_programs'] > 0)) {
-                $rec_collision = $this->when_api->process_rec_programs($start_date, $end_date, $programs['repeat_programs']);
+                $rec_collision = $this->when_api->process_rec_programs_b($start_date, $end_date, $programs['repeat_programs']);
             }
             if (count($programs['nonrepeat_programs'] > 0)) {
-                $non_rec_collision = $this->when_api->process_non_rec_programs($start_date, $end_date, $programs['nonrepeat_programs']);
+                $non_rec_collision = $this->when_api->process_non_rec_programs_b($start_date, $end_date, $programs['nonrepeat_programs']);
             }
             if ($rec_collision['collision'] || $non_rec_collision['collision']) {
                 $collision = array('collision' => true);
