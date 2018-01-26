@@ -4,7 +4,71 @@ include dirname(__FILE__) . '/when/When.php';
 
 class When_api {
 
-    public function process_rec_programs($start_date, $end_date, $repeat_programs) {
+    public function process_non_rec_programs_a($start_date, $end_date, $rec_type, $event_length, $non_repeat_programs) {
+        $success = array('collision' => false);
+        $rec_arr = explode("_", $rec_type);
+        $type = $rec_arr[0];
+        $count = (int) $rec_arr[1];
+        $day = (int) $rec_arr[2];
+        $count2 = (int) $rec_arr[3];
+        $days_extra = explode("#", $rec_arr[4]);
+        $days = $days_extra[0];
+        $extra = (int) $days_extra[1];
+        $event_length = (int) $event_length;
+        $occurrences = '';
+
+
+
+        foreach ($non_repeat_programs as $program) {
+            $program_start_date = $program['start_date'];
+            $program_end_date = $program['end_date'];
+            syslog(LOG_NOTICE, "SMH DEBUG : start_date: " . print_r($start_date, true));
+            syslog(LOG_NOTICE, "SMH DEBUG : end_date: " . print_r($end_date, true));
+            syslog(LOG_NOTICE, "SMH DEBUG : program_start_date: " . print_r($program_start_date, true));
+            syslog(LOG_NOTICE, "SMH DEBUG : program_end_date: " . print_r($program_end_date, true));
+
+            $start_dt = new DateTime($program_start_date);
+            $program_start_month = $start_dt->format('m');
+
+            $start_date_mod = new DateTime($start_date);
+            $start_day = $start_date_mod->format('d');
+            $start_year = $start_date_mod->format('Y');
+            $start_hour = $start_date_mod->format('H');
+            $start_mintue = $start_date_mod->format('i');
+            $start_second = $start_date_mod->format('s');
+
+            $new_start_date = $start_year . "-" . $program_start_month . "-" . $start_day . " " . $start_hour . ":" . $start_mintue . ":" . $start_second;
+            
+            syslog(LOG_NOTICE, "SMH DEBUG : new_start_date: " . print_r($new_start_date, true));
+
+            if ($type === 'day') {
+                $occurrences = $this->day($new_start_date, $end_date, $program_end_date, $count, $event_length, $extra);
+            } else if ($type === 'week') {
+                $occurrences = $this->week($program_start_date, $program_end_date, $end_date, $count, $event_length, $days, $extra);
+            } else if ($type === 'month') {
+                $occurrences = $this->month($program_start_date, $program_end_date, $end_date, $count, $event_length, $day, $count2, $extra);
+            } else if ($type === 'year') {
+                $occurrences = $this->year($program_start_date, $program_end_date, $end_date, $count, $event_length, $day, $count2, $extra);
+            }
+
+            syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs1: " . print_r($occurrences, true));
+
+            foreach ($occurrences as $occurrence) {
+                $occurrence_start_date = $occurrence['start_date'];
+                $occurrence_end_date = $occurrence['end_date'];
+
+                $collision = $this->datesOverlap($occurrence_start_date, $occurrence_end_date, $start_date, $end_date);
+                syslog(LOG_NOTICE, "SMH DEBUG : process_non_rec_programs_a: " . print_r($collision, true));
+                if ($collision) {
+                    $success = array('collision' => true);
+                    break;
+                }
+            }
+        }
+        return $success;
+    }
+
+    public function process_rec_programs_b($start_date, $end_date, $repeat_programs) {
         $success = array('collision' => false);
         foreach ($repeat_programs as $program) {
             $program_start_date = $program['start_date'];
@@ -49,7 +113,7 @@ class When_api {
         return $success;
     }
 
-    public function process_non_rec_programs($start_date, $end_date, $non_repeat_programs) {
+    public function process_non_rec_programs_b($start_date, $end_date, $non_repeat_programs) {
         $success = array('collision' => false);
         foreach ($non_repeat_programs as $program) {
             $program_start_date = $program['start_date'];
@@ -67,6 +131,9 @@ class When_api {
     public function day($program_start_date, $program_end_date, $end_date, $count, $event_length, $extra) {
         $r = new When();
         if ($program_end_date === '9999-02-01 00:00:00') {
+            syslog(LOG_NOTICE, "SMH DEBUG : day: program_start_date: " . print_r($program_start_date, true));
+            syslog(LOG_NOTICE, "SMH DEBUG : day: count: " . print_r($count, true));
+            syslog(LOG_NOTICE, "SMH DEBUG : day: end_date: " . print_r($end_date, true));
             $r->startDate(new DateTime($program_start_date))
                     ->freq("daily")
                     ->interval($count)
