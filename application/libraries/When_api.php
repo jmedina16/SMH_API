@@ -38,7 +38,7 @@ class When_api {
             $start_second = $start_date_mod->format('s');
 
             $new_start_date = $program_start_year . "-" . $program_start_month . "-" . $start_day . " " . $start_hour . ":" . $start_mintue . ":" . $start_second;
-            
+
             syslog(LOG_NOTICE, "SMH DEBUG : new_start_date: " . print_r($new_start_date, true));
 
             if ($type === 'day') {
@@ -88,7 +88,7 @@ class When_api {
             syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs: end_date: " . print_r($end_date, true));
 
             if ($type === 'day') {
-                $occurrences = $this->day($program_start_date, $program_end_date, $end_date, $count, $event_length, $extra);
+                $occurrences = $this->day($program_start_date, $program_end_date, $start_date, $end_date, $count, $event_length, $extra);
             } else if ($type === 'week') {
                 $occurrences = $this->week($program_start_date, $program_end_date, $end_date, $count, $event_length, $days, $extra);
             } else if ($type === 'month') {
@@ -128,36 +128,46 @@ class When_api {
         return $success;
     }
 
-    public function day($program_start_date, $program_end_date, $end_date, $count, $event_length, $extra) {
+    public function day($program_start_date, $program_end_date, $start_date, $end_date, $count, $event_length, $extra) {
         $r = new When();
+        $start_date_mod = new DateTime($start_date . ' -1 day');
+        //$start_date_mod->modify('first day of this month');
+        $new_start_date = $start_date_mod->format('Y-m-d 00:00:00');
+        syslog(LOG_NOTICE, "SMH DEBUG : day: new_start_date: " . print_r($new_start_date, true));
+
+        $end_date_mod = new DateTime($end_date . ' +1 day');
+        //$end_date_mod->modify('last day of this month');
+        $new_end_date = $end_date_mod->format('Y-m-d 00:00:00');
+        syslog(LOG_NOTICE, "SMH DEBUG : day: new_end_date: " . print_r($new_end_date, true));
+
         if ($program_end_date === '9999-02-01 00:00:00') {
             syslog(LOG_NOTICE, "SMH DEBUG : day: program_start_date: " . print_r($program_start_date, true));
             syslog(LOG_NOTICE, "SMH DEBUG : day: count: " . print_r($count, true));
             syslog(LOG_NOTICE, "SMH DEBUG : day: end_date: " . print_r($end_date, true));
+
             $r->startDate(new DateTime($program_start_date))
                     ->freq("daily")
-                    ->interval($count)
-                    ->until(new DateTime($end_date . ' +1 day'))
-                    ->generateOccurrences();
+                    ->interval($count);
+            $occurrences = $r->getOccurrencesBetween(new DateTime($new_start_date), new DateTime($new_end_date));
         } else {
             if ($extra) {
                 $r->startDate(new DateTime($program_start_date))
                         ->freq("daily")
                         ->interval($count)
                         ->count($extra)
-                        ->until(new DateTime($program_end_date))
-                        ->generateOccurrences();
+                        ->until(new DateTime($program_end_date));
+                $occurrences = $r->getOccurrencesBetween(new DateTime($new_start_date), new DateTime($new_end_date));
             } else {
                 $r->startDate(new DateTime($program_start_date))
                         ->freq("daily")
                         ->interval($count)
-                        ->until(new DateTime($program_end_date))
-                        ->generateOccurrences();
+                        ->until(new DateTime($program_end_date));
+                $occurrences = $r->getOccurrencesBetween(new DateTime($new_start_date), new DateTime($new_end_date));
             }
         }
 
         $programs = array();
-        foreach ($r->occurrences as $occurr) {
+        foreach ($occurrences as $occurr) {
             $start_date = $occurr->format('Y-m-d H:i:s');
 
             $dateinsec = strtotime($start_date);
