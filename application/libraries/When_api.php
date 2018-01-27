@@ -81,10 +81,6 @@ class When_api {
         $event_length = (int) $event_length;
         $occurrences = '';
 
-        $additoinal_dates = $count * 2;
-        $program_end_mod = new DateTime($start_date . ' +' . $additoinal_dates . ' ' . $type);
-        $program_end_check = $program_end_mod->format('Y-m-d H:i:s');
-
         foreach ($repeat_programs as $program) {
             $program_start_date = $program['start_date'];
             $program_end_date = $program['end_date'];
@@ -99,8 +95,20 @@ class When_api {
             $program_event_length = (int) $program['event_length'];
             $program_occurrences = '';
 
+            if ($start_date <= $program_start_date) {
+                $program_start_check = $program_start_date;
+                $additoinal_dates = $count * 3;
+                $program_end_mod = new DateTime($program_start_date . ' +' . $additoinal_dates . ' ' . $type);
+                $program_end_check = $program_end_mod->format('Y-m-d H:i:s');
+            } else if ($start_date > $program_start_date) {
+                $program_start_check = $start_date;
+                $additoinal_dates = $count * 10;
+                $program_end_mod = new DateTime($start_date . ' +' . $additoinal_dates . ' ' . $type);
+                $program_end_check = $program_end_mod->format('Y-m-d H:i:s');
+            }
+
             if ($program_type === 'day') {
-                $program_occurrences = $this->day($program_start_date, $program_end_date, $start_date, $program_end_check, $program_count, $program_event_length, $program_extra);
+                $program_occurrences = $this->day($program_start_date, $program_end_date, $program_start_check, $program_end_check, $program_count, $program_event_length, $program_extra);
             } else if ($program_type === 'week') {
                 $program_occurrences = $this->week($program_start_date, $program_end_date, $start_date, $end_date, $count, $event_length, $days, $extra);
             } else if ($program_type === 'month') {
