@@ -21,12 +21,14 @@ class Channel_config_model extends CI_Model {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
                 $live_channels = $this->smportal->get_channels($pid, $ks, null, null, null, $search, $category, $ac);
+                syslog(LOG_NOTICE, "SMH DEBUG : get_channels1: " . print_r($live_channels,true));
                 $data = array();
                 $channels = array();
                 $channels['channels'] = array();
                 $data['data'] = array();
                 array_push($channels['channels'], array('key' => 0, 'label' => '<div class="channel_wrapper" title="No Channel Found"><div style="color: #fff; font-size: 17px;">No Channels Found</div></div>'));
                 $this->config = $this->load->database('kaltura', TRUE);
+                syslog(LOG_NOTICE, "SMH DEBUG : get_channels2: " . print_r($this->config,true));
                 if (count($live_channels['data']) > 0) {
                     $channels['channels'] = array();
                     $data['data'] = array();
@@ -67,6 +69,7 @@ class Channel_config_model extends CI_Model {
 //                }
 //                syslog(LOG_NOTICE, "SMH DEBUG : get_channels: " . print_r($channels, true));
                 $data['collections'] = $channels;
+                syslog(LOG_NOTICE, "SMH DEBUG : get_channels3: " . print_r($data,true));
                 //syslog(LOG_NOTICE, "SMH DEBUG : get_channels: " . print_r($data, true));
                 header('Content-Type: application/json');
                 $success = json_encode($data, JSON_UNESCAPED_SLASHES);
