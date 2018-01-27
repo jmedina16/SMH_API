@@ -17,7 +17,17 @@ class When_api {
         $event_length = (int) $event_length;
         $occurrences = '';
 
+        $tz_from = 'UTC';
+        $tz_to = 'America/Los_Angeles';
+        $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
+        $start_dt->setTimeZone(new DateTimeZone($tz_to));
+        $start_date = $start_dt->format('Y-m-d H:i:s');
 
+        if ($end_date !== '9999-02-01 00:00:00') {
+            $end_dt = new DateTime($end_date, new DateTimeZone($tz_from));
+            $end_dt->setTimeZone(new DateTimeZone($tz_to));
+            $end_date = $end_dt->format('Y-m-d H:i:s');
+        }
 
         foreach ($non_repeat_programs as $program) {
             $program_start_date = $program['start_date'];
@@ -27,18 +37,17 @@ class When_api {
             syslog(LOG_NOTICE, "SMH DEBUG : program_start_date: " . print_r($program_start_date, true));
             syslog(LOG_NOTICE, "SMH DEBUG : program_end_date: " . print_r($program_end_date, true));
 
-//            $start_dt = new DateTime($program_start_date);
-//            $program_start_year = $start_dt->format('Y');
-//            $program_start_month = $start_dt->format('m');
-//
-//            $start_date_mod = new DateTime($start_date);
-//            $start_day = $start_date_mod->format('d');
-//            $start_hour = $start_date_mod->format('H');
-//            $start_mintue = $start_date_mod->format('i');
-//            $start_second = $start_date_mod->format('s');
-//
-//            $new_start_date = $program_start_year . "-" . $program_start_month . "-" . $start_day . " " . $start_hour . ":" . $start_mintue . ":" . $start_second;
-//            syslog(LOG_NOTICE, "SMH DEBUG : new_start_date: " . print_r($new_start_date, true));
+            $tz_from = 'UTC';
+            $tz_to = 'America/Los_Angeles';
+            $start_dt = new DateTime($program_start_date, new DateTimeZone($tz_from));
+            $start_dt->setTimeZone(new DateTimeZone($tz_to));
+            $program_start_date = $start_dt->format('Y-m-d H:i:s');
+
+            if ($program_end_date !== '9999-02-01 00:00:00') {
+                $end_dt = new DateTime($program_end_date, new DateTimeZone($tz_from));
+                $end_dt->setTimeZone(new DateTimeZone($tz_to));
+                $program_end_date = $end_dt->format('Y-m-d H:i:s');
+            }
 
             if ($type === 'day') {
                 $occurrences = $this->day($start_date, $end_date, $program_start_date, $program_end_date, $count, $event_length, $extra);
@@ -182,6 +191,17 @@ class When_api {
 
     public function process_rec_programs_b($start_date, $end_date, $repeat_programs) {
         $success = array('collision' => false);
+        $tz_from = 'UTC';
+        $tz_to = 'America/Los_Angeles';
+        $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
+        $start_dt->setTimeZone(new DateTimeZone($tz_to));
+        $start_date = $start_dt->format('Y-m-d H:i:s');
+
+        if ($end_date !== '9999-02-01 00:00:00') {
+            $end_dt = new DateTime($end_date, new DateTimeZone($tz_from));
+            $end_dt->setTimeZone(new DateTimeZone($tz_to));
+            $end_date = $end_dt->format('Y-m-d H:i:s');
+        }
         foreach ($repeat_programs as $program) {
             $program_start_date = $program['start_date'];
             $program_end_date = $program['end_date'];
@@ -195,6 +215,21 @@ class When_api {
             $extra = (int) $days_extra[1];
             $event_length = (int) $program['event_length'];
             $occurrences = '';
+
+            $tz_from = 'UTC';
+            $tz_to = 'America/Los_Angeles';
+            $start_dt = new DateTime($program_start_date, new DateTimeZone($tz_from));
+            $start_dt->setTimeZone(new DateTimeZone($tz_to));
+            $program_start_date = $start_dt->format('Y-m-d H:i:s');
+
+            if ($program_end_date !== '9999-02-01 00:00:00') {
+                $end_dt = new DateTime($program_end_date, new DateTimeZone($tz_from));
+                $end_dt->setTimeZone(new DateTimeZone($tz_to));
+                $program_end_date = $end_dt->format('Y-m-d H:i:s');
+            }
+
+            syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs_a start_date: " . print_r($start_date, true));
+            syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs_a end_date: " . print_r($end_date, true));
 
             syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs: start_date: " . print_r($start_date, true));
             syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs: end_date: " . print_r($end_date, true));
@@ -227,9 +262,34 @@ class When_api {
 
     public function process_non_rec_programs_b($start_date, $end_date, $non_repeat_programs) {
         $success = array('collision' => false);
+        $tz_from = 'UTC';
+        $tz_to = 'America/Los_Angeles';
+        $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
+        $start_dt->setTimeZone(new DateTimeZone($tz_to));
+        $start_date = $start_dt->format('Y-m-d H:i:s');
+
+        if ($end_date !== '9999-02-01 00:00:00') {
+            $end_dt = new DateTime($end_date, new DateTimeZone($tz_from));
+            $end_dt->setTimeZone(new DateTimeZone($tz_to));
+            $end_date = $end_dt->format('Y-m-d H:i:s');
+        }
+
         foreach ($non_repeat_programs as $program) {
             $program_start_date = $program['start_date'];
             $program_end_date = $program['end_date'];
+
+            $tz_from = 'UTC';
+            $tz_to = 'America/Los_Angeles';
+            $start_dt = new DateTime($program_start_date, new DateTimeZone($tz_from));
+            $start_dt->setTimeZone(new DateTimeZone($tz_to));
+            $program_start_date = $start_dt->format('Y-m-d H:i:s');
+
+            if ($program_end_date !== '9999-02-01 00:00:00') {
+                $end_dt = new DateTime($program_end_date, new DateTimeZone($tz_from));
+                $end_dt->setTimeZone(new DateTimeZone($tz_to));
+                $program_end_date = $end_dt->format('Y-m-d H:i:s');
+            }
+
             $collision = $this->datesOverlap($start_date, $end_date, $program_start_date, $program_end_date);
             syslog(LOG_NOTICE, "SMH DEBUG : process_non_rec_programs: " . print_r($collision, true));
             if ($collision) {
