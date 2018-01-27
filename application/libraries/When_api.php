@@ -98,12 +98,12 @@ class When_api {
             if ($start_date <= $program_start_date) {
                 $program_start_check = $program_start_date;
                 $additoinal_dates = $count * 10;
-                $program_end_mod = new DateTime($program_start_date . ' +' . $additoinal_dates . ' ' . $type);
+                $program_end_mod = new DateTime($program_start_date . ' +12 month');
                 $program_end_check = $program_end_mod->format('Y-m-d H:i:s');
             } else if ($start_date > $program_start_date) {
                 $program_start_check = $start_date;
                 $additoinal_dates = $count * 10;
-                $program_end_mod = new DateTime($start_date . ' +' . $additoinal_dates . ' ' . $type);
+                $program_end_mod = new DateTime($start_date . ' +12 month');
                 $program_end_check = $program_end_mod->format('Y-m-d H:i:s');
             }
 
@@ -300,7 +300,7 @@ class When_api {
             syslog(LOG_NOTICE, "SMH DEBUG : week: end_date_between: " . print_r($new_end_date, true));
             syslog(LOG_NOTICE, "SMH DEBUG : week: count: " . print_r($count, true));
             syslog(LOG_NOTICE, "SMH DEBUG : week: days_arr: " . print_r($days_arr, true));
-            
+
             $r->startDate(new DateTime($program_start_date))
                     ->freq("weekly")
                     ->interval($count)
@@ -360,12 +360,16 @@ class When_api {
         $start_date_mod = new DateTime($start_date . ' -1 day');
         //$start_date_mod->modify('first day of this month');
         $new_start_date = $start_date_mod->format('Y-m-d 00:00:00');
-        syslog(LOG_NOTICE, "SMH DEBUG : month: new_start_date: " . print_r($new_start_date, true));
 
         $end_date_mod = new DateTime($end_date . ' +1 day');
         //$end_date_mod->modify('last day of this month');
         $new_end_date = $end_date_mod->format('Y-m-d 00:00:00');
-        syslog(LOG_NOTICE, "SMH DEBUG : month: new_end_date: " . print_r($new_end_date, true));
+
+        syslog(LOG_NOTICE, "SMH DEBUG : month: program_start_date: " . print_r($program_start_date, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : month: start_date_between: " . print_r($new_start_date, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : month: end_date_between: " . print_r($new_end_date, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : month: count: " . print_r($count, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : month: end_date: " . print_r($end_date, true));
 
         if ($program_end_date === '9999-02-01 00:00:00') {
             if ($day) {
