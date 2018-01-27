@@ -350,23 +350,23 @@ class Channel_config_model extends CI_Model {
                 if ($collision['collision']) {
                     $success = array('success' => false, 'collision' => true);
                 } else {
-                    $success = array('success' => false, 'collision' => false);
-//                    $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $cid, $eid);
-//                    if ($add_live_segment['success']) {
-//                        $add_custom_data = $this->add_live_segment_custom_data($pid, $add_live_segment['id'], $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
-//                        if ($add_custom_data['success']) {
-//                            $add_live_segment_id = $this->add_live_segment_id($pid, $add_live_segment['id'], $add_custom_data['id']);
-//                            if ($add_live_segment_id['success']) {
-//                                $success = array('success' => true);
-//                            } else {
-//                                $success = array('success' => false, 'message' => 'Could not add custom data id');
-//                            }
-//                        } else {
-//                            $success = array('success' => false, 'message' => 'Could not add custom data');
-//                        }
-//                    } else {
-//                        $success = array('success' => false);
-//                    }
+                    //$success = array('success' => false, 'collision' => false);
+                    $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $cid, $eid);
+                    if ($add_live_segment['success']) {
+                        $add_custom_data = $this->add_live_segment_custom_data($pid, $add_live_segment['id'], $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
+                        if ($add_custom_data['success']) {
+                            $add_live_segment_id = $this->add_live_segment_id($pid, $add_live_segment['id'], $add_custom_data['id']);
+                            if ($add_live_segment_id['success']) {
+                                $success = array('success' => true);
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not add custom data id');
+                            }
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not add custom data');
+                        }
+                    } else {
+                        $success = array('success' => false);
+                    }
                 }
             } else {
                 $success = array('success' => false, 'message' => 'Channel Manager service not active');
