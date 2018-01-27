@@ -337,33 +337,37 @@ class Channel_config_model extends CI_Model {
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                if ($end_date !== '9999-02-01 00:00:00') {
-                    $end_date_mod = new DateTime($end_date);
-                    $end_date_mod->add(new DateInterval('PT' . $event_length . 'S'));
-                    $end_date = $end_date_mod->format('Y-m-d h:i:s A');
+                $repeat = ($repeat === 'true') ? true : false;
+                if ($repeat) {
+                    if ($end_date !== '9999-02-01 00:00:00') {
+                        $end_date_mod = new DateTime($end_date);
+                        $end_date_mod->add(new DateInterval('PT' . $event_length . 'S'));
+                        $end_date = $end_date_mod->format('Y-m-d h:i:s A');
+                    }
                 }
+
                 $collision = $this->collision_detection($pid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
                 if ($collision['collision']) {
-                    $success = array('success' => true, 'collision' => true);
+                    $success = array('success' => false, 'collision' => true);
                 } else {
-                    $success = array('success' => true, 'collision' => false);
+                    //$success = array('success' => false, 'collision' => false);
+                    $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $cid, $eid);
+                    if ($add_live_segment['success']) {
+                        $add_custom_data = $this->add_live_segment_custom_data($pid, $add_live_segment['id'], $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
+                        if ($add_custom_data['success']) {
+                            $add_live_segment_id = $this->add_live_segment_id($pid, $add_live_segment['id'], $add_custom_data['id']);
+                            if ($add_live_segment_id['success']) {
+                                $success = array('success' => true);
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not add custom data id');
+                            }
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not add custom data');
+                        }
+                    } else {
+                        $success = array('success' => false);
+                    }
                 }
-//                $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $cid, $eid);
-//                if ($add_live_segment['success']) {
-//                    $add_custom_data = $this->add_live_segment_custom_data($pid, $add_live_segment['id'], $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
-//                    if ($add_custom_data['success']) {
-//                        $add_live_segment_id = $this->add_live_segment_id($pid, $add_live_segment['id'], $add_custom_data['id']);
-//                        if ($add_live_segment_id['success']) {
-//                            $success = array('success' => true);
-//                        } else {
-//                            $success = array('success' => false, 'message' => 'Could not add custom data id');
-//                        }
-//                    } else {
-//                        $success = array('success' => false, 'message' => 'Could not add custom data');
-//                    }
-//                } else {
-//                    $success = array('success' => false);
-//                }
             } else {
                 $success = array('success' => false, 'message' => 'Channel Manager service not active');
             }
@@ -377,7 +381,6 @@ class Channel_config_model extends CI_Model {
         syslog(LOG_NOTICE, "SMH DEBUG : collision_detection1: start_date: " . print_r($start_date, true));
         syslog(LOG_NOTICE, "SMH DEBUG : collision_detection1: end_date: " . print_r($end_date, true));
         $collision = array('collision' => false);
-        $repeat = ($repeat === 'true') ? true : false;
         $tz_from = 'America/Los_Angeles';
         $tz_to = 'UTC';
         $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
@@ -405,7 +408,7 @@ class Channel_config_model extends CI_Model {
         $non_rec_collision = array('collision' => false);
         if ($repeat) {
             if (count($programs['nonrepeat_programs'] > 0)) {
-                //$non_rec_collision = $this->when_api->process_non_rec_programs_a($start_date, $end_date, $rec_type, $event_length, $programs['nonrepeat_programs']);
+                $non_rec_collision = $this->when_api->process_non_rec_programs_a($start_date, $end_date, $rec_type, $event_length, $programs['nonrepeat_programs']);
             }
             if (!$non_rec_collision['collision']) {
                 if (count($programs['repeat_programs'] > 0)) {
@@ -550,7 +553,7 @@ class Channel_config_model extends CI_Model {
             'status' => 2,
             'start_date' => $start_date,
             'end_date' => $end_date,
-            'repeat' => (bool) $repeat,
+            'repeat' => $repeat,
             'rec_type' => $rec_type,
             'event_pid' => 0,
             'event_length' => (int) $event_length,
