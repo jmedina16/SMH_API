@@ -67,6 +67,67 @@ class When_api {
         return $success;
     }
 
+    public function process_rec_programs_a($start_date, $end_date, $rec_type, $event_length, $repeat_programs) {
+        $success = array('collision' => false);
+
+        $rec_arr = explode("_", $rec_type);
+        $type = $rec_arr[0];
+        $count = (int) $rec_arr[1];
+        $day = (int) $rec_arr[2];
+        $count2 = (int) $rec_arr[3];
+        $days_extra = explode("#", $rec_arr[4]);
+        $days = $days_extra[0];
+        $extra = (int) $days_extra[1];
+        $event_length = (int) $event_length;
+        $occurrences = '';
+
+        foreach ($repeat_programs as $program) {
+            $program_start_date = $program['start_date'];
+            $program_end_date = $program['end_date'];
+            $program_rec_arr = explode("_", $program['rec_type']);
+            $program_type = $program_rec_arr[0];
+            $program_count = (int) $program_rec_arr[1];
+            $program_day = (int) $program_rec_arr[2];
+            $program_count2 = (int) $program_rec_arr[3];
+            $program_days_extra = explode("#", $program_rec_arr[4]);
+            $program_days = $program_days_extra[0];
+            $program_extra = (int) $program_days_extra[1];
+            $program_event_length = (int) $program['event_length'];
+            $program_occurrences = '';
+
+            $additoinal_dates = $program_count * 2;
+            $program_end_mod = new DateTime($program_start_date . ' +' . $additoinal_dates . ' ' . $program_type);
+            $program_end_check = $program_end_mod->format('Y-m-d H:i:s');
+
+            if ($program_type === 'day') {
+                $program_occurrences = $this->day($program_start_date, $program_end_date, $program_start_date, $program_end_check, $program_count, $program_event_length, $program_extra);
+            } else if ($program_type === 'week') {
+                $program_occurrences = $this->week($program_start_date, $program_end_date, $start_date, $end_date, $count, $event_length, $days, $extra);
+            } else if ($program_type === 'month') {
+                $program_occurrences = $this->month($program_start_date, $program_end_date, $start_date, $end_date, $count, $event_length, $day, $count2, $extra);
+            } else if ($program_type === 'year') {
+                $program_occurrences = $this->year($program_start_date, $program_end_date, $start_date, $end_date, $count, $event_length, $day, $count2, $extra);
+            }
+
+            syslog(LOG_NOTICE, "SMH DEBUG : program_occurrences: " . print_r($program_occurrences, true));
+
+            $start_check = reset($program_occurrences);
+            $end_check = end($program_occurrences);
+
+            if ($type === 'day') {
+                $occurrences = $this->day($start_date, $end_date, $start_check, $end_check, $count, $event_length, $extra);
+            } else if ($type === 'week') {
+                $occurrences = $this->week($program_start_date, $program_end_date, $start_date, $end_date, $count, $event_length, $days, $extra);
+            } else if ($type === 'month') {
+                $occurrences = $this->month($program_start_date, $program_end_date, $start_date, $end_date, $count, $event_length, $day, $count2, $extra);
+            } else if ($type === 'year') {
+                $occurrences = $this->year($program_start_date, $program_end_date, $start_date, $end_date, $count, $event_length, $day, $count2, $extra);
+            }
+            
+            syslog(LOG_NOTICE, "SMH DEBUG : occurrences: " . print_r($occurrences, true));
+        }
+    }
+
     public function process_rec_programs_b($start_date, $end_date, $repeat_programs) {
         $success = array('collision' => false);
         foreach ($repeat_programs as $program) {
