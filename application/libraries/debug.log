@@ -5405,3 +5405,19 @@ Stack trace:
 #3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(415): When_api->process_rec_programs_a('2018-02-01 05:4...', '9999-02-01 00:0...', 'week_1___3#no', '6', Array)
 #4 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(349): Channel_config_model->collision_detection('10012', '0_4r7w45lq', '0_nqjntm4h', '2018-01-31 09:4...', '9999-02-01 00:0...', true, 'week_1___3#no', '6')
 #5 /var/www/vhost in /var/www/vhosts/api/application/libraries/when/When.php on line 646
+[27-Jan-2018 00:34:21 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'InvalidStartDate' with message 'The start date must be the first occurrence.' in /var/www/vhosts/api/application/libraries/when/When.php:646
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/when/When.php(475): When->generateOccurrences()
+#1 /var/www/vhosts/api/application/libraries/When_api.php(316): When->getOccurrencesBetween(Object(DateTime), Object(DateTime))
+#2 /var/www/vhosts/api/application/libraries/When_api.php(115): When_api->week('2018-01-28 05:3...', '9999-02-01 00:0...', '2018-02-01 05:4...', '2019-02-01 05:4...', 1, 193, '2,6', 0)
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(415): When_api->process_rec_programs_a('2018-02-01 05:4...', '9999-02-01 00:0...', 'week_1___3#no', '6', Array)
+#4 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(349): Channel_config_model->collision_detection('10012', '0_4r7w45lq', '0_nqjntm4h', '2018-01-31 09:4...', '9999-02-01 00:0...', true, 'week_1___3#no', '6')
+#5 /var/www/vhost in /var/www/vhosts/api/application/libraries/when/When.php on line 646
+[27-Jan-2018 00:36:41 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'InvalidStartDate' with message 'The start date must be the first occurrence.' in /var/www/vhosts/api/application/libraries/when/When.php:646
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/when/When.php(475): When->generateOccurrences()
+#1 /var/www/vhosts/api/application/libraries/When_api.php(316): When->getOccurrencesBetween(Object(DateTime), Object(DateTime))
+#2 /var/www/vhosts/api/application/libraries/When_api.php(115): When_api->week('2018-01-28 05:3...', '9999-02-01 00:0...', '2018-01-31 21:4...', '2019-01-31 21:4...', 1, 193, '2,6', 0)
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(415): When_api->process_rec_programs_a('2018-01-31 21:4...', '9999-02-01 00:0...', 'week_1___3#no', '6', Array)
+#4 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(349): Channel_config_model->collision_detection('10012', '0_4r7w45lq', '0_nqjntm4h', '2018-01-31 09:4...', '9999-02-01 00:0...', true, 'week_1___3#no', '6')
+#5 /var/www/vhost in /var/www/vhosts/api/application/libraries/when/When.php on line 646

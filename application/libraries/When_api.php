@@ -81,6 +81,21 @@ class When_api {
         $event_length = (int) $event_length;
         $occurrences = '';
 
+        $tz_from = 'UTC';
+        $tz_to = 'America/Los_Angeles';
+        $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
+        $start_dt->setTimeZone(new DateTimeZone($tz_to));
+        $start_date = $start_dt->format('Y-m-d H:i:s');
+
+        if ($end_date !== '9999-02-01 00:00:00') {
+            $end_dt = new DateTime($end_date, new DateTimeZone($tz_from));
+            $end_dt->setTimeZone(new DateTimeZone($tz_to));
+            $end_date = $end_dt->format('Y-m-d H:i:s');
+        }
+
+        syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs_a start_date: " . print_r($start_date, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs_a end_date: " . print_r($end_date, true));
+
         foreach ($repeat_programs as $program) {
             $program_start_date = $program['start_date'];
             $program_end_date = $program['end_date'];
@@ -94,6 +109,18 @@ class When_api {
             $program_extra = (int) $program_days_extra[1];
             $program_event_length = (int) $program['event_length'];
             $program_occurrences = '';
+
+            $tz_from = 'UTC';
+            $tz_to = 'America/Los_Angeles';
+            $start_dt = new DateTime($program_start_date, new DateTimeZone($tz_from));
+            $start_dt->setTimeZone(new DateTimeZone($tz_to));
+            $program_start_date = $start_dt->format('Y-m-d H:i:s');
+
+            if ($program_end_date !== '9999-02-01 00:00:00') {
+                $end_dt = new DateTime($program_end_date, new DateTimeZone($tz_from));
+                $end_dt->setTimeZone(new DateTimeZone($tz_to));
+                $program_end_date = $end_dt->format('Y-m-d H:i:s');
+            }
 
             if ($start_date <= $program_start_date) {
                 $program_start_check = $program_start_date;
@@ -293,11 +320,11 @@ class When_api {
         //$end_date_mod->modify('last day of this month');
         $new_end_date = $end_date_mod->format('Y-m-d 00:00:00');
 
-        $tz_from = 'UTC';
-        $tz_to = 'America/Los_Angeles';
-        $start_dt = new DateTime($program_start_date, new DateTimeZone($tz_to));
-        $start_dt->setTimeZone(new DateTimeZone($tz_from));
-        $program_start_date = $start_dt->format('Y-m-d H:i:s');
+//        $tz_from = 'UTC';
+//        $tz_to = 'America/Los_Angeles';
+//        $start_dt = new DateTime($program_start_date, new DateTimeZone($tz_from));
+//        $start_dt->setTimeZone(new DateTimeZone($tz_to));
+//        $program_start_date = $start_dt->format('Y-m-d H:i:s');
 
         $r = new When();
         if ($program_end_date === '9999-02-01 00:00:00') {
