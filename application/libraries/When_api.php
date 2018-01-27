@@ -60,7 +60,7 @@ class When_api {
                 syslog(LOG_NOTICE, "SMH DEBUG : process_non_rec_programs_a: " . print_r($collision, true));
                 if ($collision) {
                     $success = array('collision' => true);
-                    break;
+                    break 2;
                 }
             }
         }
@@ -81,6 +81,10 @@ class When_api {
         $event_length = (int) $event_length;
         $occurrences = '';
 
+        $additoinal_dates = $count * 2;
+        $program_end_mod = new DateTime($start_date . ' +' . $additoinal_dates . ' ' . $type);
+        $program_end_check = $program_end_mod->format('Y-m-d H:i:s');
+
         foreach ($repeat_programs as $program) {
             $program_start_date = $program['start_date'];
             $program_end_date = $program['end_date'];
@@ -95,12 +99,8 @@ class When_api {
             $program_event_length = (int) $program['event_length'];
             $program_occurrences = '';
 
-            $additoinal_dates = $program_count * 2;
-            $program_end_mod = new DateTime($program_start_date . ' +' . $additoinal_dates . ' ' . $program_type);
-            $program_end_check = $program_end_mod->format('Y-m-d H:i:s');
-
             if ($program_type === 'day') {
-                $program_occurrences = $this->day($program_start_date, $program_end_date, $program_start_date, $program_end_check, $program_count, $program_event_length, $program_extra);
+                $program_occurrences = $this->day($program_start_date, $program_end_date, $start_date, $program_end_check, $program_count, $program_event_length, $program_extra);
             } else if ($program_type === 'week') {
                 $program_occurrences = $this->week($program_start_date, $program_end_date, $start_date, $end_date, $count, $event_length, $days, $extra);
             } else if ($program_type === 'month') {
@@ -115,7 +115,7 @@ class When_api {
             $end_check = end($program_occurrences);
 
             if ($type === 'day') {
-                $occurrences = $this->day($start_date, $end_date, $start_check, $end_check, $count, $event_length, $extra);
+                $occurrences = $this->day($start_date, $end_date, $start_check['start_date'], $end_check['end_date'], $count, $event_length, $extra);
             } else if ($type === 'week') {
                 $occurrences = $this->week($program_start_date, $program_end_date, $start_date, $end_date, $count, $event_length, $days, $extra);
             } else if ($type === 'month') {
@@ -123,9 +123,26 @@ class When_api {
             } else if ($type === 'year') {
                 $occurrences = $this->year($program_start_date, $program_end_date, $start_date, $end_date, $count, $event_length, $day, $count2, $extra);
             }
-            
+
             syslog(LOG_NOTICE, "SMH DEBUG : occurrences: " . print_r($occurrences, true));
+
+            foreach ($program_occurrences as $program_occurrence) {
+                $program_occurrence_start_date = $program_occurrence['start_date'];
+                $program_occurrence_end_date = $program_occurrence['end_date'];
+
+                foreach ($occurrences as $occurrence) {
+                    $occurrence_start_date = $occurrence['start_date'];
+                    $occurrence_end_date = $occurrence['end_date'];
+                    $collision = $this->datesOverlap($program_occurrence_start_date, $program_occurrence_end_date, $occurrence_start_date, $occurrence_end_date);
+                    syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs: collision: " . print_r($collision, true));
+                    if ($collision) {
+                        $success = array('collision' => true);
+                        break 3;
+                    }
+                }
+            }
         }
+        return $success;
     }
 
     public function process_rec_programs_b($start_date, $end_date, $repeat_programs) {
@@ -166,7 +183,7 @@ class When_api {
                 syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs2: " . print_r($collision, true));
                 if ($collision) {
                     $success = array('collision' => true);
-                    break;
+                    break 2;
                 }
             }
         }
@@ -193,15 +210,15 @@ class When_api {
         $start_date_mod = new DateTime($start_date . ' -1 day');
         //$start_date_mod->modify('first day of this month');
         $new_start_date = $start_date_mod->format('Y-m-d 00:00:00');
-        syslog(LOG_NOTICE, "SMH DEBUG : day: new_start_date: " . print_r($new_start_date, true));
 
         $end_date_mod = new DateTime($end_date . ' +1 day');
         //$end_date_mod->modify('last day of this month');
         $new_end_date = $end_date_mod->format('Y-m-d 00:00:00');
-        syslog(LOG_NOTICE, "SMH DEBUG : day: new_end_date: " . print_r($new_end_date, true));
 
         if ($program_end_date === '9999-02-01 00:00:00') {
             syslog(LOG_NOTICE, "SMH DEBUG : day: program_start_date: " . print_r($program_start_date, true));
+            syslog(LOG_NOTICE, "SMH DEBUG : day: start_date_between: " . print_r($new_start_date, true));
+            syslog(LOG_NOTICE, "SMH DEBUG : day: end_date_between: " . print_r($new_end_date, true));
             syslog(LOG_NOTICE, "SMH DEBUG : day: count: " . print_r($count, true));
             syslog(LOG_NOTICE, "SMH DEBUG : day: end_date: " . print_r($end_date, true));
 

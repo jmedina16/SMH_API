@@ -4968,3 +4968,73 @@ Stack trace:
 #2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(403): When_api->process_non_rec_programs_a('2018-01-01 23:0...', '9999-02-01 00:0...', 'week_1___1,5#no', '55', Array)
 #3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(340): Channel_config_model->collision_detection('10012', '0_ys3tjiru', '0_sxllsn8w', '2018-01-01 03:0...', '9999-02-01 00:0...', 'true', 'week_1___1,5#no', '55')
 #4 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(201): Channel_config_model- in /var/www/vhosts/api/application/libraries/When_api.php on line 208
+[26-Jan-2018 16:01:07 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'Exception' with message 'DateTime::__construct(): Failed to parse time string (Array -1 day) at position 0 (A): The timezone could not be found in the database' in /var/www/vhosts/api/application/libraries/When_api.php:193
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/When_api.php(193): DateTime->__construct('Array -1 day')
+#1 /var/www/vhosts/api/application/libraries/When_api.php(118): When_api->day('2018-01-02 23:0...', '9999-02-01 00:0...', Array, Array, 2, 55, 0)
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(412): When_api->process_rec_programs_a('2018-01-02 23:0...', '9999-02-01 00:0...', 'day_2___#no', '55', Array)
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(345): Channel_config_model->collision_detection('10012', '0_ys3tjiru', '0_sxllsn8w', '2018-01-02 03:0...', '9999-02-01 00:0...', 'true', 'day_2___#no', '55')
+#4 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(201): Channel_confi in /var/www/vhosts/api/application/libraries/When_api.php on line 193
+[26-Jan-2018 16:03:28 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'Exception' with message 'DateTime::__construct(): Failed to parse time string (Array -1 day) at position 0 (A): The timezone could not be found in the database' in /var/www/vhosts/api/application/libraries/When_api.php:195
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/When_api.php(195): DateTime->__construct('Array -1 day')
+#1 /var/www/vhosts/api/application/libraries/When_api.php(120): When_api->day('2018-01-02 23:0...', '9999-02-01 00:0...', Array, Array, 2, 55, 0)
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(412): When_api->process_rec_programs_a('2018-01-02 23:0...', '9999-02-01 00:0...', 'day_2___#no', '55', Array)
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(345): Channel_config_model->collision_detection('10012', '0_ys3tjiru', '0_sxllsn8w', '2018-01-02 03:0...', '9999-02-01 00:0...', 'true', 'day_2___#no', '55')
+#4 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(201): Channel_confi in /var/www/vhosts/api/application/libraries/When_api.php on line 195
+[26-Jan-2018 16:17:20 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'InvalidStartDate' with message 'The start date must be the first occurrence.' in /var/www/vhosts/api/application/libraries/when/When.php:646
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/when/When.php(475): When->generateOccurrences()
+#1 /var/www/vhosts/api/application/libraries/When_api.php(228): When->getOccurrencesBetween(Object(DateTime), Object(DateTime))
+#2 /var/www/vhosts/api/application/libraries/When_api.php(118): When_api->day('2018-03-01 23:0...', '9999-02-01 00:0...', '2018-01-25 23:0...', '2018-01-29 23:0...', 2, 55, 0)
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(412): When_api->process_rec_programs_a('2018-03-01 23:0...', '9999-02-01 00:0...', 'day_2___#no', '55', Array)
+#4 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(345): Channel_config_model->collision_detection('10012', '0_ys3tjiru', '0_sxllsn8w', '2018-03-01 03:0...', '9999-02-01 00:0...', 'true', 'day_2___#no', '55')
+#5 /var/www/vhosts/api/app in /var/www/vhosts/api/application/libraries/when/When.php on line 646
+[26-Jan-2018 16:19:24 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'InvalidStartDate' with message 'The start date must be the first occurrence.' in /var/www/vhosts/api/application/libraries/when/When.php:646
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/when/When.php(475): When->generateOccurrences()
+#1 /var/www/vhosts/api/application/libraries/When_api.php(228): When->getOccurrencesBetween(Object(DateTime), Object(DateTime))
+#2 /var/www/vhosts/api/application/libraries/When_api.php(118): When_api->day('2018-03-01 23:0...', '9999-02-01 00:0...', '2018-01-25 23:0...', '2018-01-29 23:0...', 2, 55, 0)
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(412): When_api->process_rec_programs_a('2018-03-01 23:0...', '9999-02-01 00:0...', 'day_2___#no', '55', Array)
+#4 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(345): Channel_config_model->collision_detection('10012', '0_ys3tjiru', '0_sxllsn8w', '2018-03-01 03:0...', '9999-02-01 00:0...', 'true', 'day_2___#no', '55')
+#5 /var/www/vhosts/api/app in /var/www/vhosts/api/application/libraries/when/When.php on line 646
+[26-Jan-2018 16:28:24 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'InvalidStartDate' with message 'The start date must be the first occurrence.' in /var/www/vhosts/api/application/libraries/when/When.php:646
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/when/When.php(475): When->generateOccurrences()
+#1 /var/www/vhosts/api/application/libraries/When_api.php(229): When->getOccurrencesBetween(Object(DateTime), Object(DateTime))
+#2 /var/www/vhosts/api/application/libraries/When_api.php(118): When_api->day('2018-03-01 23:0...', '9999-02-01 00:0...', '2018-01-25 23:0...', '2018-01-29 23:0...', 2, 55, 0)
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(412): When_api->process_rec_programs_a('2018-03-01 23:0...', '9999-02-01 00:0...', 'day_2___#no', '55', Array)
+#4 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(345): Channel_config_model->collision_detection('10012', '0_ys3tjiru', '0_sxllsn8w', '2018-03-01 03:0...', '9999-02-01 00:0...', 'true', 'day_2___#no', '55')
+#5 /var/www/vhosts/api/app in /var/www/vhosts/api/application/libraries/when/When.php on line 646
+[26-Jan-2018 16:29:24 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'InvalidStartDate' with message 'The start date must be the first occurrence.' in /var/www/vhosts/api/application/libraries/when/When.php:646
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/when/When.php(475): When->generateOccurrences()
+#1 /var/www/vhosts/api/application/libraries/When_api.php(228): When->getOccurrencesBetween(Object(DateTime), Object(DateTime))
+#2 /var/www/vhosts/api/application/libraries/When_api.php(118): When_api->day('2018-03-01 23:0...', '9999-02-01 00:0...', '2018-01-25 23:0...', '2018-01-29 23:0...', 2, 55, 0)
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(412): When_api->process_rec_programs_a('2018-03-01 23:0...', '9999-02-01 00:0...', 'day_2___#no', '55', Array)
+#4 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(345): Channel_config_model->collision_detection('10012', '0_ys3tjiru', '0_sxllsn8w', '2018-03-01 03:0...', '9999-02-01 00:0...', 'true', 'day_2___#no', '55')
+#5 /var/www/vhosts/api/app in /var/www/vhosts/api/application/libraries/when/When.php on line 646
+[26-Jan-2018 16:55:01 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'InvalidStartDate' with message 'The start date must be the first occurrence.' in /var/www/vhosts/api/application/libraries/when/When.php:646
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/when/When.php(475): When->generateOccurrences()
+#1 /var/www/vhosts/api/application/libraries/When_api.php(232): When->getOccurrencesBetween(Object(DateTime), Object(DateTime))
+#2 /var/www/vhosts/api/application/libraries/When_api.php(122): When_api->day('2018-03-01 23:0...', '9999-02-01 00:0...', NULL, NULL, 2, 55, 0)
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(412): When_api->process_rec_programs_a('2018-03-01 23:0...', '9999-02-01 00:0...', 'day_2___#no', '55', Array)
+#4 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(345): Channel_config_model->collision_detection('10012', '0_ys3tjiru', '0_sxllsn8w', '2018-03-01 03:0...', '9999-02-01 00:0...', 'true', 'day_2___#no', '55')
+#5 /var/www/vhosts/api/application/controllers/api_dev/cha in /var/www/vhosts/api/application/libraries/when/When.php on line 646
+[26-Jan-2018 16:57:29 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'InvalidStartDate' with message 'The start date must be the first occurrence.' in /var/www/vhosts/api/application/libraries/when/When.php:646
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/when/When.php(475): When->generateOccurrences()
+#1 /var/www/vhosts/api/application/libraries/When_api.php(228): When->getOccurrencesBetween(Object(DateTime), Object(DateTime))
+#2 /var/www/vhosts/api/application/libraries/When_api.php(103): When_api->day('2018-01-25 23:0...', '9999-02-01 00:0...', '2018-01-01 23:0...', '2018-01-05 23:0...', 2, 193, 0)
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(412): When_api->process_rec_programs_a('2018-01-01 23:0...', '9999-02-01 00:0...', 'day_2___#no', '55', Array)
+#4 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(345): Channel_config_model->collision_detection('10012', '0_ys3tjiru', '0_sxllsn8w', '2018-01-01 03:0...', '9999-02-01 00:0...', 'true', 'day_2___#no', '55')
+#5 /var/www/vhosts/api/ap in /var/www/vhosts/api/application/libraries/when/When.php on line 646
+[26-Jan-2018 16:57:47 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'InvalidStartDate' with message 'The start date must be the first occurrence.' in /var/www/vhosts/api/application/libraries/when/When.php:646
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/when/When.php(475): When->generateOccurrences()
+#1 /var/www/vhosts/api/application/libraries/When_api.php(228): When->getOccurrencesBetween(Object(DateTime), Object(DateTime))
+#2 /var/www/vhosts/api/application/libraries/When_api.php(103): When_api->day('2018-01-25 23:0...', '9999-02-01 00:0...', '2018-01-01 23:0...', '2018-01-05 23:0...', 2, 193, 0)
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(412): When_api->process_rec_programs_a('2018-01-01 23:0...', '9999-02-01 00:0...', 'day_2___#no', '55', Array)
+#4 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(345): Channel_config_model->collision_detection('10012', '0_ys3tjiru', '0_sxllsn8w', '2018-01-01 03:0...', '9999-02-01 00:0...', 'true', 'day_2___#no', '55')
+#5 /var/www/vhosts/api/ap in /var/www/vhosts/api/application/libraries/when/When.php on line 646
