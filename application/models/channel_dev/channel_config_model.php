@@ -405,7 +405,12 @@ class Channel_config_model extends CI_Model {
         $non_rec_collision = array('collision' => false);
         if ($repeat) {
             if (count($programs['nonrepeat_programs'] > 0)) {
-                $non_rec_collision = $this->when_api->process_non_rec_programs_a($start_date, $end_date, $rec_type, $event_length, $programs['nonrepeat_programs']);
+                //$non_rec_collision = $this->when_api->process_non_rec_programs_a($start_date, $end_date, $rec_type, $event_length, $programs['nonrepeat_programs']);
+            }
+            if (!$non_rec_collision['collision']) {
+                if (count($programs['repeat_programs'] > 0)) {
+                    $rec_collision = $this->when_api->process_rec_programs_a($start_date, $end_date, $rec_type, $event_length, $programs['repeat_programs']);
+                }
             }
         } else {
             if (count($programs['nonrepeat_programs'] > 0)) {
