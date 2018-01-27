@@ -293,11 +293,11 @@ class When_api {
         //$end_date_mod->modify('last day of this month');
         $new_end_date = $end_date_mod->format('Y-m-d 00:00:00');
 
-        //$tz_from = 'UTC';
-        //$tz_to = 'America/Los_Angeles';
-        //$start_dt = new DateTime($program_start_date, new DateTimeZone($tz_from));
-        //$start_dt->setTimeZone(new DateTimeZone($tz_to));
-        //$program_start_date = $start_dt->format('Y-m-d H:i:s');
+        $tz_from = 'UTC';
+        $tz_to = 'America/Los_Angeles';
+        $start_dt = new DateTime($program_start_date, new DateTimeZone($tz_to));
+        $start_dt->setTimeZone(new DateTimeZone($tz_from));
+        $program_start_date = $start_dt->format('Y-m-d H:i:s');
 
         $r = new When();
         if ($program_end_date === '9999-02-01 00:00:00') {
