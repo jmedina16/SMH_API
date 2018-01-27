@@ -102,7 +102,7 @@ class When_api {
                 $program_end_check = $program_end_mod->format('Y-m-d H:i:s');
             } else if ($start_date > $program_start_date) {
                 $program_start_check = $start_date;
-                $additoinal_dates = $count * 10;
+                $additoinal_dates = $count * 3;
                 $program_end_mod = new DateTime($start_date . ' +' . $additoinal_dates . ' ' . $type);
                 $program_end_check = $program_end_mod->format('Y-m-d H:i:s');
             }
