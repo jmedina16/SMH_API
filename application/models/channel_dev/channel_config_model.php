@@ -21,6 +21,7 @@ class Channel_config_model extends CI_Model {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
                 $live_channels = $this->smportal->get_channels($pid, $ks, null, null, null, $search, $category, $ac);
+                syslog(LOG_NOTICE, "SMH DEBUG : get_channels: " . print_r($live_channels, true));
                 $data = array();
                 $channels = array();
                 $channels['channels'] = array();
@@ -720,6 +721,7 @@ class Channel_config_model extends CI_Model {
         $this->_ci->curl->create("https://mediaplatform.streamingmediahosting.com/apps/services/v1.0/index.php?pid=" . $pid . "&action=get_services");
         $this->_ci->curl->get();
         $response = json_decode($this->_ci->curl->execute());
+        syslog(LOG_NOTICE, "SMH DEBUG : verify_service: " . $response);
         if ($response->channel_manager) {
             $has_service = true;
         }
