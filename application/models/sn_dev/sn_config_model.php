@@ -6192,6 +6192,8 @@ class Sn_config_model extends CI_Model {
         $has_service = false;
         $this->_ci->curl->create("https://mediaplatform.streamingmediahosting.com/apps/services/v1.0/index.php?pid=" . $pid . "&action=get_services");
         $this->_ci->curl->get();
+        $this->_ci->curl->option('SSL_VERIFYPEER', false);
+        $this->_ci->curl->option('SSL_VERIFYHOST', false);
         $response = json_decode($this->_ci->curl->execute());
         if ($response->social_network) {
             $has_service = true;

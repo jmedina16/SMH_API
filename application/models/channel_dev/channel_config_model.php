@@ -21,7 +21,6 @@ class Channel_config_model extends CI_Model {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
                 $live_channels = $this->smportal->get_channels($pid, $ks, null, null, null, $search, $category, $ac);
-                syslog(LOG_NOTICE, "SMH DEBUG : get_channels: " . print_r($live_channels, true));
                 $data = array();
                 $channels = array();
                 $channels['channels'] = array();
@@ -49,14 +48,15 @@ class Channel_config_model extends CI_Model {
                                 array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $segment['rec_type'], 'event_pid' => $segment['event_pid'], 'event_length' => $segment['event_length']));
                             }
                         }
-                        $thumbnail_url = str_replace("http://mediaplatform.streamingmediahosting.com", "", $channel['thumbnailUrl']);
+                        //syslog(LOG_NOTICE, "SMH DEBUG : get_channels: " . print_r($channel['thumbnailUrl'], true));
+                        //$thumbnail_url = str_replace("http://mediaplatform.streamingmediahosting.com", "", $channel['thumbnailUrl']);
                         $publish = ($channel['pushPublishEnabled']) ? $channel['pushPublishEnabled'] : 0;
                         $edit_arr = $channel['id'] . '\',\'' . htmlspecialchars(addslashes($channel['name']), ENT_QUOTES) . '\',\'' . htmlspecialchars(addslashes($channel['description']), ENT_QUOTES) . '\',\'' . htmlspecialchars(addslashes($channel['tags']), ENT_QUOTES) . '\',\'' . htmlspecialchars(addslashes($channel['referenceId']), ENT_QUOTES) . '\',\'' . htmlspecialchars(addslashes($channel['categories']), ENT_QUOTES) . '\',' . $channel['accessControlId'] . ',' . $channel['status'] . ',' . $publish . ',\'' . $thumbnail_url . '\'';
                         $preview_arr = $channel['id'] . '\',\'' . htmlspecialchars(addslashes($channel['name']), ENT_QUOTES);
                         if ($channel['pushPublishEnabled']) {
                             $live_status = '<i class="fa fa-circle" style="color:#FF0000; font-size: 11px;"></i> LIVE';
                         }
-                        array_push($channels['channels'], array('key' => $channel['id'], 'label' => '<div class="channel_wrapper" title="' . $channel['name'] . '" data-channel-id ="' . $channel['id'] . '"><div class="channel-play-wrapper"><a class="channel-link" onclick="smhCM.previewEmbed(\'' . $preview_arr . '\');"><i class="play-button"></i><div class="channel_thumb"><img src="http://mediaplatform.streamingmediahosting.com' . $thumbnail_url . '/quality/100/type/1/width/100/height/60" width="100" height="60"></div><div class="channel-status">' . $live_status . '</div></a></div><div class="channel_title">' . $channel['name'] . '</div><div class="clear"></div><div class="channel_tools"><div class="channel_option1" onclick="smhCM.editChannel(\'' . $edit_arr . ');"><i class="fa fa-pencil-square-o"></i></div><div class="channel_option2" onclick="smhCM.deleteChannel(\'' . $channel['id'] . '\', \'' . $channel['name'] . '\');"><i class="fa fa-trash-o"></i></div></div></div>'));
+                        array_push($channels['channels'], array('key' => $channel['id'], 'label' => '<div class="channel_wrapper" title="' . $channel['name'] . '" data-channel-id ="' . $channel['id'] . '"><div class="channel-play-wrapper"><a class="channel-link" onclick="smhCM.previewEmbed(\'' . $preview_arr . '\');"><i class="play-button"></i><div class="channel_thumb"><img src="' . $channel['thumbnailUrl'] . '/quality/100/type/1/width/100/height/60" width="100" height="60"></div><div class="channel-status">' . $live_status . '</div></a></div><div class="channel_title">' . $channel['name'] . '</div><div class="clear"></div><div class="channel_tools"><div class="channel_option1" onclick="smhCM.editChannel(\'' . $edit_arr . ');"><i class="fa fa-pencil-square-o"></i></div><div class="channel_option2" onclick="smhCM.deleteChannel(\'' . $channel['id'] . '\', \'' . $channel['name'] . '\');"><i class="fa fa-trash-o"></i></div></div></div>'));
                     }
                 }
 
@@ -720,12 +720,12 @@ class Channel_config_model extends CI_Model {
         $has_service = false;
         $this->_ci->curl->create("https://mediaplatform.streamingmediahosting.com/apps/services/v1.0/index.php?pid=" . $pid . "&action=get_services");
         $this->_ci->curl->get();
+        $this->_ci->curl->option('SSL_VERIFYPEER', false);
+        $this->_ci->curl->option('SSL_VERIFYHOST', false);
         $response = json_decode($this->_ci->curl->execute());
-        syslog(LOG_NOTICE, "SMH DEBUG : verify_service: " . $response);
         if ($response->channel_manager) {
             $has_service = true;
         }
-
         return $has_service;
     }
 
