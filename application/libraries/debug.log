@@ -5421,3 +5421,11 @@ Stack trace:
 #3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(415): When_api->process_rec_programs_a('2018-01-31 21:4...', '9999-02-01 00:0...', 'week_1___3#no', '6', Array)
 #4 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(349): Channel_config_model->collision_detection('10012', '0_4r7w45lq', '0_nqjntm4h', '2018-01-31 09:4...', '9999-02-01 00:0...', true, 'week_1___3#no', '6')
 #5 /var/www/vhost in /var/www/vhosts/api/application/libraries/when/When.php on line 646
+[31-Jan-2018 07:35:19 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Entry id "" not found' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(438): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(409): KalturaBaseEntryService->get('', NULL)
+#2 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2693): SMPortal->get_entry_details('10012', '')
+#3 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('10012', NULL, NULL, NULL, NULL, 'Active', 'Pending')
+#4 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('vpinBl9VANmX1f2...', 'I-GVGLAVFLP465', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Test', 'User', 'user2@smh.com', 'Z2NPJYZKK2RSY', 'US', 'Pending', '22V03127G145940...', 'instant', '07:34:37 Jan 31...')
+#5 [internal  in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
