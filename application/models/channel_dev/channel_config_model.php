@@ -50,7 +50,7 @@ class Channel_config_model extends CI_Model {
 
                                 //array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => '2018-02-19 23:35:00', 'end_date' => '2018-05-22 23:35:00', 'rec_type' => 'month_2_1_3_#2', 'event_pid' => 0, 'event_length' => 300));
                                 //array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => 'day_1___', 'event_pid' => 0, 'event_length' => 600));
-                                array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $segment['rec_type'], 'event_pid' => $segment['event_pid'], 'event_length' => $segment['event_length'], 'entryId' => $segment['entryId']));
+                                array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $segment['rec_type'], 'event_pid' => (int) $segment['event_pid'], 'event_length' => (int) $segment['event_length'], 'entryId' => $segment['entryId'], 'repeat' => (bool) $segment['repeat']));
                             }
                         }
                         //syslog(LOG_NOTICE, "SMH DEBUG : get_channels: " . print_r($channel['thumbnailUrl'], true));
@@ -193,7 +193,8 @@ class Channel_config_model extends CI_Model {
                 $rec_type = $res['rec_type'];
                 $event_pid = $res['event_pid'];
                 $event_length = $res['event_length'];
-                array_push($segments, array('id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $rec_type, 'event_pid' => $event_pid, 'event_length' => $event_length, 'created_at' => $created_at));
+                $repeat = $res['repeat'];
+                array_push($segments, array('id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $rec_type, 'event_pid' => $event_pid, 'event_length' => $event_length, 'created_at' => $created_at, 'repeat' => $repeat));
             }
             $success = array('success' => true, 'live_channel_segment' => $segments);
         }
