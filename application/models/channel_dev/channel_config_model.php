@@ -40,12 +40,17 @@ class Channel_config_model extends CI_Model {
                                 $start_dt = new DateTime($segment['start_date'], new DateTimeZone($tz_from));
                                 $start_dt->setTimeZone(new DateTimeZone($tz_to));
                                 $start_date = $start_dt->format('Y-m-d H:i:s');
-                                $end_dt = new DateTime($segment['end_date'], new DateTimeZone($tz_from));
-                                $end_dt->setTimeZone(new DateTimeZone($tz_to));
-                                $end_date = $end_dt->format('Y-m-d H:i:s');
+                                if ($segment['end_date'] === '9999-02-01 00:00:00') {
+                                    $end_date = $segment['end_date'];
+                                } else {
+                                    $end_dt = new DateTime($segment['end_date'], new DateTimeZone($tz_from));
+                                    $end_dt->setTimeZone(new DateTimeZone($tz_to));
+                                    $end_date = $end_dt->format('Y-m-d H:i:s');
+                                }
+
                                 //array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => '2018-02-19 23:35:00', 'end_date' => '2018-05-22 23:35:00', 'rec_type' => 'month_2_1_3_#2', 'event_pid' => 0, 'event_length' => 300));
                                 //array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => 'day_1___', 'event_pid' => 0, 'event_length' => 600));
-                                array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $segment['rec_type'], 'event_pid' => $segment['event_pid'], 'event_length' => $segment['event_length']));
+                                array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $segment['rec_type'], 'event_pid' => $segment['event_pid'], 'event_length' => $segment['event_length'], 'entryId' => $segment['entryId']));
                             }
                         }
                         //syslog(LOG_NOTICE, "SMH DEBUG : get_channels: " . print_r($channel['thumbnailUrl'], true));
