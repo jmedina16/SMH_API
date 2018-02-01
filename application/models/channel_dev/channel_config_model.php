@@ -43,9 +43,19 @@ class Channel_config_model extends CI_Model {
                                 if ($segment['end_date'] === '9999-02-01 00:00:00') {
                                     $end_date = $segment['end_date'];
                                 } else {
-                                    $end_dt = new DateTime($segment['end_date'], new DateTimeZone($tz_from));
-                                    $end_dt->setTimeZone(new DateTimeZone($tz_to));
-                                    $end_date = $end_dt->format('Y-m-d H:i:s');
+                                    $rec_type = explode("#", $segment['rec_type']);
+                                    $extra = $rec_type[1];
+                                    if ($extra && $extra != 'no') {
+                                        $event_length = (int) $segment['event_length'];
+                                        $end_dt = new DateTime($segment['end_date'], new DateTimeZone($tz_from));
+                                        $end_dt->sub(new DateInterval('PT' . $event_length . 'S'));
+                                        $end_dt->setTimeZone(new DateTimeZone($tz_to));
+                                        $end_date = $end_dt->format('Y-m-d H:i:s');
+                                    } else {
+                                        $end_dt = new DateTime($segment['end_date'], new DateTimeZone($tz_from));
+                                        $end_dt->setTimeZone(new DateTimeZone($tz_to));
+                                        $end_date = $end_dt->format('Y-m-d H:i:s');
+                                    }
                                 }
 
                                 //array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => '2018-02-19 23:35:00', 'end_date' => '2018-05-22 23:35:00', 'rec_type' => 'month_2_1_3_#2', 'event_pid' => 0, 'event_length' => 300));
