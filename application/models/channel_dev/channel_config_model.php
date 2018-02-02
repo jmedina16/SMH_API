@@ -108,12 +108,12 @@ class Channel_config_model extends CI_Model {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
                 $this->config = $this->load->database('kaltura', TRUE);
-                $live_channel_segments = $this->get_live_channel_segment($pid, $cid);
+                $live_channel_segments = $this->get_live_channel_segment_entries($pid, $cid, $start, $length);
 
                 $output = array(
                     "orderBy" => '-createdAt',
-                    "recordsTotal" => intval(count($live_channel_segments['live_channel_segment'])),
-                    "recordsFiltered" => intval(count($live_channel_segments['live_channel_segment'])),
+                    "recordsTotal" => intval($live_channel_segments['recordsTotal']),
+                    "recordsFiltered" => intval($live_channel_segments['recordsTotal']),
                     "data" => array(),
                 );
 
@@ -233,6 +233,55 @@ class Channel_config_model extends CI_Model {
                 array_push($segments, array('pcid' => $pcid, 'id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $rec_type, 'event_pid' => $event_pid, 'event_length' => $event_length, 'created_at' => $created_at, 'repeat' => (bool) $repeat));
             }
             $success = array('success' => true, 'live_channel_segment' => $segments);
+        }
+
+        return $success;
+    }
+
+    public function get_live_channel_segment_entries($pid, $cid, $start, $length) {
+        $success = array('success' => false);
+        $this->config = $this->load->database('ch', TRUE);
+        if (isset($start) && $length != '-1') {
+            $this->config->limit($this->config->escape_str($length), $this->config->escape_str($start));
+        }
+        $this->config->select('*')
+                ->from('program_config')
+                ->where('partner_id', $pid)
+                ->where('status', 2)
+                ->where('channel_id', $cid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+
+        $this->config->select('FOUND_ROWS() AS found_rows');
+        $filteredTotal = $this->config->get()->row()->found_rows;
+
+        /* Total data set length */
+        $count = $this->config->query('SELECT count(*) AS `Count` FROM program_config WHERE partner_id = "' . $pid . '" AND status = 2 AND channel_id = "' . $cid . '"');
+        $countQuery = $count->result_array();
+        $total = $countQuery[0]['Count'];
+
+        if ($query->num_rows() > 0) {
+            $segments = array();
+            foreach ($result as $res) {
+                $entry_id = $res['entry_id'];
+                $entry_details = $this->smportal->get_entry_details($pid, $entry_id);
+                $pcid = (int) $res['id'];
+                $id = (int) $res['live_segment_id'];
+                $name = $entry_details['name'];
+                $description = $entry_details['desc'];
+                $status = (int) $res['status'];
+                $created_at = $res['created_at'];
+                $thumbnail = $entry_details['thumbnailUrl'];
+                $start_date = $res['start_date'];
+                $end_date = $res['end_date'];
+                $rec_type = $res['rec_type'];
+                $event_pid = (int) $res['event_pid'];
+                $event_length = (int) $res['event_length'];
+                $repeat = ($res['repeat']) ? true : false;
+                array_push($segments, array('pcid' => $pcid, 'id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $rec_type, 'event_pid' => $event_pid, 'event_length' => $event_length, 'created_at' => $created_at, 'repeat' => (bool) $repeat));
+            }
+            $success = array('success' => true, 'live_channel_segment' => $segments, 'recordsFiltered' => $filteredTotal, 'recordsTotal' => $total);
         }
 
         return $success;
