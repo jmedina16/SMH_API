@@ -60,7 +60,7 @@ class Channel_config_model extends CI_Model {
 
                                 //array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => '2018-02-19 23:35:00', 'end_date' => '2018-05-22 23:35:00', 'rec_type' => 'month_2_1_3_#2', 'event_pid' => 0, 'event_length' => 300));
                                 //array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => 'day_1___', 'event_pid' => 0, 'event_length' => 600));
-                                array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $segment['rec_type'], 'event_pid' => (int) $segment['event_pid'], 'event_length' => (int) $segment['event_length'], 'entryId' => $segment['entryId'], 'repeat' => (bool) $segment['repeat']));
+                                array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $segment['rec_type'], 'event_pid' => (int) $segment['event_pid'], 'event_length' => (int) $segment['event_length'], 'entryId' => $segment['entryId'], 'repeat' => (bool) $segment['repeat'], 'pcid' => (int) $segment['pcid'], 'live_segment_id' => (int) $segment['id']));
                             }
                         }
                         //syslog(LOG_NOTICE, "SMH DEBUG : get_channels: " . print_r($channel['thumbnailUrl'], true));
@@ -192,6 +192,7 @@ class Channel_config_model extends CI_Model {
             foreach ($result as $res) {
                 $entry_id = $res['entry_id'];
                 $entry_details = $this->smportal->get_entry_details($pid, $entry_id);
+                $pcid = $res['id'];
                 $id = $res['live_segment_id'];
                 $name = $entry_details['name'];
                 $description = $entry_details['desc'];
@@ -204,7 +205,7 @@ class Channel_config_model extends CI_Model {
                 $event_pid = $res['event_pid'];
                 $event_length = $res['event_length'];
                 $repeat = $res['repeat'];
-                array_push($segments, array('id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $rec_type, 'event_pid' => $event_pid, 'event_length' => $event_length, 'created_at' => $created_at, 'repeat' => $repeat));
+                array_push($segments, array('pcid' => $pcid, 'id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $rec_type, 'event_pid' => $event_pid, 'event_length' => $event_length, 'created_at' => $created_at, 'repeat' => $repeat));
             }
             $success = array('success' => true, 'live_channel_segment' => $segments);
         }
@@ -363,7 +364,7 @@ class Channel_config_model extends CI_Model {
                     }
                 }
 
-                $collision = $this->collision_detection($pid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
+                $collision = $this->collision_detection($pid, null, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
                 if ($collision['collision']) {
                     $success = array('success' => false, 'collision' => true);
                 } else {
@@ -394,7 +395,53 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function collision_detection($pid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
+    public function update_program($pid, $ks, $lsid, $pcid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $repeat = ($repeat === 'true') ? true : false;
+                if ($repeat) {
+                    if ($end_date !== '9999-02-01 00:00:00') {
+                        $end_date_mod = new DateTime($end_date);
+                        $end_date_mod->add(new DateInterval('PT' . $event_length . 'S'));
+                        $end_date = $end_date_mod->format('Y-m-d h:i:s A');
+                    }
+                }
+
+                $collision = $this->collision_detection($pid, $pcid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
+                if ($collision['collision']) {
+                    $success = array('success' => false, 'collision' => true);
+                } else {
+                    $success = array('success' => false, 'collision' => false);
+//                    $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $cid, $eid);
+//                    if ($add_live_segment['success']) {
+//                        $add_custom_data = $this->add_live_segment_custom_data($pid, $add_live_segment['id'], $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
+//                        if ($add_custom_data['success']) {
+//                            $add_live_segment_id = $this->add_live_segment_id($pid, $add_live_segment['id'], $add_custom_data['id']);
+//                            if ($add_live_segment_id['success']) {
+//                                $success = array('success' => true);
+//                            } else {
+//                                $success = array('success' => false, 'message' => 'Could not add custom data id');
+//                            }
+//                        } else {
+//                            $success = array('success' => false, 'message' => 'Could not add custom data');
+//                        }
+//                    } else {
+//                        $success = array('success' => false);
+//                    }
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Channel Manager service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+        return $success;
+    }
+
+    public function collision_detection($pid, $pcid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
         syslog(LOG_NOTICE, "SMH DEBUG : collision_detection1: start_date: " . print_r($start_date, true));
         syslog(LOG_NOTICE, "SMH DEBUG : collision_detection1: end_date: " . print_r($end_date, true));
         $collision = array('collision' => false);
@@ -420,7 +467,7 @@ class Channel_config_model extends CI_Model {
         syslog(LOG_NOTICE, "SMH DEBUG : collision_detection2: start_date: " . print_r($start_date, true));
         syslog(LOG_NOTICE, "SMH DEBUG : collision_detection2: end_date: " . print_r($end_date, true));
 
-        $programs = $this->get_program_dates($pid, $cid, $start_date, $end_date);
+        $programs = $this->get_program_dates($pid, $pcid, $cid, $start_date, $end_date);
         $rec_collision = array('collision' => false);
         $non_rec_collision = array('collision' => false);
         if ($repeat) {
@@ -452,16 +499,27 @@ class Channel_config_model extends CI_Model {
         return $collision;
     }
 
-    public function get_program_dates($pid, $cid, $start_date, $end_date) {
+    public function get_program_dates($pid, $pcid, $cid, $start_date, $end_date) {
         $success = array('success' => false);
         $this->config = $this->load->database('ch', TRUE);
-        $this->config->select('*')
-                ->from('program_config')
-                ->where('partner_id', $pid)
-                ->where('channel_id', $cid)
-                ->where('status', 2)
-                ->where('start_date <=', $end_date)
-                ->where('end_date >=', $start_date);
+        if ($pcid) {
+            $this->config->select('*')
+                    ->from('program_config')
+                    ->where('partner_id', $pid)
+                    ->where('channel_id', $cid)
+                    ->where('id !=', $pcid)
+                    ->where('status', 2)
+                    ->where('start_date <=', $end_date)
+                    ->where('end_date >=', $start_date);
+        } else {
+            $this->config->select('*')
+                    ->from('program_config')
+                    ->where('partner_id', $pid)
+                    ->where('channel_id', $cid)
+                    ->where('status', 2)
+                    ->where('start_date <=', $end_date)
+                    ->where('end_date >=', $start_date);
+        }
 
         $query = $this->config->get();
         $result = $query->result_array();
