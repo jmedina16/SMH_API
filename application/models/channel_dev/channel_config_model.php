@@ -125,8 +125,8 @@ class Channel_config_model extends CI_Model {
                     $delete_action = '';
                     $edit_action = '';
 
-                    $edit_arr = $channel_segment['id'] . '\',\'' . addslashes($channel_segment['name']) . '\',\'' . addslashes($channel_segment['description']) . '\'';
-                    $edit_action = '<li role="presentation"><a role="menuitem" tabindex="-1" onclick="smhCM.editProgram(\'' . $edit_arr . ');">Program</a></li>';
+                    $edit_arr = $channel_segment['id'] . ',' . $channel_segment['pcid'] . ',\'' . $cid . '\',\'' . $channel_segment['entryId'] . '\',\'' . $channel_segment['name'] . '\',' . $channel_segment['event_length'] . ',' . $channel_segment['repeat'] . ',\'' . $channel_segment['rec_type'] . '\',\'' . $channel_segment['start_date'] . '\',\'' . $channel_segment['end_date'] . '\'';
+                    $edit_action = '<li role="presentation"><a role="menuitem" tabindex="-1" onclick="smhCM.editProgram(' . $edit_arr . ');">Program</a></li>';
 
                     $delete_arr = $channel_segment['id'] . '\',\'' . addslashes($channel_segment['name']) . '\',\'' . $cid;
                     $delete_action = '<li role="presentation" style="border-top: solid 1px #f0f0f0;"><a role="menuitem" tabindex="-1" onclick="smhCM.deleteProgram(\'' . $delete_arr . '\');">Delete</a></li>';
@@ -192,19 +192,19 @@ class Channel_config_model extends CI_Model {
             foreach ($result as $res) {
                 $entry_id = $res['entry_id'];
                 $entry_details = $this->smportal->get_entry_details($pid, $entry_id);
-                $pcid = $res['id'];
-                $id = $res['live_segment_id'];
+                $pcid = (int) $res['id'];
+                $id = (int) $res['live_segment_id'];
                 $name = $entry_details['name'];
                 $description = $entry_details['desc'];
-                $status = $res['status'];
+                $status = (int) $res['status'];
                 $created_at = $res['created_at'];
                 $thumbnail = $entry_details['thumbnailUrl'];
                 $start_date = $res['start_date'];
                 $end_date = $res['end_date'];
                 $rec_type = $res['rec_type'];
-                $event_pid = $res['event_pid'];
-                $event_length = $res['event_length'];
-                $repeat = $res['repeat'];
+                $event_pid = (int) $res['event_pid'];
+                $event_length = (int) $res['event_length'];
+                $repeat = (bool) $res['repeat'];
                 array_push($segments, array('pcid' => $pcid, 'id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $rec_type, 'event_pid' => $event_pid, 'event_length' => $event_length, 'created_at' => $created_at, 'repeat' => $repeat));
             }
             $success = array('success' => true, 'live_channel_segment' => $segments);
@@ -414,23 +414,18 @@ class Channel_config_model extends CI_Model {
                 if ($collision['collision']) {
                     $success = array('success' => false, 'collision' => true);
                 } else {
-                    $success = array('success' => false, 'collision' => false);
-//                    $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $cid, $eid);
-//                    if ($add_live_segment['success']) {
-//                        $add_custom_data = $this->add_live_segment_custom_data($pid, $add_live_segment['id'], $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
-//                        if ($add_custom_data['success']) {
-//                            $add_live_segment_id = $this->add_live_segment_id($pid, $add_live_segment['id'], $add_custom_data['id']);
-//                            if ($add_live_segment_id['success']) {
-//                                $success = array('success' => true);
-//                            } else {
-//                                $success = array('success' => false, 'message' => 'Could not add custom data id');
-//                            }
-//                        } else {
-//                            $success = array('success' => false, 'message' => 'Could not add custom data');
-//                        }
-//                    } else {
-//                        $success = array('success' => false);
-//                    }
+                    //$success = array('success' => false, 'collision' => false);
+                    $update_live_segment = $this->smportal->update_live_segment($pid, $ks, $lsid, $cid, $eid);
+                    if ($update_live_segment['success']) {
+                        $update_custom_data = $this->update_live_segment_custom_data($pcid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
+                        if ($update_custom_data['success']) {
+                            $success = array('success' => true);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not update custom data');
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not update live segment');
+                    }
                 }
             } else {
                 $success = array('success' => false, 'message' => 'Channel Manager service not active');
@@ -639,6 +634,45 @@ class Channel_config_model extends CI_Model {
         $this->config->limit(1);
         if ($this->config->affected_rows() > 0) {
             $success = array('success' => true, 'id' => $this->config->insert_id());
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function update_live_segment_custom_data($pcid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
+        $success = array('success' => false);
+
+        $tz_from = 'America/Los_Angeles';
+        $tz_to = 'UTC';
+        $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
+        $start_dt->setTimeZone(new DateTimeZone($tz_to));
+        $start_date = $start_dt->format('Y-m-d H:i:s');
+
+        if ($end_date !== '9999-02-01 00:00:00') {
+            $end_dt = new DateTime($end_date, new DateTimeZone($tz_from));
+            $end_dt->setTimeZone(new DateTimeZone($tz_to));
+            $end_date = $end_dt->format('Y-m-d H:i:s');
+        }
+
+        $data = array(
+            'channel_id' => $cid,
+            'entry_id' => $eid,
+            'status' => 2,
+            'start_date' => $start_date,
+            'end_date' => $end_date,
+            'repeat' => $repeat,
+            'rec_type' => $rec_type,
+            'event_pid' => 0,
+            'event_length' => (int) $event_length,
+            'updated_at' => date('Y-m-d H:i:s')
+        );
+        $this->config = $this->load->database('ch', TRUE);
+        $this->config->where('id', $pcid);
+        $this->config->update('program_config', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
         } else {
             $success = array('success' => false);
         }
