@@ -208,6 +208,79 @@ class Channel_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code
     }
 
+    public function update_program_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+        $lsid = $this->get('lsid');
+        $pcid = $this->get('pcid');
+        $cid = $this->get('cid');
+        $eid = $this->get('eid');
+        $start_date = $this->get('start_date');
+        $end_date = $this->get('end_date');
+        $repeat = $this->get('repeat');
+        $rec_type = $this->get('rec_type');
+        $event_length = $this->get('event_length');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing pid'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        if (!isset($lsid) || $lsid == null) {
+
+            $this->response(array('error' => 'Missing lsid'), 200);
+        }
+
+        if (!isset($pcid) || $pcid == null) {
+
+            $this->response(array('error' => 'Missing pcid'), 200);
+        }
+
+        if (!isset($cid) || $cid == null) {
+
+            $this->response(array('error' => 'Missing cid'), 200);
+        }
+
+        if (!isset($eid) || $eid == null) {
+
+            $this->response(array('error' => 'Missing eid'), 200);
+        }
+
+        if (!isset($start_date) || $start_date == null) {
+
+            $this->response(array('error' => 'Missing start_date'), 200);
+        }
+
+        if (!isset($end_date) || $end_date == null) {
+
+            $this->response(array('error' => 'Missing end_date'), 200);
+        }
+
+        if (!isset($repeat) || $repeat == null) {
+
+            $this->response(array('error' => 'Missing repeat'), 200);
+        }
+
+        if (!isset($event_length) || $event_length == null) {
+
+            $this->response(array('error' => 'Missing event_length'), 200);
+        }
+
+        $result = $this->channel_config_model->update_program($pid, $ks, $lsid, $pcid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code
+    }
+
     public function delete_program_get() {
         $pid = $this->get('pid');
         $ks = $this->get('ks');
