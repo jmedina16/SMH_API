@@ -125,8 +125,33 @@ class Channel_config_model extends CI_Model {
                     $delete_action = '';
                     $edit_action = '';
 
-                    $edit_arr = $channel_segment['id'] . ',' . $channel_segment['pcid'] . ',\'' . $cid . '\',\'' . $channel_segment['entryId'] . '\',\'' . $channel_segment['name'] . '\',' . $channel_segment['event_length'] . ',' . $channel_segment['repeat'] . ',\'' . $channel_segment['rec_type'] . '\',\'' . $channel_segment['start_date'] . '\',\'' . $channel_segment['end_date'] . '\'';
-                    $edit_action = '<li role="presentation"><a role="menuitem" tabindex="-1" onclick="smhCM.editProgram(' . $edit_arr . ');">Program</a></li>';
+                    $tz_from = 'UTC';
+                    $tz_to = 'America/Los_Angeles';
+                    $start_dt = new DateTime($channel_segment['start_date'], new DateTimeZone($tz_from));
+                    $start_dt->setTimeZone(new DateTimeZone($tz_to));
+                    $start_date = $start_dt->format('Y-m-d H:i:s');
+
+                    if ($channel_segment['end_date'] === '9999-02-01 00:00:00') {
+                        $end_date = $channel_segment['end_date'];
+                    } else {
+                        $rec_type = explode("#", $channel_segment['rec_type']);
+                        $extra = $rec_type[1];
+                        if ($extra && $extra != 'no') {
+                            $event_length = (int) $channel_segment['event_length'];
+                            $end_dt = new DateTime($channel_segment['end_date'], new DateTimeZone($tz_from));
+                            $end_dt->sub(new DateInterval('PT' . $event_length . 'S'));
+                            $end_dt->setTimeZone(new DateTimeZone($tz_to));
+                            $end_date = $end_dt->format('Y-m-d H:i:s');
+                        } else {
+                            $end_dt = new DateTime($channel_segment['end_date'], new DateTimeZone($tz_from));
+                            $end_dt->setTimeZone(new DateTimeZone($tz_to));
+                            $end_date = $end_dt->format('Y-m-d H:i:s');
+                        }
+                    }
+
+                    $repeat = ($channel_segment['repeat']) ? 1 : 0;
+                    $edit_arr = $channel_segment['id'] . ',' . $channel_segment['pcid'] . ',\'' . $cid . '\',\'' . $channel_segment['entryId'] . '\',\'' . $channel_segment['name'] . '\',' . $channel_segment['event_length'] . ',' . $repeat . ',\'' . $channel_segment['rec_type'] . '\',\'' . $start_date . '\',\'' . $end_date . '\'';
+                    $edit_action = '<li role="presentation"><a role="menuitem" tabindex="-1" onclick="smhCM.editChannelProgram(' . $edit_arr . ');">Program</a></li>';
 
                     $delete_arr = $channel_segment['id'] . '\',\'' . addslashes($channel_segment['name']) . '\',\'' . $cid;
                     $delete_action = '<li role="presentation" style="border-top: solid 1px #f0f0f0;"><a role="menuitem" tabindex="-1" onclick="smhCM.deleteProgram(\'' . $delete_arr . '\');">Delete</a></li>';
@@ -204,8 +229,8 @@ class Channel_config_model extends CI_Model {
                 $rec_type = $res['rec_type'];
                 $event_pid = (int) $res['event_pid'];
                 $event_length = (int) $res['event_length'];
-                $repeat = (bool) $res['repeat'];
-                array_push($segments, array('pcid' => $pcid, 'id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $rec_type, 'event_pid' => $event_pid, 'event_length' => $event_length, 'created_at' => $created_at, 'repeat' => $repeat));
+                $repeat = ($res['repeat']) ? true : false;
+                array_push($segments, array('pcid' => $pcid, 'id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $rec_type, 'event_pid' => $event_pid, 'event_length' => $event_length, 'created_at' => $created_at, 'repeat' => (bool) $repeat));
             }
             $success = array('success' => true, 'live_channel_segment' => $segments);
         }
