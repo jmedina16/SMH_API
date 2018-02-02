@@ -153,7 +153,7 @@ class Channel_config_model extends CI_Model {
                     $edit_arr = $channel_segment['id'] . ',' . $channel_segment['pcid'] . ',\'' . $cid . '\',\'' . $channel_segment['entryId'] . '\',\'' . $channel_segment['name'] . '\',' . $channel_segment['event_length'] . ',' . $repeat . ',\'' . $channel_segment['rec_type'] . '\',\'' . $start_date . '\',\'' . $end_date . '\'';
                     $edit_action = '<li role="presentation"><a role="menuitem" tabindex="-1" onclick="smhCM.editChannelProgram(' . $edit_arr . ');">Program</a></li>';
 
-                    $delete_arr = $channel_segment['id'] . '\',\'' . addslashes($channel_segment['name']) . '\',\'' . $cid;
+                    $delete_arr = $channel_segment['id'] . '\',\'' . addslashes($channel_segment['name']) . '\',\'' . $cid . '\',\'channel';
                     $delete_action = '<li role="presentation" style="border-top: solid 1px #f0f0f0;"><a role="menuitem" tabindex="-1" onclick="smhCM.deleteProgram(\'' . $delete_arr . '\');">Delete</a></li>';
 
                     $actions = '<span class="dropdown header">
@@ -813,7 +813,17 @@ class Channel_config_model extends CI_Model {
                 $live_channel_segments = $this->get_live_channel_segments($pid, $cid);
                 if ($live_channel_segments['success']) {
                     foreach ($live_channel_segments['live_channel_segments'] as $segment) {
-                        $this->smportal->delete_live_segment($pid, $ks, $segment['id']);
+                        $delete_live_segment = $this->smportal->delete_live_segment($pid, $ks, $segment['id']);
+                        if ($delete_live_segment['success']) {
+                            $get_program_config_id = $this->get_program_config_id($pid, $segment['id']);
+                            if ($get_program_config_id['success']) {
+                                $this->update_program_config_status($pid, $get_program_config_id['pcid'], 3);
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not get program config id');
+                            }
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not delete live segment');
+                        }
                     }
                     $delete_channel_resp = $this->smportal->delete_live_channel($pid, $ks, $cid);
                     if ($delete_channel_resp['success']) {
