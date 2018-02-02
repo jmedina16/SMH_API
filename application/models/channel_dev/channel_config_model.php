@@ -108,7 +108,7 @@ class Channel_config_model extends CI_Model {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
                 $this->config = $this->load->database('kaltura', TRUE);
-                $live_channel_segments = $this->get_live_channel_segment_entries($pid, $cid, $start, $length);
+                $live_channel_segments = $this->get_live_channel_segment_entries($pid, $cid, $start, $length, $search);
 
                 $output = array(
                     "orderBy" => '-createdAt',
@@ -238,17 +238,31 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function get_live_channel_segment_entries($pid, $cid, $start, $length) {
+    public function get_live_channel_segment_entries($pid, $cid, $start, $length, $search) {
         $success = array('success' => false);
         $this->config = $this->load->database('ch', TRUE);
         if (isset($start) && $length != '-1') {
             $this->config->limit($this->config->escape_str($length), $this->config->escape_str($start));
         }
+
         $this->config->select('*')
                 ->from('program_config')
                 ->where('partner_id', $pid)
                 ->where('status', 2)
                 ->where('channel_id', $cid);
+
+        $columns = array('entry_id', 'start_date', 'end_date');
+        if ($search != "") {
+            $where = '';
+            for ($i = 0; $i < count($columns); $i++) {
+                if ($i < count($columns) - 1) {
+                    $where .= $columns[$i] . " LIKE '%" . $search . "%' OR ";
+                } else {
+                    $where .= $columns[$i] . " LIKE '%" . $search . "%'";
+                }
+            }
+            $this->config->where('partner_id = "' . $pid . '" AND (' . $where . ')');
+        }
 
         $query = $this->config->get();
         $result = $query->result_array();
