@@ -181,7 +181,7 @@ class SMPortal {
         }
     }
 
-    public function update_live_segment($pid, $ks, $sid, $cid, $eid, $name, $desc) {
+    public function update_live_segment($pid, $ks, $lsid, $cid, $eid) {
         $success = array('success' => false);
         try {
             $config = new KalturaConfiguration($pid);
@@ -189,13 +189,11 @@ class SMPortal {
             $client = new KalturaClient($config);
             $client->setKs($ks);
             $liveChannelSegment = new KalturaLiveChannelSegment();
-            $liveChannelSegment->name = $name;
-            $liveChannelSegment->description = $desc;
             $liveChannelSegment->channelId = $cid;
             $liveChannelSegment->entryId = $eid;
             $liveChannelSegment->startTime = 0;
             $liveChannelSegment->duration = -1;
-            $result = $client->liveChannelSegment->update($sid, $liveChannelSegment);
+            $result = $client->liveChannelSegment->update($lsid, $liveChannelSegment);
             if ($result) {
                 $success = array('success' => true);
             } else {
