@@ -416,21 +416,43 @@ class Channel_config_model extends CI_Model {
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $delete_live_segment = $this->smportal->delete_live_segment($pid, $ks, $sid);
-                if ($delete_live_segment['success']) {
-                    $get_program_config_id = $this->get_program_config_id($pid, $sid);
-                    if ($get_program_config_id['success']) {
-                        $update_program_config_status = $this->update_program_config_status($pid, $get_program_config_id['pcid'], 3);
-                        if ($update_program_config_status['success']) {
-                            $success = array('success' => true);
+                if (strpos($sid, ',') !== false) {
+                    $sid_explode = array_map('intval', explode(',', $sid));
+                    foreach ($sid_explode as $lsid) {
+                        $delete_live_segment = $this->smportal->delete_live_segment($pid, $ks, $lsid);
+                        if ($delete_live_segment['success']) {
+                            $get_program_config_id = $this->get_program_config_id($pid, $lsid);
+                            if ($get_program_config_id['success']) {
+                                $update_program_config_status = $this->update_program_config_status($pid, $get_program_config_id['pcid'], 3);
+                                if ($update_program_config_status['success']) {
+                                    $success = array('success' => true);
+                                } else {
+                                    $success = array('success' => false, 'message' => 'Could not delete program config');
+                                }
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not get program config id');
+                            }
                         } else {
-                            $success = array('success' => false, 'message' => 'Could not delete program config');
+                            $success = array('success' => false, 'message' => 'Could not delete live segment');
                         }
-                    } else {
-                        $success = array('success' => false, 'message' => 'Could not get program config id');
                     }
                 } else {
-                    $success = array('success' => false, 'message' => 'Could not delete live segment');
+                    $delete_live_segment = $this->smportal->delete_live_segment($pid, $ks, $sid);
+                    if ($delete_live_segment['success']) {
+                        $get_program_config_id = $this->get_program_config_id($pid, $sid);
+                        if ($get_program_config_id['success']) {
+                            $update_program_config_status = $this->update_program_config_status($pid, $get_program_config_id['pcid'], 3);
+                            if ($update_program_config_status['success']) {
+                                $success = array('success' => true);
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not delete program config');
+                            }
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not get program config id');
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not delete live segment');
+                    }
                 }
             } else {
                 $success = array('success' => false, 'message' => 'Channel Manager service not active');
