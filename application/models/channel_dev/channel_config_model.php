@@ -129,10 +129,12 @@ class Channel_config_model extends CI_Model {
                     $tz_to = 'America/Los_Angeles';
                     $start_dt = new DateTime($channel_segment['start_date'], new DateTimeZone($tz_from));
                     $start_dt->setTimeZone(new DateTimeZone($tz_to));
-                    $start_date = $start_dt->format('Y-m-d H:i:s');
+                    $start_date = $start_dt->format('Y-m-d h:i:s A');
+                    $edit_start_date = $start_dt->format('Y-m-d H:i:s');
 
                     if ($channel_segment['end_date'] === '9999-02-01 00:00:00') {
-                        $end_date = $channel_segment['end_date'];
+                        $end_date = 'No End Date';
+                        $edit_end_date = $channel_segment['end_date'];
                     } else {
                         $rec_type = explode("#", $channel_segment['rec_type']);
                         $extra = $rec_type[1];
@@ -141,16 +143,18 @@ class Channel_config_model extends CI_Model {
                             $end_dt = new DateTime($channel_segment['end_date'], new DateTimeZone($tz_from));
                             $end_dt->sub(new DateInterval('PT' . $event_length . 'S'));
                             $end_dt->setTimeZone(new DateTimeZone($tz_to));
-                            $end_date = $end_dt->format('Y-m-d H:i:s');
+                            $end_date = $end_dt->format('Y-m-d h:i:s A');
+                            $edit_end_date = $end_dt->format('Y-m-d H:i:s');
                         } else {
                             $end_dt = new DateTime($channel_segment['end_date'], new DateTimeZone($tz_from));
                             $end_dt->setTimeZone(new DateTimeZone($tz_to));
-                            $end_date = $end_dt->format('Y-m-d H:i:s');
+                            $end_date = $end_dt->format('Y-m-d h:i:s A');
+                            $edit_end_date = $end_dt->format('Y-m-d H:i:s');
                         }
                     }
 
                     $repeat = ($channel_segment['repeat']) ? 1 : 0;
-                    $edit_arr = $channel_segment['id'] . ',' . $channel_segment['pcid'] . ',\'' . $cid . '\',\'' . $channel_segment['entryId'] . '\',\'' . $channel_segment['name'] . '\',' . $channel_segment['event_length'] . ',' . $repeat . ',\'' . $channel_segment['rec_type'] . '\',\'' . $start_date . '\',\'' . $end_date . '\'';
+                    $edit_arr = $channel_segment['id'] . ',' . $channel_segment['pcid'] . ',\'' . $cid . '\',\'' . $channel_segment['entryId'] . '\',\'' . $channel_segment['name'] . '\',' . $channel_segment['event_length'] . ',' . $repeat . ',\'' . $channel_segment['rec_type'] . '\',\'' . $edit_start_date . '\',\'' . $edit_end_date . '\'';
                     $edit_action = '<li role="presentation"><a role="menuitem" tabindex="-1" onclick="smhCM.editChannelProgram(' . $edit_arr . ');">Program</a></li>';
 
                     $delete_arr = $channel_segment['id'] . '\',\'' . addslashes($channel_segment['name']) . '\',\'' . $cid . '\',\'channel';
@@ -171,14 +175,14 @@ class Channel_config_model extends CI_Model {
                         <img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $channel_segment['entryId'] . '/quality/100/type/1/width/100/height/60" width="100" height="60">
                     </div>';
 
-                    $tz_from = 'UTC';
-                    $tz_to = 'America/Los_Angeles';
-                    $start_dt = new DateTime($channel_segment['start_date'], new DateTimeZone($tz_from));
-                    $start_dt->setTimeZone(new DateTimeZone($tz_to));
-                    $start_date = $start_dt->format('Y-m-d h:i:s A');
-                    $end_dt = new DateTime($channel_segment['end_date'], new DateTimeZone($tz_from));
-                    $end_dt->setTimeZone(new DateTimeZone($tz_to));
-                    $end_date = $end_dt->format('Y-m-d h:i:s A');
+//                    $tz_from = 'UTC';
+//                    $tz_to = 'America/Los_Angeles';
+//                    $start_dt = new DateTime($channel_segment['start_date'], new DateTimeZone($tz_from));
+//                    $start_dt->setTimeZone(new DateTimeZone($tz_to));
+//                    $start_date = $start_dt->format('Y-m-d h:i:s A');
+//                    $end_dt = new DateTime($channel_segment['end_date'], new DateTimeZone($tz_from));
+//                    $end_dt->setTimeZone(new DateTimeZone($tz_to));
+//                    $end_date = $end_dt->format('Y-m-d h:i:s A');
 
                     $row = array();
                     $row[] = '<input type="checkbox" class="channel-bulk" name="channel_bulk" value="' . $channel_segment['id'] . '" />';
