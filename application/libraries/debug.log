@@ -5455,3 +5455,24 @@ Stack trace:
 [05-Feb-2018 18:36:16 America/Los_Angeles] PHP Fatal error:  Only variables can be passed by reference in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 346
 [05-Feb-2018 18:39:35 America/Los_Angeles] PHP Fatal error:  Only variables can be passed by reference in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 349
 [05-Feb-2018 18:41:40 America/Los_Angeles] PHP Fatal error:  Only variables can be passed by reference in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 351
+[05-Feb-2018 22:08:50 America/Los_Angeles] PHP Fatal error:  Call to undefined function buildVideoSrcs() in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 359
+[05-Feb-2018 22:09:08 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Missing parameter "entryId"' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(2559): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(482): KalturaFlavorAssetService->getFlavorAssetsWithParams(NULL)
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(384): SMPortal->get_entry_filename('10012', NULL)
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(359): Channel_config_model->buildVideoSrcs('10012', NULL, NULL)
+#4 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(330): Channel_config_model->build_schedules()
+#5 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(39): Channel_config_model->get_schedules()
+#6 [internal function]: Channel_config->get_schedules_get()
+#7 /var/www/vhosts/api/appli in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
+[05-Feb-2018 22:24:16 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Missing parameter "entryId"' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(438): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(426): KalturaBaseEntryService->get(NULL, NULL)
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(362): SMPortal->get_entry_details(NULL, NULL)
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(330): Channel_config_model->build_schedules()
+#4 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(39): Channel_config_model->get_schedules()
+#5 [internal function]: Channel_config->get_schedules_get()
+#6 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#7 /var/www/vhosts/api/application/libraries/REST_Controller.php(316): REST_Controller-> in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
