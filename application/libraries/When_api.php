@@ -300,6 +300,50 @@ class When_api {
         return $success;
     }
 
+    public function process_rec_programs_build_schedule($start_date, $end_date, $program_start_check, $program_end_check, $rec_type, $event_length) {
+        $success = array('collision' => false);
+
+        $rec_arr = explode("_", $rec_type);
+        $type = $rec_arr[0];
+        $count = (int) $rec_arr[1];
+        $day = (int) $rec_arr[2];
+        $count2 = (int) $rec_arr[3];
+        $days_extra = explode("#", $rec_arr[4]);
+        $days = $days_extra[0];
+        $extra = (int) $days_extra[1];
+        $event_length = (int) $event_length;
+        $occurrences = '';
+
+        $tz_from = 'UTC';
+        $tz_to = 'America/Los_Angeles';
+        $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
+        $start_dt->setTimeZone(new DateTimeZone($tz_to));
+        $start_date = $start_dt->format('Y-m-d H:i:s');
+
+        if ($end_date !== '9999-02-01 00:00:00') {
+            $end_dt = new DateTime($end_date, new DateTimeZone($tz_from));
+            $end_dt->setTimeZone(new DateTimeZone($tz_to));
+            $end_date = $end_dt->format('Y-m-d H:i:s');
+        }
+
+        syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs_build_schedule start_date: " . print_r($start_date, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs_build_schedule end_date: " . print_r($end_date, true));
+
+        if ($type === 'day') {
+            $occurrences = $this->day($start_date, $end_date, $program_start_check, $program_end_check, $count, $event_length, $extra);
+        } else if ($type === 'week') {
+            $occurrences = $this->week($start_date, $end_date, $program_start_check, $program_end_check, $count, $event_length, $days, $extra);
+        } else if ($type === 'month') {
+            $occurrences = $this->month($start_date, $end_date, $program_start_check, $program_end_check, $count, $event_length, $day, $count2, $extra);
+        } else if ($type === 'year') {
+            $occurrences = $this->year($start_date, $end_date, $program_start_check, $program_end_check, $count, $event_length, $day, $count2, $extra);
+        }
+        
+        syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs_build_schedule occurrences: " . print_r($occurrences, true));
+
+        return $success;
+    }
+
     public function day($program_start_date, $program_end_date, $start_date, $end_date, $count, $event_length, $extra) {
         $r = new When();
         $start_date_mod = new DateTime($start_date . ' -1 day');
