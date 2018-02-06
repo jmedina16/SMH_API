@@ -238,7 +238,26 @@ class SMPortal {
         }
     }
 
-    public function get_channel_ids($pid, $ks) {
+    public function get_channel_ids($pid) {
+        $ks = $this->impersonate($pid);
+        $channel_ids = array();
+        $config = new KalturaConfiguration($pid);
+        $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
+        $client = new KalturaClient($config);
+        $client->setKs($ks);
+        $filter = new KalturaLiveChannelFilter();
+        $filter->orderBy = '-createdAt';
+        $filter->statusEqual = KalturaEntryStatus::READY;
+        $pager = null;
+        $results = $client->liveChannel->listAction($filter, $pager);
+        foreach ($results->objects as $r) {
+            array_push($channel_ids, $r->id);
+        }
+
+        return $channel_ids;
+    }
+
+    public function get_account_channel_ids($pid, $ks) {
         $channel_ids = array();
         $config = new KalturaConfiguration($pid);
         $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
