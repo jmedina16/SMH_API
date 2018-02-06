@@ -326,19 +326,40 @@ class Channel_config_model extends CI_Model {
     }
 
     public function get_schedules() {
-        $schedules = $this->build_schedules();
-        return $schedules;
+        $schedules = array();
+        $build_schedules = $this->build_schedules();
+        if ($build_schedules['success']) {
+            $schedules = $build_schedules['schedules'];
+        }
+        return json_encode($schedules);
     }
 
     public function build_schedules() {
         $success = array('success' => false);
         $accounts = $this->get_active_cm_accounts();
-        if(count($accounts['partner_ids']) > 0){
-            
+        if (count($accounts['partner_ids']) > 0) {
+            $schedules = array();
+            $schedules['account'] = array();
+            $schedules['account']['streams'] = array();
+            $schedules['account']['playlists'] = array();
+            foreach ($accounts['partner_ids'] as $partner_ids) {
+                $schedules['account'] = $partner_ids;
+//                $schedules['account']['streams'] = array();
+//                $schedules['account']['playlists'] = array();
+                $streams = array();
+                array_push($streams, '0_n4yefwai');
+                syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: " . print_r($streams, true));
+                //$playlists = array('name' => 'Test');
+                array_push($schedules['streams'], $streams);
+                syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: " . print_r($schedules, true));
+                //array_push($schedules['account'], $playlists);
+//                $schedules['account']['streams'] = array();
+//                $schedules['account']['playlists'] = array();
+            }
+            $success = array('success' => true, 'schedules' => $schedules);
         } else {
-            
+            $success = array('success' => false, 'error' => 'No accounts found with channel manager service');
         }
-        $success = array('success' => true, 'schedule' => $accounts['partner_ids']);
         return $success;
     }
 
