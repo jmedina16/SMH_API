@@ -325,7 +325,46 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function build_schedule($pid, $ks) {
+    public function get_schedule() {
+        $schedule = $this->build_schedule();
+        if ($schedule['success']) {
+            $success = array('success' => true, 'schedule' => $schedule['schedule']);
+        }
+        return $success;
+    }
+
+    public function build_schedule() {
+        $success = array('success' => false);
+        $accounts = $this->get_active_cm_accounts();
+        $success = array('success' => true, 'schedule' => $accounts['partner_ids']);
+        return $success;
+    }
+
+    public function get_active_cm_accounts() {
+        $success = array('success' => false);
+        $this->config = $this->load->database('accounts', TRUE);
+        $this->config->select('am.uid, am.publisher_id, am.status, ms.channel_manager')
+                ->from('master_services AS ms, accounts_master AS am')
+                ->where('am.uid = ms.uid')
+                ->where('ms.channel_manager = 1')
+                ->where('am.status = 1');
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+
+        if ($query->num_rows() > 0) {
+            $partner_ids = array();
+            foreach ($result as $res) {
+                $pid = $res['publisher_id'];
+                array_push($partner_ids, $pid);
+            }
+            $success = array('success' => true, 'partner_ids' => $partner_ids);
+        }
+
+        return $success;
+    }
+
+    public function build_account_schedule($pid, $ks) {
         $success = array('success' => false);
         $live_channels = $this->smportal->get_channel_ids($pid, $ks);
         if (count($live_channels) > 0) {
