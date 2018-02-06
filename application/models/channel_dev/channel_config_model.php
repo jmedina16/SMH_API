@@ -339,9 +339,9 @@ class Channel_config_model extends CI_Model {
         $accounts = $this->get_active_cm_accounts();
         if (count($accounts['partner_ids']) > 0) {
             $schedules = array();
-            $schedules['account'] = array();
-            $schedules['account']['streams'] = array();
-            $schedules['account']['playlists'] = array();
+//            $schedules['account'] = array();
+//            $schedules['account']['streams'] = array();
+//            $schedules['account']['playlists'] = array();
             foreach ($accounts['partner_ids'] as $partner_ids) {
                 $schedules['account'] = $partner_ids;
 //                $schedules['account']['streams'] = array();
