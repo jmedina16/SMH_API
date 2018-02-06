@@ -35,8 +35,8 @@ class Channel_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code
     }
 
-    public function get_schedule_get() {
-        $result = $this->channel_config_model->get_schedule();
+    public function get_schedules_get() {
+        $result = $this->channel_config_model->get_schedules();
 
         if (!$result) {
 
