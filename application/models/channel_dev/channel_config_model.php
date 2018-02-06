@@ -331,7 +331,7 @@ class Channel_config_model extends CI_Model {
         if ($build_schedules['success']) {
             $schedules = $build_schedules['schedules'];
         }
-        return json_encode($schedules);
+        return $schedules;
     }
 
     public function build_schedules() {
@@ -339,22 +339,13 @@ class Channel_config_model extends CI_Model {
         $accounts = $this->get_active_cm_accounts();
         if (count($accounts['partner_ids']) > 0) {
             $schedules = array();
-//            $schedules['account'] = array();
-//            $schedules['account']['streams'] = array();
-//            $schedules['account']['playlists'] = array();
             foreach ($accounts['partner_ids'] as $partner_ids) {
-                $schedules['account'] = $partner_ids;
-//                $schedules['account']['streams'] = array();
-//                $schedules['account']['playlists'] = array();
-                $streams = array();
-                array_push($streams, '0_n4yefwai');
-                syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: " . print_r($streams, true));
-                //$playlists = array('name' => 'Test');
-                array_push($schedules['streams'], $streams);
-                syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: " . print_r($schedules, true));
-                //array_push($schedules['account'], $playlists);
-//                $schedules['account']['streams'] = array();
-//                $schedules['account']['playlists'] = array();
+                $live_channels = $this->smportal->get_channel_ids($partner_ids);
+                if (count($live_channels) > 0) {
+                    $schedules['account'] = $partner_ids;
+                    $schedules['streams'] = array();
+                    $schedules['streams'] = $live_channels;
+                }
             }
             $success = array('success' => true, 'schedules' => $schedules);
         } else {
