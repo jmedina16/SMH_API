@@ -434,6 +434,7 @@ class SMPortal {
         $entry_info['startDate'] = $results->startDate;
         $entry_info['endDate'] = $results->endDate;
         $entry_info['status'] = $results->status;
+        $entry_info['type'] = $results->type;
         $entry_info['countdown'] = ($partnerData) ? ((isset($partnerData->ppvConfig)) ? $partnerData->ppvConfig[0]->countdown : null) : null;
         $entry_info['timezone'] = ($partnerData) ? ((isset($partnerData->ppvConfig)) ? $partnerData->ppvConfig[0]->timezone : null) : null;
 
