@@ -325,17 +325,19 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function get_schedule() {
-        $schedule = $this->build_schedule();
-        if ($schedule['success']) {
-            $success = array('success' => true, 'schedule' => $schedule['schedule']);
-        }
-        return $success;
+    public function get_schedules() {
+        $schedules = $this->build_schedules();
+        return $schedules;
     }
 
-    public function build_schedule() {
+    public function build_schedules() {
         $success = array('success' => false);
         $accounts = $this->get_active_cm_accounts();
+        if(count($accounts['partner_ids']) > 0){
+            
+        } else {
+            
+        }
         $success = array('success' => true, 'schedule' => $accounts['partner_ids']);
         return $success;
     }
