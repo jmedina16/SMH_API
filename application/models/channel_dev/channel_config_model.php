@@ -339,12 +339,28 @@ class Channel_config_model extends CI_Model {
         $accounts = $this->get_active_cm_accounts();
         if (count($accounts['partner_ids']) > 0) {
             $schedules = array();
-            foreach ($accounts['partner_ids'] as $partner_ids) {
-                $live_channels = $this->smportal->get_channel_ids($partner_ids);
+            foreach ($accounts['partner_ids'] as $partner_id) {
+                $live_channels = $this->smportal->get_channel_ids($partner_id);
                 if (count($live_channels) > 0) {
-                    $schedules['account'] = $partner_ids;
+                    $schedules['account'] = $partner_id;
                     $schedules['streams'] = array();
                     $schedules['streams'] = $live_channels;
+                    $date = new DateTime('now');
+                    $date->setTimezone(new DateTimeZone('UTC'));
+                    $start_date = $date->format('Y-m-d 00:00:00');
+                    $end_date = $date->format('Y-m-d 23:59:59');
+                    $plist_num = 1;
+                    foreach ($live_channels as $channel) {
+                        $playlist = array();
+                        $programs = $this->get_program_dates($partner_id, null, $channel, $start_date, $end_date);
+                        if (count($programs['nonrepeat_programs']) > 0) {
+                            $video_src = buildVideoSrcs($partner_id, $programs['nonrepeat_programs']['entry_id'], $programs['nonrepeat_programs']['event_length']);
+                            array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => false, 'scheduled' => $programs['nonrepeat_programs']['start_date'], 'video_srcs' => $video_src));
+                            $plist_num++;
+                        }
+                    }
+
+                    $schedules['playlists'] = $playlist;
                 }
             }
             $success = array('success' => true, 'schedules' => $schedules);
@@ -352,6 +368,19 @@ class Channel_config_model extends CI_Model {
             $success = array('success' => false, 'error' => 'No accounts found with channel manager service');
         }
         return $success;
+    }
+
+    public function buildVideoSrcs($pid, $entryId, $event_length) {
+        $sources = array();
+        $filename = $this->smportal->get_entry_filename($pid, $entryId);
+        $video_src = 'httpcache1/' . $pid . '/content/' . $filename['filename'];
+        $entry_details = $this->smportal->get_entry_details($pid, $entryId);
+        $start = ($entry_details['type'] === 7) ? -2 : 0;
+        $length = ($entry_details['duration'] === $event_length) ? -1 : $event_length;
+        $sources['video_src'] = $video_src;
+        $sources['start'] = $start;
+        $sources['length'] = $length;
+        return $sources;
     }
 
     public function get_active_cm_accounts() {
@@ -693,9 +722,9 @@ class Channel_config_model extends CI_Model {
             $programs_nonrepeat = array();
             foreach ($result as $res) {
                 if ($res['repeat']) {
-                    array_push($programs_repeat, array('start_date' => $res['start_date'], 'end_date' => $res['end_date'], 'rec_type' => $res['rec_type'], 'event_length' => $res['event_length']));
+                    array_push($programs_repeat, array('start_date' => $res['start_date'], 'end_date' => $res['end_date'], 'rec_type' => $res['rec_type'], 'event_length' => $res['event_length'], 'entry_id' => $res['entry_id']));
                 } else {
-                    array_push($programs_nonrepeat, array('start_date' => $res['start_date'], 'end_date' => $res['end_date'], 'event_length' => $res['event_length']));
+                    array_push($programs_nonrepeat, array('start_date' => $res['start_date'], 'end_date' => $res['end_date'], 'event_length' => $res['event_length'], 'entry_id' => $res['entry_id']));
                 }
             }
             $success = array('success' => true, 'repeat_programs' => $programs_repeat, 'nonrepeat_programs' => $programs_nonrepeat);
