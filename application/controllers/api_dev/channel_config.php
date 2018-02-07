@@ -11,7 +11,7 @@ class Channel_config extends REST_Controller {
         $this->load->model('/channel_dev/channel_config_model');
     }
 
-    public function post_schedule_get() {
+    public function push_schedule_get() {
         $pid = $this->get('pid');
         $ks = $this->get('ks');
 
@@ -25,7 +25,31 @@ class Channel_config extends REST_Controller {
             $this->response(array('error' => 'Missing ks'), 200);
         }
 
-        $result = $this->channel_config_model->post_schedule($pid, $ks);
+        $result = $this->channel_config_model->push_schedule($pid, $ks);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code
+    }
+
+    public function disable_schedule_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing pid'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        $result = $this->channel_config_model->disable_schedule($pid, $ks);
 
         if (!$result) {
 
