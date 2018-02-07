@@ -499,6 +499,19 @@ class SMPortal {
         return $success;
     }
 
+    public function get_stream_name($pid, $entryId) {
+        $sess = $this->impersonate($pid);
+        $config = new KalturaConfiguration($pid);
+        $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
+        $client = new KalturaClient($config);
+        $client->setKs($sess);
+        $version = null;
+        $result = $client->liveStream->get($entryId, $version);
+        $explode = explode("?", $result->streamName);
+        $streamName = $explode[0];
+        return $streamName;
+    }
+
     public function get_partner_child_acnts($pid, $ks) {
         try {
             $config = new KalturaConfiguration($pid);
