@@ -5483,3 +5483,6 @@ Stack trace:
 #2 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('\xE3vt\x8Dxr\x86+\vR\xCFA\x15\xE2\x8C...', NULL, NULL, NULL, NULL, 'Active', 'Pending')
 #3 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('1470466361:0 D:...', 'I-DGK6N0SDJ1GJ', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Jorge', 'Medina', 'jmedina616@gmai...', '853NLG6TBL9TC', 'US', 'Pending', '5KY51342JA46631...', 'instant', '11:12:19 Feb 06...')
 #4 [internal func in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 1191
+[06-Feb-2018 19:02:26 America/Los_Angeles] PHP Fatal error:  Call to undefined method Channel_config_model::build_schedule() in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 1046
+[06-Feb-2018 19:20:48 America/Los_Angeles] PHP Fatal error:  Call to undefined method Channel_config_model::build_schedule() in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 1046
+[06-Feb-2018 19:21:07 America/Los_Angeles] PHP Fatal error:  Call to undefined method Channel_config_model::build_schedule() in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 1046
