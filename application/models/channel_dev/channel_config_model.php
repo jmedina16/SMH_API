@@ -305,12 +305,23 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function push_schedule($pid) {
+    public function push_schedule($pid, $ks) {
         $success = array('success' => false);
         $schedule = $this->build_account_schedule($pid);
         if ($schedule['success']) {
-            syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule['schedule'], true));
-            $success = array('success' => true, 'schedule' => $schedule['schedule']);
+            if (count($schedule['schedule']) > 0) {
+                $schedule['schedule']['ks'] = $ks;
+                $success = array('success' => true, 'schedule' => $schedule['schedule']);
+                syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule['schedule'], true));
+            } else {
+                $schedule = array();
+                $schedule['account'] = $pid;
+                $schedule['ks'] = $ks;
+                $schedule['streams'] = array();
+                $schedule['playlists'] = array();
+                $success = array('success' => true, 'schedule' => $schedule);
+               syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule, true)); 
+            }            
         }
         return $success;
     }
@@ -562,7 +573,7 @@ class Channel_config_model extends CI_Model {
                             if ($get_program_config_id['success']) {
                                 $update_program_config_status = $this->update_program_config_status($pid, $get_program_config_id['pcid'], 3);
                                 if ($update_program_config_status['success']) {
-                                    $push_schedule = $this->push_schedule($pid);
+                                    $push_schedule = $this->push_schedule($pid, $ks);
                                     if ($push_schedule['success']) {
                                         $success = array('success' => true);
                                     } else {
@@ -585,7 +596,7 @@ class Channel_config_model extends CI_Model {
                         if ($get_program_config_id['success']) {
                             $update_program_config_status = $this->update_program_config_status($pid, $get_program_config_id['pcid'], 3);
                             if ($update_program_config_status['success']) {
-                                $push_schedule = $this->push_schedule($pid);
+                                $push_schedule = $this->push_schedule($pid, $ks);
                                 if ($push_schedule['success']) {
                                     $success = array('success' => true);
                                 } else {
@@ -636,7 +647,7 @@ class Channel_config_model extends CI_Model {
                         if ($add_custom_data['success']) {
                             $add_live_segment_id = $this->add_live_segment_id($pid, $add_live_segment['id'], $add_custom_data['id']);
                             if ($add_live_segment_id['success']) {
-                                $push_schedule = $this->push_schedule($pid);
+                                $push_schedule = $this->push_schedule($pid, $ks);
                                 if ($push_schedule['success']) {
                                     $success = array('success' => true);
                                 } else {
@@ -685,7 +696,7 @@ class Channel_config_model extends CI_Model {
                     if ($update_live_segment['success']) {
                         $update_custom_data = $this->update_live_segment_custom_data($pcid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
                         if ($update_custom_data['success']) {
-                            $push_schedule = $this->push_schedule($pid);
+                            $push_schedule = $this->push_schedule($pid, $ks);
                             if ($push_schedule['success']) {
                                 $success = array('success' => true);
                             } else {
@@ -1018,7 +1029,7 @@ class Channel_config_model extends CI_Model {
             if ($has_service) {
                 $update_live_segment = $this->smportal->delete_live_segment($pid, $ks, $sid);
                 if ($update_live_segment['success']) {
-                    $push_schedule = $this->push_schedule($pid);
+                    $push_schedule = $this->push_schedule($pid, $ks);
                     if ($push_schedule['success']) {
                         $success = array('success' => true);
                     } else {
@@ -1060,7 +1071,7 @@ class Channel_config_model extends CI_Model {
                     }
                     $delete_channel_resp = $this->smportal->delete_live_channel($pid, $ks, $cid);
                     if ($delete_channel_resp['success']) {
-                        $push_schedule = $this->push_schedule($pid);
+                        $push_schedule = $this->push_schedule($pid, $ks);
                         if ($push_schedule['success']) {
                             $success = array('success' => true);
                         } else {
@@ -1072,7 +1083,7 @@ class Channel_config_model extends CI_Model {
                 } else {
                     $delete_channel_resp = $this->smportal->delete_live_channel($pid, $ks, $cid);
                     if ($delete_channel_resp['success']) {
-                        $push_schedule = $this->push_schedule($pid);
+                        $push_schedule = $this->push_schedule($pid, $ks);
                         if ($push_schedule['success']) {
                             $success = array('success' => true);
                         } else {
