@@ -324,6 +324,8 @@ class When_api {
 
         syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs_build_schedule start_date: " . print_r($start_date, true));
         syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs_build_schedule end_date: " . print_r($end_date, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs_build_schedule program_start_check: " . print_r($program_start_check, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs_build_schedule program_end_check: " . print_r($program_end_check, true));
 
         if ($type === 'day') {
             $occurrences = $this->day($start_date, $end_date, $program_start_check, $program_end_check, $count, $event_length, $extra);
@@ -335,7 +337,21 @@ class When_api {
             $occurrences = $this->year($start_date, $end_date, $program_start_check, $program_end_check, $count, $event_length, $day, $count2, $extra);
         }
 
-        $success = array('success' => true, 'date_found' => $occurrences[0]);
+        $date_range_found = array();
+        foreach ($occurrences as $occurrence) {
+            $occurrence_start_date = $occurrence['start_date'];
+            $occurrence_end_date = $occurrence['end_date'];
+            $collision = $this->datesOverlap($program_start_check, $program_end_check, $occurrence_start_date, $occurrence_end_date);
+            syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs_build_schedule: collision:" . print_r($collision, true));
+            if ($collision) {
+                $date_range_found['start_date'] = $occurrence_start_date;
+                $date_range_found['end_date'] = $occurrence_end_date;
+//                $success = array('collision' => true);
+//                break 2;
+            }
+        }
+
+        $success = array('success' => true, 'date_range_found' => $date_range_found);
 
         syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs_build_schedule occurrences: " . print_r($occurrences, true));
 
