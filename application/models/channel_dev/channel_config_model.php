@@ -381,7 +381,7 @@ class Channel_config_model extends CI_Model {
                                 } else if ($entry_details['type'] === 5) {
                                     //TODO Playlist
                                 }
-                                array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => false, 'scheduled' => $rec_programs['date_found']['start_date'], 'video_srcs' => $video_srcs));
+                                array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => false, 'scheduled' => $rec_programs['date_range_found']['start_date'], 'video_srcs' => $video_srcs));
                                 $plist_num++;
                                 //syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: " . print_r($repeat_programs, true));
                             }
