@@ -374,12 +374,16 @@ class Channel_config_model extends CI_Model {
                             foreach ($programs['repeat_programs'] as $repeat_programs) {
                                 $video_srcs = array();
                                 $entry_details = $this->smportal->get_entry_details($partner_id, $repeat_programs['entry_id']);
+                                $rec_programs = $this->when_api->process_rec_programs_build_schedule($repeat_programs['start_date'], $repeat_programs['end_date'], $start_date, $end_date, $repeat_programs['rec_type'], $repeat_programs['event_length']);
                                 if ($entry_details['type'] === 1 || $entry_details['type'] === 7) {
-                                    $occurrence = $this->when_api->process_rec_programs_build_schedule($repeat_programs['start_date'], $repeat_programs['end_date'], $start_date, $end_date, $repeat_programs['rec_type'], $repeat_programs['event_length']);
+                                    $video_src = $this->buildVideoSrcs($partner_id, $repeat_programs['entry_id'], $entry_details['type'], $entry_details['duration'], $repeat_programs['event_length']);
+                                    array_push($video_srcs, $video_src);
                                 } else if ($entry_details['type'] === 5) {
                                     //TODO Playlist
                                 }
-                                syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: " . print_r($repeat_programs, true));
+                                array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => false, 'scheduled' => $rec_programs['date_found']['start_date'], 'video_srcs' => $video_srcs));
+                                $plist_num++;
+                                //syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: " . print_r($repeat_programs, true));
                             }
                         }
                         if (count($playlist) > 0) {
