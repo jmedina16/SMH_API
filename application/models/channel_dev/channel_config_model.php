@@ -305,23 +305,13 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function post_schedule($pid, $ks) {
+    public function push_schedule($pid) {
         $success = array('success' => false);
-        $valid = $this->verfiy_ks($pid, $ks);
-        if ($valid['success']) {
-            $has_service = $this->verify_service($pid);
-            if ($has_service) {
-                $schedule = $this->build_schedule($pid, $ks);
-                if ($schedule['success']) {
-                    $success = array('success' => true, 'schedule' => $schedule['schedule']);
-                }
-            } else {
-                $success = array('success' => false, 'message' => 'Channel Manager service not active');
-            }
-        } else {
-            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        $schedule = $this->build_account_schedule($pid);
+        if ($schedule['success']) {
+            syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule['schedule'], true));
+            $success = array('success' => true, 'schedule' => $schedule['schedule']);
         }
-
         return $success;
     }
 
@@ -452,44 +442,64 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function build_account_schedule($pid, $ks) {
+    public function build_account_schedule($partner_id) {
         $success = array('success' => false);
-        $live_channels = $this->smportal->get_channel_ids($pid, $ks);
+        $schedule = array();
+        $live_channels = $this->smportal->get_channel_ids($partner_id);
         if (count($live_channels) > 0) {
-            $schedule = array();
-            $schedule['streams'] = $live_channels;
-            $playlists = array();
-            $live_channel_segments = $this->get_live_channel_segments($pid, $live_channels);
-            if ($live_channel_segments['success']) {
-                $plist_num = 1;
-                $time = time();
-                $unixtime_to_date = date('n/j/Y H:i', $time);
-                $datetime = strtotime($unixtime_to_date);
-                $newDatetime = date('Y-m-d H:i:s', $datetime);
-                foreach ($live_channel_segments['live_channel_segments'] as $segment) {
-                    if ($this->multi_array_search($segment['playOnStream'], $playlists)) {
-                        foreach ($playlists as &$playlist) {
-                            if ($playlist['playOnStream'] == $segment['playOnStream']) {
-                                $playlist['video_srcs'][$segment['sortValue']] = array('video_src' => $segment['video_src'], 'start' => $segment['start'], 'length' => $segment['length']);
-                            }
+            $date = new DateTime('now');
+            $date->setTimezone(new DateTimeZone('UTC'));
+            $start_date = $date->format('Y-m-d 00:00:00');
+            $end_date = $date->format('Y-m-d 23:59:59');
+            $plist_num = 1;
+            $ready_channels = array();
+            $playlist = array();
+            foreach ($live_channels as $channel) {
+                $programs = $this->get_program_dates($partner_id, null, $channel, $start_date, $end_date);
+                if (count($programs['nonrepeat_programs']) > 0) {
+                    foreach ($programs['nonrepeat_programs'] as $nonrepeat_program) {
+                        $video_srcs = array();
+                        $entry_details = $this->smportal->get_entry_details($partner_id, $nonrepeat_program['entry_id']);
+                        if ($entry_details['type'] === 1 || $entry_details['type'] === 7) {
+                            $video_src = $this->buildVideoSrcs($partner_id, $nonrepeat_program['entry_id'], $entry_details['type'], $entry_details['duration'], $nonrepeat_program['event_length']);
+                            array_push($video_srcs, $video_src);
+                        } else if ($entry_details['type'] === 5) {
+                            //TODO Playlist
                         }
-                    } else {
-                        $video_src = array();
-                        $video_src[$segment['sortValue']] = array('video_src' => $segment['video_src'], 'start' => $segment['start'], 'length' => $segment['length']);
-                        array_push($playlists, array('name' => 'pl' . $plist_num, 'playOnStream' => $segment['playOnStream'], 'repeat' => true, 'scheduled' => $newDatetime, 'video_srcs' => $video_src));
+                        array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => false, 'scheduled' => $nonrepeat_program['start_date'], 'video_srcs' => $video_srcs));
                         $plist_num++;
                     }
                 }
+                if (count($programs['repeat_programs']) > 0) {
+                    foreach ($programs['repeat_programs'] as $repeat_programs) {
+                        $rec_programs = $this->when_api->process_rec_programs_build_schedule($repeat_programs['start_date'], $repeat_programs['end_date'], $start_date, $end_date, $repeat_programs['rec_type'], $repeat_programs['event_length']);
+                        if (count($rec_programs['date_range_found']) > 0) {
+                            $video_srcs = array();
+                            $entry_details = $this->smportal->get_entry_details($partner_id, $repeat_programs['entry_id']);
+                            if ($entry_details['type'] === 1 || $entry_details['type'] === 7) {
+                                $video_src = $this->buildVideoSrcs($partner_id, $repeat_programs['entry_id'], $entry_details['type'], $entry_details['duration'], $repeat_programs['event_length']);
+                                array_push($video_srcs, $video_src);
+                            } else if ($entry_details['type'] === 5) {
+                                //TODO Playlist
+                            }
+                            array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => false, 'scheduled' => $rec_programs['date_range_found']['start_date'], 'video_srcs' => $video_srcs));
+                            $plist_num++;
+                            //syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: " . print_r($repeat_programs, true));
+                        }
+                    }
+                }
+                if (count($playlist) > 0) {
+                    array_push($ready_channels, $channel);
+                }
             }
-
-            foreach ($playlists as &$playlist) {
-                ksort($playlist['video_srcs']);
+            if (count($ready_channels) > 0) {
+                $schedule['account'] = $partner_id;
+                $schedule['streams'] = array();
+                $schedule['streams'] = $ready_channels;
+                $schedule['playlists'] = $playlist;
             }
-
-            $schedule['playlists'] = $playlists;
-            $schedule_json = json_encode($schedule, JSON_UNESCAPED_SLASHES);
-            $success = array('success' => true, 'schedule' => $schedule_json);
         }
+        $success = array('success' => true, 'schedule' => $schedule);
         return $success;
     }
 
@@ -552,7 +562,12 @@ class Channel_config_model extends CI_Model {
                             if ($get_program_config_id['success']) {
                                 $update_program_config_status = $this->update_program_config_status($pid, $get_program_config_id['pcid'], 3);
                                 if ($update_program_config_status['success']) {
-                                    $success = array('success' => true);
+                                    $push_schedule = $this->push_schedule($pid);
+                                    if ($push_schedule['success']) {
+                                        $success = array('success' => true);
+                                    } else {
+                                        $success = array('success' => false, 'message' => 'Could not push schedule');
+                                    }
                                 } else {
                                     $success = array('success' => false, 'message' => 'Could not delete program config');
                                 }
@@ -570,7 +585,12 @@ class Channel_config_model extends CI_Model {
                         if ($get_program_config_id['success']) {
                             $update_program_config_status = $this->update_program_config_status($pid, $get_program_config_id['pcid'], 3);
                             if ($update_program_config_status['success']) {
-                                $success = array('success' => true);
+                                $push_schedule = $this->push_schedule($pid);
+                                if ($push_schedule['success']) {
+                                    $success = array('success' => true);
+                                } else {
+                                    $success = array('success' => false, 'message' => 'Could not push schedule');
+                                }
                             } else {
                                 $success = array('success' => false, 'message' => 'Could not delete program config');
                             }
@@ -616,7 +636,12 @@ class Channel_config_model extends CI_Model {
                         if ($add_custom_data['success']) {
                             $add_live_segment_id = $this->add_live_segment_id($pid, $add_live_segment['id'], $add_custom_data['id']);
                             if ($add_live_segment_id['success']) {
-                                $success = array('success' => true);
+                                $push_schedule = $this->push_schedule($pid);
+                                if ($push_schedule['success']) {
+                                    $success = array('success' => true);
+                                } else {
+                                    $success = array('success' => false, 'message' => 'Could not push schedule');
+                                }
                             } else {
                                 $success = array('success' => false, 'message' => 'Could not add custom data id');
                             }
@@ -660,7 +685,12 @@ class Channel_config_model extends CI_Model {
                     if ($update_live_segment['success']) {
                         $update_custom_data = $this->update_live_segment_custom_data($pcid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
                         if ($update_custom_data['success']) {
-                            $success = array('success' => true);
+                            $push_schedule = $this->push_schedule($pid);
+                            if ($push_schedule['success']) {
+                                $success = array('success' => true);
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not push schedule');
+                            }
                         } else {
                             $success = array('success' => false, 'message' => 'Could not update custom data');
                         }
@@ -940,13 +970,7 @@ class Channel_config_model extends CI_Model {
                             $success = array('success' => false);
                         }
                     }
-                    $schedule = $this->build_schedule($pid, $ks);
-                    if ($schedule['success']) {
-                        syslog(LOG_NOTICE, "SMH DEBUG : add_segment: " . print_r($schedule['schedule'], true));
-                        $success = array('success' => true);
-                    } else {
-                        $success = array('success' => true);
-                    }
+                    $success = array('success' => true);
                 } else {
                     $success = array('success' => false);
                 }
@@ -969,13 +993,7 @@ class Channel_config_model extends CI_Model {
                 if ($update_live_segment['success']) {
                     $update_live_segment_custom_data = $this->update_live_segment_custom_data($pid, $sid, $repeat, $scheduled);
                     if ($update_live_segment_custom_data['success']) {
-                        $schedule = $this->build_schedule($pid, $ks);
-                        if ($schedule['success']) {
-                            syslog(LOG_NOTICE, "SMH DEBUG : update_segment: " . print_r($schedule['schedule'], true));
-                            $success = array('success' => true);
-                        } else {
-                            $success = array('success' => true);
-                        }
+                        $success = array('success' => true);
                     } else {
                         $success = array('success' => false);
                     }
@@ -1000,12 +1018,11 @@ class Channel_config_model extends CI_Model {
             if ($has_service) {
                 $update_live_segment = $this->smportal->delete_live_segment($pid, $ks, $sid);
                 if ($update_live_segment['success']) {
-                    $schedule = $this->build_schedule($pid, $ks);
-                    if ($schedule['success']) {
-                        syslog(LOG_NOTICE, "SMH DEBUG : delete_segment: " . print_r($schedule['schedule'], true));
+                    $push_schedule = $this->push_schedule($pid);
+                    if ($push_schedule['success']) {
                         $success = array('success' => true);
                     } else {
-                        $success = array('success' => true);
+                        $success = array('success' => false, 'message' => 'Could not push schedule');
                     }
                 } else {
                     $success = array('success' => false);
@@ -1043,12 +1060,11 @@ class Channel_config_model extends CI_Model {
                     }
                     $delete_channel_resp = $this->smportal->delete_live_channel($pid, $ks, $cid);
                     if ($delete_channel_resp['success']) {
-                        $schedule = $this->build_schedule($pid, $ks);
-                        if ($schedule['success']) {
-                            syslog(LOG_NOTICE, "SMH DEBUG : delete_channel: " . print_r($schedule['schedule'], true));
+                        $push_schedule = $this->push_schedule($pid);
+                        if ($push_schedule['success']) {
                             $success = array('success' => true);
                         } else {
-                            $success = array('success' => true);
+                            $success = array('success' => false, 'message' => 'Could not push schedule');
                         }
                     } else {
                         $success = array('success' => false);
@@ -1056,7 +1072,12 @@ class Channel_config_model extends CI_Model {
                 } else {
                     $delete_channel_resp = $this->smportal->delete_live_channel($pid, $ks, $cid);
                     if ($delete_channel_resp['success']) {
-                        $success = array('success' => true);
+                        $push_schedule = $this->push_schedule($pid);
+                        if ($push_schedule['success']) {
+                            $success = array('success' => true);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not push schedule');
+                        }
                     } else {
                         $success = array('success' => false);
                     }
