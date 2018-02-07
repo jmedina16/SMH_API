@@ -325,6 +325,23 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
+    public function disable_schedule($pid, $ks) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $schedule = array();
+            $schedule['account'] = (int) $pid;
+            $schedule['ks'] = $ks;
+            $schedule['streams'] = array();
+            $schedule['playlists'] = array();
+            $success = array('success' => true, 'schedule' => $schedule);
+            syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule, true));
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+        return $success;
+    }
+
     public function get_schedules() {
         $schedules = array();
         $build_schedules = $this->build_schedules();
