@@ -301,7 +301,7 @@ class When_api {
     }
 
     public function process_rec_programs_build_schedule($start_date, $end_date, $program_start_check, $program_end_check, $rec_type, $event_length) {
-        $success = array('collision' => false);
+        $success = array('success' => false);
 
         $rec_arr = explode("_", $rec_type);
         $type = $rec_arr[0];
@@ -314,15 +314,11 @@ class When_api {
         $event_length = (int) $event_length;
         $occurrences = '';
 
-        $tz_from = 'UTC';
-        $tz_to = 'America/Los_Angeles';
-        $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
-        $start_dt->setTimeZone(new DateTimeZone($tz_to));
+        $start_dt = new DateTime($start_date);
         $start_date = $start_dt->format('Y-m-d H:i:s');
 
         if ($end_date !== '9999-02-01 00:00:00') {
-            $end_dt = new DateTime($end_date, new DateTimeZone($tz_from));
-            $end_dt->setTimeZone(new DateTimeZone($tz_to));
+            $end_dt = new DateTime($end_date);
             $end_date = $end_dt->format('Y-m-d H:i:s');
         }
 
@@ -338,7 +334,9 @@ class When_api {
         } else if ($type === 'year') {
             $occurrences = $this->year($start_date, $end_date, $program_start_check, $program_end_check, $count, $event_length, $day, $count2, $extra);
         }
-        
+
+        $success = array('success' => true, 'date_found' => $occurrences[0]);
+
         syslog(LOG_NOTICE, "SMH DEBUG : process_rec_programs_build_schedule occurrences: " . print_r($occurrences, true));
 
         return $success;
