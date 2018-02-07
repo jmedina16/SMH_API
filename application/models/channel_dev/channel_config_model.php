@@ -343,6 +343,7 @@ class Channel_config_model extends CI_Model {
         $success = array('success' => false);
         $accounts = $this->get_active_cm_accounts();
         if (count($accounts['partner_ids']) > 0) {
+            $final_schedules = array();
             $schedules = array();
             foreach ($accounts['partner_ids'] as $partner_id) {
                 $live_channels = $this->smportal->get_channel_ids($partner_id);
@@ -354,7 +355,7 @@ class Channel_config_model extends CI_Model {
                     $plist_num = 1;
                     $ready_channels = array();
                     $playlist = array();
-                    foreach ($live_channels as $channel) {                        
+                    foreach ($live_channels as $channel) {
                         $programs = $this->get_program_dates($partner_id, null, $channel, $start_date, $end_date);
                         if (count($programs['nonrepeat_programs']) > 0) {
                             foreach ($programs['nonrepeat_programs'] as $nonrepeat_program) {
@@ -397,10 +398,11 @@ class Channel_config_model extends CI_Model {
                         $schedules['streams'] = array();
                         $schedules['streams'] = $ready_channels;
                         $schedules['playlists'] = $playlist;
+                        array_push($final_schedules, $schedules);
                     }
                 }
             }
-            $success = array('success' => true, 'schedules' => $schedules);
+            $success = array('success' => true, 'schedules' => $final_schedules);
         } else {
             $success = array('success' => false, 'error' => 'No accounts found with channel manager service');
         }
@@ -409,8 +411,15 @@ class Channel_config_model extends CI_Model {
 
     public function buildVideoSrcs($pid, $entryId, $entryType, $entryDuration, $event_length) {
         $sources = array();
-        $filename = $this->smportal->get_entry_filename($pid, $entryId);
-        $video_src = 'httpcache1/' . $pid . '/content/' . $filename['filename'];
+        $video_src = '';
+        if ($entryType === 1) {
+            $filename = $this->smportal->get_entry_filename($pid, $entryId);
+            $video_src = 'httpcache1/' . $pid . '/content/' . $filename['filename'];
+        } else if ($entryType === 7) {
+            $streamName = $this->smportal->get_stream_name($pid, $entryId);
+            $video_src = $streamName;
+        }
+
         $start = ($entryType === 7) ? -2 : 0;
         $length = ((int) $entryDuration === (int) $event_length) ? -1 : $event_length;
         $sources['video_src'] = $video_src;
