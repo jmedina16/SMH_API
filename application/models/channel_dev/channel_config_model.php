@@ -307,21 +307,20 @@ class Channel_config_model extends CI_Model {
 
     public function push_schedule($pid, $ks) {
         $success = array('success' => false);
-        $schedule = $this->build_account_schedule($pid);
+        $schedule = $this->build_account_schedule($pid, $ks);
         if ($schedule['success']) {
             if (count($schedule['schedule']) > 0) {
-                $schedule['schedule']['ks'] = $ks;
                 $success = array('success' => true, 'schedule' => $schedule['schedule']);
                 syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule['schedule'], true));
             } else {
                 $schedule = array();
-                $schedule['account'] = $pid;
+                $schedule['account'] = (int) $pid;
                 $schedule['ks'] = $ks;
                 $schedule['streams'] = array();
                 $schedule['playlists'] = array();
                 $success = array('success' => true, 'schedule' => $schedule);
-               syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule, true)); 
-            }            
+                syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule, true));
+            }
         }
         return $success;
     }
@@ -390,17 +389,27 @@ class Channel_config_model extends CI_Model {
                                 }
                             }
                         }
-                        if (count($playlist) > 0) {
+                        if (count($playlist) > 0 && $this->multi_array_search($channel, $playlist)) {
                             array_push($ready_channels, $channel);
                         }
                     }
                     if (count($ready_channels) > 0) {
-                        $schedules['account'] = $partner_id;
+                        $schedules['account'] = (int) $partner_id;
                         $schedules['streams'] = array();
                         $schedules['streams'] = $ready_channels;
                         $schedules['playlists'] = $playlist;
                         array_push($final_schedules, $schedules);
+                    } else {
+                        $schedules['account'] = (int) $partner_id;
+                        $schedules['streams'] = array();
+                        $schedules['playlists'] = array();
+                        array_push($final_schedules, $schedules);
                     }
+                } else {
+                    $schedules['account'] = (int) $partner_id;
+                    $schedules['streams'] = array();
+                    $schedules['playlists'] = array();
+                    array_push($final_schedules, $schedules);
                 }
             }
             $success = array('success' => true, 'schedules' => $final_schedules);
@@ -424,8 +433,8 @@ class Channel_config_model extends CI_Model {
         $start = ($entryType === 7) ? -2 : 0;
         $length = ((int) $entryDuration === (int) $event_length) ? -1 : $event_length;
         $sources['video_src'] = $video_src;
-        $sources['start'] = $start;
-        $sources['length'] = $length;
+        $sources['start'] = (int) $start;
+        $sources['length'] = (int) $length;
         return $sources;
     }
 
@@ -453,7 +462,7 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function build_account_schedule($partner_id) {
+    public function build_account_schedule($partner_id, $ks) {
         $success = array('success' => false);
         $schedule = array();
         $live_channels = $this->smportal->get_channel_ids($partner_id);
@@ -499,12 +508,13 @@ class Channel_config_model extends CI_Model {
                         }
                     }
                 }
-                if (count($playlist) > 0) {
+                if (count($playlist) > 0 && $this->multi_array_search($channel, $playlist)) {
                     array_push($ready_channels, $channel);
                 }
             }
             if (count($ready_channels) > 0) {
-                $schedule['account'] = $partner_id;
+                $schedule['account'] = (int) $partner_id;
+                $schedule['ks'] = $ks;
                 $schedule['streams'] = array();
                 $schedule['streams'] = $ready_channels;
                 $schedule['playlists'] = $playlist;
