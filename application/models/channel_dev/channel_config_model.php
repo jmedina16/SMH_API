@@ -14,6 +14,61 @@ class Channel_config_model extends CI_Model {
         $this->load->library('when_api');
     }
 
+    public function get_public_channels($pid) {
+        $ks = $this->smportal->impersonate($pid);
+        $tz_from = 'UTC';
+        $search = '';
+        $category = '';
+        $ac = '';
+        $tz_to = $this->get_int_timezone($pid, $ks);
+        $live_channels = $this->smportal->get_public_channels($pid, $ks);
+        $data = array();
+        $channels = array();
+        $channels['channels'] = array();
+        $data['data'] = array();
+        array_push($channels['channels'], array('key' => 0, 'label' => '<div class="channel_wrapper" title="No Channel Found"><div style="color: #fff; font-size: 17px;">No Channels Found</div></div>'));
+        $this->config = $this->load->database('kaltura', TRUE);
+        if (count($live_channels['data']) > 0) {
+            $channels['channels'] = array();
+            $data['data'] = array();
+            foreach ($live_channels['data'] as $channel) {
+                $live_status = 'Off Air';
+                $live_channel_segment = $this->get_live_channel_segment($pid, $channel['id']);
+                if ($live_channel_segment['success']) {
+                    foreach ($live_channel_segment['live_channel_segment'] as $segment) {
+                        $start_dt = new DateTime($segment['start_date'], new DateTimeZone($tz_from));
+                        $start_dt->setTimeZone(new DateTimeZone($tz_to));
+                        $start_date = $start_dt->format('Y-m-d H:i:s');
+                        if ($segment['end_date'] === '9999-02-01 00:00:00') {
+                            $end_date = $segment['end_date'];
+                        } else {
+                            $rec_type = explode("#", $segment['rec_type']);
+                            $extra = $rec_type[1];
+                            if ($extra && $extra != 'no') {
+                                $event_length = (int) $segment['event_length'];
+                                $end_dt = new DateTime($segment['end_date'], new DateTimeZone($tz_from));
+                                $end_dt->sub(new DateInterval('PT' . $event_length . 'S'));
+                                $end_dt->setTimeZone(new DateTimeZone($tz_to));
+                                $end_date = $end_dt->format('Y-m-d H:i:s');
+                            } else {
+                                $end_dt = new DateTime($segment['end_date'], new DateTimeZone($tz_from));
+                                $end_dt->setTimeZone(new DateTimeZone($tz_to));
+                                $end_date = $end_dt->format('Y-m-d H:i:s');
+                            }
+                        }
+                        array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $segment['rec_type'], 'event_pid' => (int) $segment['event_pid'], 'event_length' => (int) $segment['event_length'], 'entryId' => $segment['entryId'], 'repeat' => (bool) $segment['repeat'], 'pcid' => (int) $segment['pcid'], 'live_segment_id' => (int) $segment['id']));
+                    }
+                }
+                $publish = ($channel['pushPublishEnabled']) ? $channel['pushPublishEnabled'] : 0;
+                $edit_arr = $channel['id'] . '\',\'' . htmlspecialchars(addslashes($channel['name']), ENT_QUOTES) . '\',\'' . htmlspecialchars(addslashes($channel['description']), ENT_QUOTES) . '\',\'' . htmlspecialchars(addslashes($channel['tags']), ENT_QUOTES) . '\',\'' . htmlspecialchars(addslashes($channel['referenceId']), ENT_QUOTES) . '\',\'' . htmlspecialchars(addslashes($channel['categories']), ENT_QUOTES) . '\',' . $channel['accessControlId'] . ',' . $channel['status'] . ',' . $publish . ',\'' . $channel['thumbnailUrl'] . '\'';
+                array_push($channels['channels'], array('key' => $channel['id'], 'label' => '<div class="channel_wrapper" title="' . $channel['name'] . '"><div class="channel-play-wrapper"><div class="channel_thumb"><img src="' . str_replace("http", "https", $channel['thumbnailUrl']) . '/quality/100/type/1/width/100/height/60" width="100" height="60"></div></div><div class="channel_title">' . $channel['name'] . '</div><div class="clear"></div></div>'));
+            }
+        }
+        $data['collections'] = $channels;
+        header('Content-Type: application/json');
+        return $data;
+    }
+
     public function get_channels($pid, $ks, $category, $ac, $search, $tz) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
