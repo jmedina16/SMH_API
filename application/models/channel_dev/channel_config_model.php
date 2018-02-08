@@ -14,12 +14,15 @@ class Channel_config_model extends CI_Model {
         $this->load->library('when_api');
     }
 
-    public function get_channels($pid, $ks, $category, $ac, $search) {
+    public function get_channels($pid, $ks, $category, $ac, $search, $tz) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
+                $tz_from = 'UTC';
+                $get_timezone = $this->get_timezone($pid, $ks, $tz);
+                $tz_to = $get_timezone['timezone'];
                 $live_channels = $this->smportal->get_channels($pid, $ks, null, null, null, $search, $category, $ac);
                 $data = array();
                 $channels = array();
@@ -35,8 +38,6 @@ class Channel_config_model extends CI_Model {
                         $live_channel_segment = $this->get_live_channel_segment($pid, $channel['id']);
                         if ($live_channel_segment['success']) {
                             foreach ($live_channel_segment['live_channel_segment'] as $segment) {
-                                $tz_from = 'UTC';
-                                $tz_to = 'America/Los_Angeles';
                                 $start_dt = new DateTime($segment['start_date'], new DateTimeZone($tz_from));
                                 $start_dt->setTimeZone(new DateTimeZone($tz_to));
                                 $start_date = $start_dt->format('Y-m-d H:i:s');
@@ -1137,6 +1138,13 @@ class Channel_config_model extends CI_Model {
         if ($tz_resp) {
             $timezone = $tz_resp;
         }
+        $success = array('success' => true, 'timezone' => $timezone);
+        return $success;
+    }
+
+    public function update_timezone($pid, $ks, $tz) {
+        $success = array('success' => false);
+        $timezone = $this->smportal->set_new_timezone($pid, $ks, $tz);
         $success = array('success' => true, 'timezone' => $timezone);
         return $success;
     }
