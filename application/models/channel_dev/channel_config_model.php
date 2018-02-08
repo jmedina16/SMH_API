@@ -56,7 +56,7 @@ class Channel_config_model extends CI_Model {
                                 $end_date = $end_dt->format('Y-m-d H:i:s');
                             }
                         }
-                        array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $segment['rec_type'], 'event_pid' => (int) $segment['event_pid'], 'event_length' => (int) $segment['event_length'], 'entryId' => $segment['entryId'], 'repeat' => (bool) $segment['repeat'], 'pcid' => (int) $segment['pcid'], 'live_segment_id' => (int) $segment['id']));
+                        array_push($data['data'], array('channel_id' => $channel['id'], 'channel_name' => $channel['name'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $segment['rec_type'], 'event_pid' => (int) $segment['event_pid'], 'event_length' => (int) $segment['event_length'], 'entryId' => $segment['entryId'], 'entry_desc' => $segment['description']));
                     }
                 }
                 $publish = ($channel['pushPublishEnabled']) ? $channel['pushPublishEnabled'] : 0;
