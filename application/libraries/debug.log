@@ -5535,3 +5535,27 @@ Stack trace:
 #6 /var/www/vhosts/api/index.php(202): require_once('/var/www/vhosts...')
 #7 {main}
   thrown in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 42
+[07-Feb-2018 19:18:10 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'Exception' with message 'DateTime::__construct(): Failed to parse time string (0NaN-aN-aN aN:aN:aN PM) at position 0 (0): Unexpected character' in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php:705
+Stack trace:
+#0 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(705): DateTime->__construct('0NaN-aN-aN aN:a...')
+#1 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(315): Channel_config_model->update_program('10012', 'NzFjMmVlOTFiOTg...', '823', '588', '0_77s19ixu', '0_8s7sul4y', '2018-02-06 04:0...', '0NaN-aN-aN aN:a...', 'true', 'day_1___#no', '103')
+#2 [internal function]: Channel_config->update_program_get()
+#3 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#4 /var/www/vhosts/api/application/libraries/REST_Controller.php(316): REST_Controller->_fire_method(Array, Array)
+#5 /var/www/vhosts/api/system/core/CodeIgniter.php(325): REST_Controller->_remap('update_ in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 705
+[07-Feb-2018 19:18:54 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'Exception' with message 'DateTime::__construct(): Failed to parse time string (0NaN-aN-aN aN:aN:aN PM) at position 0 (0): Unexpected character' in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php:705
+Stack trace:
+#0 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(705): DateTime->__construct('0NaN-aN-aN aN:a...')
+#1 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(315): Channel_config_model->update_program('10012', 'NzFjMmVlOTFiOTg...', '823', '588', '0_77s19ixu', '0_8s7sul4y', '2018-02-06 04:0...', '0NaN-aN-aN aN:a...', 'true', 'day_1___#no', '103')
+#2 [internal function]: Channel_config->update_program_get()
+#3 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#4 /var/www/vhosts/api/application/libraries/REST_Controller.php(316): REST_Controller->_fire_method(Array, Array)
+#5 /var/www/vhosts/api/system/core/CodeIgniter.php(325): REST_Controller->_remap('update_ in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 705
+[07-Feb-2018 19:23:28 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'Exception' with message 'DateTime::__construct(): Failed to parse time string (0NaN-aN-aN aN:aN:aN PM) at position 0 (0): Unexpected character' in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php:705
+Stack trace:
+#0 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(705): DateTime->__construct('0NaN-aN-aN aN:a...')
+#1 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(315): Channel_config_model->update_program('10012', 'NzFjMmVlOTFiOTg...', '823', '588', '0_77s19ixu', '0_8s7sul4y', '2018-02-06 04:0...', '0NaN-aN-aN aN:a...', 'true', 'day_1___#no', '103')
+#2 [internal function]: Channel_config->update_program_get()
+#3 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#4 /var/www/vhosts/api/application/libraries/REST_Controller.php(316): REST_Controller->_fire_method(Array, Array)
+#5 /var/www/vhosts/api/system/core/CodeIgniter.php(325): REST_Controller->_remap('update_ in /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php on line 705
