@@ -4,7 +4,7 @@ include dirname(__FILE__) . '/when/When.php';
 
 class When_api {
 
-    public function process_non_rec_programs_a($start_date, $end_date, $rec_type, $event_length, $non_repeat_programs) {
+    public function process_non_rec_programs_a($start_date, $end_date, $rec_type, $event_length, $non_repeat_programs, $tz_from, $tz_to) {
         $success = array('collision' => false);
         $rec_arr = explode("_", $rec_type);
         $type = $rec_arr[0];
@@ -17,8 +17,6 @@ class When_api {
         $event_length = (int) $event_length;
         $occurrences = '';
 
-        $tz_from = 'UTC';
-        $tz_to = 'America/Los_Angeles';
         $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
         $start_dt->setTimeZone(new DateTimeZone($tz_to));
         $start_date = $start_dt->format('Y-m-d H:i:s');
@@ -37,8 +35,6 @@ class When_api {
             syslog(LOG_NOTICE, "SMH DEBUG : program_start_date: " . print_r($program_start_date, true));
             syslog(LOG_NOTICE, "SMH DEBUG : program_end_date: " . print_r($program_end_date, true));
 
-            $tz_from = 'UTC';
-            $tz_to = 'America/Los_Angeles';
             $start_dt = new DateTime($program_start_date, new DateTimeZone($tz_from));
             $start_dt->setTimeZone(new DateTimeZone($tz_to));
             $program_start_date = $start_dt->format('Y-m-d H:i:s');
@@ -76,7 +72,7 @@ class When_api {
         return $success;
     }
 
-    public function process_rec_programs_a($start_date, $end_date, $rec_type, $event_length, $repeat_programs) {
+    public function process_rec_programs_a($start_date, $end_date, $rec_type, $event_length, $repeat_programs, $tz_from, $tz_to) {
         $success = array('collision' => false);
 
         $rec_arr = explode("_", $rec_type);
@@ -90,8 +86,6 @@ class When_api {
         $event_length = (int) $event_length;
         $occurrences = '';
 
-        $tz_from = 'UTC';
-        $tz_to = 'America/Los_Angeles';
         $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
         $start_dt->setTimeZone(new DateTimeZone($tz_to));
         $start_date = $start_dt->format('Y-m-d H:i:s');
@@ -119,8 +113,6 @@ class When_api {
             $program_event_length = (int) $program['event_length'];
             $program_occurrences = '';
 
-            $tz_from = 'UTC';
-            $tz_to = 'America/Los_Angeles';
             $start_dt = new DateTime($program_start_date, new DateTimeZone($tz_from));
             $start_dt->setTimeZone(new DateTimeZone($tz_to));
             $program_start_date = $start_dt->format('Y-m-d H:i:s');
@@ -189,10 +181,8 @@ class When_api {
         return $success;
     }
 
-    public function process_rec_programs_b($start_date, $end_date, $repeat_programs) {
+    public function process_rec_programs_b($start_date, $end_date, $repeat_programs, $tz_from, $tz_to) {
         $success = array('collision' => false);
-        $tz_from = 'UTC';
-        $tz_to = 'America/Los_Angeles';
         $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
         $start_dt->setTimeZone(new DateTimeZone($tz_to));
         $start_date = $start_dt->format('Y-m-d H:i:s');
@@ -216,8 +206,6 @@ class When_api {
             $event_length = (int) $program['event_length'];
             $occurrences = '';
 
-            $tz_from = 'UTC';
-            $tz_to = 'America/Los_Angeles';
             $start_dt = new DateTime($program_start_date, new DateTimeZone($tz_from));
             $start_dt->setTimeZone(new DateTimeZone($tz_to));
             $program_start_date = $start_dt->format('Y-m-d H:i:s');
@@ -260,10 +248,8 @@ class When_api {
         return $success;
     }
 
-    public function process_non_rec_programs_b($start_date, $end_date, $non_repeat_programs) {
+    public function process_non_rec_programs_b($start_date, $end_date, $non_repeat_programs, $tz_from, $tz_to) {
         $success = array('collision' => false);
-        $tz_from = 'UTC';
-        $tz_to = 'America/Los_Angeles';
         $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
         $start_dt->setTimeZone(new DateTimeZone($tz_to));
         $start_date = $start_dt->format('Y-m-d H:i:s');
@@ -278,8 +264,6 @@ class When_api {
             $program_start_date = $program['start_date'];
             $program_end_date = $program['end_date'];
 
-            $tz_from = 'UTC';
-            $tz_to = 'America/Los_Angeles';
             $start_dt = new DateTime($program_start_date, new DateTimeZone($tz_from));
             $start_dt->setTimeZone(new DateTimeZone($tz_to));
             $program_start_date = $start_dt->format('Y-m-d H:i:s');

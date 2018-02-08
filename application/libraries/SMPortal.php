@@ -275,6 +275,25 @@ class SMPortal {
         return $channel_ids;
     }
 
+    public function get_int_timezone($pid, $ks) {
+        $config = new KalturaConfiguration($pid);
+        $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
+        $client = new KalturaClient($config);
+        $client->setKs($ks);
+        $filter = new KalturaUserFilter();
+        $filter->isAdminEqual = KalturaNullableBoolean::TRUE_VALUE;
+        $pager = null;
+        $results = $client->user->listAction($filter, $pager);
+        $partnerData = null;
+        foreach ($results->objects as $r) {
+            if ($r->isAccountOwner) {
+                $partnerData = json_decode($r->partnerData);
+            }
+        }
+        $timezone = ($partnerData) ? ((isset($partnerData->cmConfig)) ? $partnerData->cmConfig[0]->timezone : null) : null;
+        return $timezone;
+    }
+
     public function get_timezone($pid, $ks, $tz) {
         $config = new KalturaConfiguration($pid);
         $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
