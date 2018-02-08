@@ -354,6 +354,44 @@ class SMPortal {
         return $timezone;
     }
 
+    public function get_public_channels($pid, $ks) {
+        $channels = array();
+        $config = new KalturaConfiguration($pid);
+        $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
+        $client = new KalturaClient($config);
+        $client->setKs($ks);
+        $filter = new KalturaLiveChannelFilter();
+        $filter->orderBy = '+createdAt';
+        $filter->statusIn = '2';
+        $pager = null;
+
+        $results = $client->liveChannel->listAction($filter, $pager);
+
+        $output = array(
+            "orderBy" => $filter->orderBy,
+            "recordsTotal" => intval($results->totalCount),
+            "recordsFiltered" => intval($results->totalCount),
+            "data" => array(),
+        );
+
+        if (isset($draw)) {
+            $output["draw"] = intval($draw);
+        }
+
+        $sort = 1;
+        foreach ($results->objects as $r) {
+            if ($r->pushPublishEnabled) {
+                $channels[$sort] = array('id' => $r->id, 'name' => $r->name, 'description' => $r->description, 'tags' => $r->tags, 'referenceId' => $r->referenceId, 'categories' => $r->categories, 'status' => $r->status, 'pushPublishEnabled' => $r->pushPublishEnabled, 'thumbnailUrl' => $r->thumbnailUrl, 'accessControlId' => $r->accessControlId, 'partnerSortValue' => $r->partnerSortValue, 'createdAt' => $r->createdAt);
+                $sort++;
+            }
+        }
+
+        ksort($channels);
+        $output["data"] = $channels;
+
+        return $output;
+    }
+
     public function get_channels($pid, $ks, $start, $length, $draw, $search, $category, $ac) {
         $channels = array();
         $config = new KalturaConfiguration($pid);
