@@ -275,6 +275,47 @@ class SMPortal {
         return $channel_ids;
     }
 
+    public function get_timezone($pid, $ks, $tz) {
+        $config = new KalturaConfiguration($pid);
+        $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
+        $client = new KalturaClient($config);
+        $client->setKs($ks);
+        $filter = new KalturaUserFilter();
+        $filter->isAdminEqual = KalturaNullableBoolean::TRUE_VALUE;
+        $pager = null;
+        $results = $client->user->listAction($filter, $pager);
+        $partnerData = null;
+        $userId = null;
+        foreach ($results->objects as $r) {
+            if ($r->isAccountOwner) {
+                $userId = $r->id;
+                $partnerData = json_decode($r->partnerData);
+            }
+        }
+        $timezone = ($partnerData) ? ((isset($partnerData->cmConfig)) ? $partnerData->cmConfig[0]->timezone : null) : null;
+        if (!$timezone) {
+            $timezone = $this->update_timezone($pid, $ks, $userId, $tz);
+        }
+        return $timezone;
+    }
+
+    public function update_timezone($pid, $ks, $userId, $tz) {
+        $config = new KalturaConfiguration($pid);
+        $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
+        $client = new KalturaClient($config);
+        $client->setKs($ks);
+        $user = new KalturaUser();
+        $cmConfig = array();
+        $config = array();
+        array_push($config, array('timezone' => $tz));
+        $cmConfig['cmConfig'] = $config;
+        $user->partnerData = json_encode($cmConfig);
+        $result = $client->user->update($userId, $user);
+        $partnerData = json_decode($result->partnerData);
+        $timezone = ($partnerData) ? ((isset($partnerData->cmConfig)) ? $partnerData->cmConfig[0]->timezone : null) : null;
+        return $timezone;
+    }
+
     public function get_channels($pid, $ks, $start, $length, $draw, $search, $category, $ac) {
         $channels = array();
         $config = new KalturaConfiguration($pid);
