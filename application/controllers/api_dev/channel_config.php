@@ -76,6 +76,7 @@ class Channel_config extends REST_Controller {
         $category = $this->get('category');
         $ac = $this->get('ac');
         $search = $this->get('search');
+        $tz = $this->get('tz');
 
         if (!isset($pid) || $pid == null) {
 
@@ -87,7 +88,12 @@ class Channel_config extends REST_Controller {
             $this->response(array('error' => 'Missing ks'), 200);
         }
 
-        $result = $this->channel_config_model->get_channels($pid, $ks, $category, $ac, $search);
+        if (!isset($tz) || $tz == null) {
+
+            $this->response(array('error' => 'Missing tz'), 200);
+        }
+
+        $result = $this->channel_config_model->get_channels($pid, $ks, $category, $ac, $search, $tz);
 
         if (!$result) {
 
@@ -427,6 +433,36 @@ class Channel_config extends REST_Controller {
         }
 
         $result = $this->channel_config_model->get_timezone($pid, $ks, $tz);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code
+    }
+
+    public function update_timezone_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+        $tz = $this->get('tz');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing pid'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        if (!isset($tz) || $tz == null) {
+
+            $this->response(array('error' => 'Missing tz'), 200);
+        }
+
+        $result = $this->channel_config_model->update_timezone($pid, $ks, $tz);
 
         if (!$result) {
 
