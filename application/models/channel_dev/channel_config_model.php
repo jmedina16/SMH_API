@@ -743,10 +743,13 @@ class Channel_config_model extends CI_Model {
         syslog(LOG_NOTICE, "SMH DEBUG : collision_detection1: start_date: " . print_r($start_date, true));
         syslog(LOG_NOTICE, "SMH DEBUG : collision_detection1: end_date: " . print_r($end_date, true));
         $collision = array('collision' => false);
-        $tz_from = 'UTC';
-        $tz_to = $this->get_int_timezone($pid, $ks);
-        
-        syslog(LOG_NOTICE, "SMH DEBUG : collision_detection: tz_to: " . print_r($tz_to, true));
+        $tz = $this->get_int_timezone($pid, $ks);
+        $tz_from = $tz;
+        $tz_to = 'UTC';
+        $when_tz_from = 'UTC';
+        $when_tz_to = $tz;
+
+        syslog(LOG_NOTICE, "SMH DEBUG : collision_detection: tz_to: " . print_r($tz, true));
 
         $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
         $start_dt->setTimeZone(new DateTimeZone($tz_to));
@@ -773,20 +776,20 @@ class Channel_config_model extends CI_Model {
         $non_rec_collision = array('collision' => false);
         if ($repeat) {
             if (count($programs['nonrepeat_programs'] > 0)) {
-                $non_rec_collision = $this->when_api->process_non_rec_programs_a($start_date, $end_date, $rec_type, $event_length, $programs['nonrepeat_programs'], $tz_from, $tz_to);
+                $non_rec_collision = $this->when_api->process_non_rec_programs_a($start_date, $end_date, $rec_type, $event_length, $programs['nonrepeat_programs'], $when_tz_from, $when_tz_to);
             }
             if (!$non_rec_collision['collision']) {
                 if (count($programs['repeat_programs'] > 0)) {
-                    $rec_collision = $this->when_api->process_rec_programs_a($start_date, $end_date, $rec_type, $event_length, $programs['repeat_programs'], $tz_from, $tz_to);
+                    $rec_collision = $this->when_api->process_rec_programs_a($start_date, $end_date, $rec_type, $event_length, $programs['repeat_programs'], $when_tz_from, $when_tz_to);
                 }
             }
         } else {
             if (count($programs['nonrepeat_programs'] > 0)) {
-                $non_rec_collision = $this->when_api->process_non_rec_programs_b($start_date, $end_date, $programs['nonrepeat_programs'], $tz_from, $tz_to);
+                $non_rec_collision = $this->when_api->process_non_rec_programs_b($start_date, $end_date, $programs['nonrepeat_programs'], $when_tz_from, $when_tz_to);
             }
             if (!$non_rec_collision['collision']) {
                 if (count($programs['repeat_programs'] > 0)) {
-                    $rec_collision = $this->when_api->process_rec_programs_b($start_date, $end_date, $programs['repeat_programs'], $tz_from, $tz_to);
+                    $rec_collision = $this->when_api->process_rec_programs_b($start_date, $end_date, $programs['repeat_programs'], $when_tz_from, $when_tz_to);
                 }
             }
         }
