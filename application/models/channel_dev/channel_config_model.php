@@ -17,9 +17,6 @@ class Channel_config_model extends CI_Model {
     public function get_public_channels($pid) {
         $ks = $this->smportal->impersonate($pid);
         $tz_from = 'UTC';
-        $search = '';
-        $category = '';
-        $ac = '';
         $tz_to = $this->get_int_timezone($pid, $ks);
         $live_channels = $this->smportal->get_public_channels($pid, $ks);
         $data = array();
@@ -56,7 +53,9 @@ class Channel_config_model extends CI_Model {
                                 $end_date = $end_dt->format('Y-m-d H:i:s');
                             }
                         }
-                        array_push($data['data'], array('channel_id' => $channel['id'], 'channel_name' => $channel['name'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $segment['rec_type'], 'event_pid' => (int) $segment['event_pid'], 'event_length' => (int) $segment['event_length'], 'entryId' => $segment['entryId'], 'entry_desc' => $segment['description']));
+                        $entry_desc = ($segment['description']) ? $segment['description'] : '';
+                        $thumbnail_url = str_replace("http://mediaplatform.streamingmediahosting.com", "", $segment['thumbnail']);
+                        array_push($data['data'], array('channel_id' => $channel['id'], 'channel_name' => $channel['name'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $segment['rec_type'], 'event_pid' => (int) $segment['event_pid'], 'event_length' => (int) $segment['event_length'], 'entryId' => $segment['entryId'], 'entry_desc' => $entry_desc, 'thumbnail_url' => $thumbnail_url));
                     }
                 }
                 $publish = ($channel['pushPublishEnabled']) ? $channel['pushPublishEnabled'] : 0;
