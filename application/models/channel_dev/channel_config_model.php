@@ -83,6 +83,7 @@ class Channel_config_model extends CI_Model {
 //                }
 //                syslog(LOG_NOTICE, "SMH DEBUG : get_channels: " . print_r($channels, true));
                 $data['collections'] = $channels;
+                $data['time_zone'] = 'TEST';
                 //syslog(LOG_NOTICE, "SMH DEBUG : get_channels: " . print_r($data, true));
                 header('Content-Type: application/json');
                 $success = json_encode($data, JSON_UNESCAPED_SLASHES);
@@ -1121,6 +1122,22 @@ class Channel_config_model extends CI_Model {
                     }
                 }
                 //syslog(LOG_NOTICE, "SMH DEBUG : delete_channel: " . print_r($live_channel_segment, true));
+            } else {
+                $success = array('success' => false, 'message' => 'Channel Manager service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+        return $success;
+    }
+
+    public function get_timezone($pid, $ks, $tz) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                
             } else {
                 $success = array('success' => false, 'message' => 'Channel Manager service not active');
             }
