@@ -122,12 +122,12 @@ class Channel_config_model extends CI_Model {
                     $output["draw"] = intval($draw);
                 }
 
+                $tz_from = 'UTC';
+                $tz_to = $this->get_int_timezone($pid, $ks);
+
                 foreach ($live_channel_segments['live_channel_segment'] as $channel_segment) {
                     $delete_action = '';
                     $edit_action = '';
-
-                    $tz_from = 'UTC';
-                    $tz_to = 'America/Los_Angeles';
                     $start_dt = new DateTime($channel_segment['start_date'], new DateTimeZone($tz_from));
                     $start_dt->setTimeZone(new DateTimeZone($tz_to));
                     $start_date = $start_dt->format('Y-m-d h:i:s A');
@@ -571,14 +571,7 @@ class Channel_config_model extends CI_Model {
             $segments = array();
             foreach ($result as $res) {
                 $id = $res['id'];
-                $channel_id = $res['channel_id'];
-                $filename = $this->smportal->get_entry_filename($pid, $res['entry_id']);
-                $video_src = 'httpcache1/' . $pid . '/content/' . $filename['filename'];
-                $start = $res['start_time'];
-                $length = $res['duration'];
-                $custom_data = json_decode($res['custom_data'], true);
-                $sortValue = $custom_data['segmentConfig'][0]['sortValue'];
-                array_push($segments, array('id' => $id, 'playOnStream' => $channel_id, 'video_src' => $video_src, 'start' => $start, 'length' => $length, 'sortValue' => $sortValue));
+                array_push($segments, array('id' => $id));
             }
             $success = array('success' => true, 'live_channel_segments' => $segments);
         }
@@ -664,14 +657,14 @@ class Channel_config_model extends CI_Model {
                     }
                 }
 
-                $collision = $this->collision_detection($pid, null, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
+                $collision = $this->collision_detection($pid, $ks, null, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
                 if ($collision['collision']) {
                     $success = array('success' => false, 'collision' => true);
                 } else {
                     //$success = array('success' => false, 'collision' => false);
                     $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $cid, $eid);
                     if ($add_live_segment['success']) {
-                        $add_custom_data = $this->add_live_segment_custom_data($pid, $add_live_segment['id'], $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
+                        $add_custom_data = $this->add_live_segment_custom_data($pid, $ks, $add_live_segment['id'], $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
                         if ($add_custom_data['success']) {
                             $add_live_segment_id = $this->add_live_segment_id($pid, $add_live_segment['id'], $add_custom_data['id']);
                             if ($add_live_segment_id['success']) {
@@ -715,14 +708,14 @@ class Channel_config_model extends CI_Model {
                     }
                 }
 
-                $collision = $this->collision_detection($pid, $pcid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
+                $collision = $this->collision_detection($pid, $ks, $pcid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
                 if ($collision['collision']) {
                     $success = array('success' => false, 'collision' => true);
                 } else {
                     //$success = array('success' => false, 'collision' => false);
                     $update_live_segment = $this->smportal->update_live_segment($pid, $ks, $lsid, $cid, $eid);
                     if ($update_live_segment['success']) {
-                        $update_custom_data = $this->update_live_segment_custom_data($pcid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
+                        $update_custom_data = $this->update_live_segment_custom_data($pid, $ks, $pcid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
                         if ($update_custom_data['success']) {
                             $push_schedule = $this->push_schedule($pid, $ks);
                             if ($push_schedule['success']) {
@@ -746,12 +739,15 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function collision_detection($pid, $pcid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
+    public function collision_detection($pid, $ks, $pcid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
         syslog(LOG_NOTICE, "SMH DEBUG : collision_detection1: start_date: " . print_r($start_date, true));
         syslog(LOG_NOTICE, "SMH DEBUG : collision_detection1: end_date: " . print_r($end_date, true));
         $collision = array('collision' => false);
-        $tz_from = 'America/Los_Angeles';
-        $tz_to = 'UTC';
+        $tz_from = 'UTC';
+        $tz_to = $this->get_int_timezone($pid, $ks);
+        
+        syslog(LOG_NOTICE, "SMH DEBUG : collision_detection: tz_to: " . print_r($tz_to, true));
+
         $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
         $start_dt->setTimeZone(new DateTimeZone($tz_to));
         if (date("I", strtotime($start_date))) {
@@ -777,20 +773,20 @@ class Channel_config_model extends CI_Model {
         $non_rec_collision = array('collision' => false);
         if ($repeat) {
             if (count($programs['nonrepeat_programs'] > 0)) {
-                $non_rec_collision = $this->when_api->process_non_rec_programs_a($start_date, $end_date, $rec_type, $event_length, $programs['nonrepeat_programs']);
+                $non_rec_collision = $this->when_api->process_non_rec_programs_a($start_date, $end_date, $rec_type, $event_length, $programs['nonrepeat_programs'], $tz_from, $tz_to);
             }
             if (!$non_rec_collision['collision']) {
                 if (count($programs['repeat_programs'] > 0)) {
-                    $rec_collision = $this->when_api->process_rec_programs_a($start_date, $end_date, $rec_type, $event_length, $programs['repeat_programs']);
+                    $rec_collision = $this->when_api->process_rec_programs_a($start_date, $end_date, $rec_type, $event_length, $programs['repeat_programs'], $tz_from, $tz_to);
                 }
             }
         } else {
             if (count($programs['nonrepeat_programs'] > 0)) {
-                $non_rec_collision = $this->when_api->process_non_rec_programs_b($start_date, $end_date, $programs['nonrepeat_programs']);
+                $non_rec_collision = $this->when_api->process_non_rec_programs_b($start_date, $end_date, $programs['nonrepeat_programs'], $tz_from, $tz_to);
             }
             if (!$non_rec_collision['collision']) {
                 if (count($programs['repeat_programs'] > 0)) {
-                    $rec_collision = $this->when_api->process_rec_programs_b($start_date, $end_date, $programs['repeat_programs']);
+                    $rec_collision = $this->when_api->process_rec_programs_b($start_date, $end_date, $programs['repeat_programs'], $tz_from, $tz_to);
                 }
             }
         }
@@ -910,10 +906,10 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function add_live_segment_custom_data($pid, $sid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
+    public function add_live_segment_custom_data($pid, $ks, $sid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
         $success = array('success' => false);
 
-        $tz_from = 'America/Los_Angeles';
+        $tz_from = $this->get_int_timezone($pid, $ks);
         $tz_to = 'UTC';
         $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
         $start_dt->setTimeZone(new DateTimeZone($tz_to));
@@ -950,10 +946,10 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function update_live_segment_custom_data($pcid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
+    public function update_live_segment_custom_data($pid, $ks, $pcid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
         $success = array('success' => false);
 
-        $tz_from = 'America/Los_Angeles';
+        $tz_from = $this->get_int_timezone($pid, $ks);
         $tz_to = 'UTC';
         $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
         $start_dt->setTimeZone(new DateTimeZone($tz_to));
@@ -985,93 +981,6 @@ class Channel_config_model extends CI_Model {
             $success = array('success' => true);
         } else {
             $success = array('success' => false);
-        }
-        return $success;
-    }
-
-    public function add_channel($pid, $ks, $eids, $name, $desc) {
-        $success = array('success' => false);
-        $valid = $this->verfiy_ks($pid, $ks);
-        if ($valid['success']) {
-            $has_service = $this->verify_service($pid);
-            if ($has_service) {
-                $add_live_channel = $this->smportal->add_live_channel($pid, $ks, $name, $desc);
-                if ($add_live_channel['success']) {
-                    $success = array('success' => true);
-                    $live_segments = explode(";", $eids);
-                    $sort_value = 0;
-                    foreach ($live_segments as $segment) {
-                        $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $add_live_channel['id'], $segment);
-                        if ($add_live_segment['success']) {
-                            $this->update_live_segment_custom_data($pid, $add_live_segment['id'], $sort_value);
-                            $sort_value++;
-                        } else {
-                            $success = array('success' => false);
-                        }
-                    }
-                    $success = array('success' => true);
-                } else {
-                    $success = array('success' => false);
-                }
-            } else {
-                $success = array('success' => false, 'message' => 'Channel Manager service not active');
-            }
-        } else {
-            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
-        }
-        return $success;
-    }
-
-    public function update_segment($pid, $ks, $sid, $cid, $eid, $name, $desc, $repeat, $scheduled) {
-        $success = array('success' => false);
-        $valid = $this->verfiy_ks($pid, $ks);
-        if ($valid['success']) {
-            $has_service = $this->verify_service($pid);
-            if ($has_service) {
-                $update_live_segment = $this->smportal->update_live_segment($pid, $ks, $sid, $cid, $eid, $name, $desc);
-                if ($update_live_segment['success']) {
-                    $update_live_segment_custom_data = $this->update_live_segment_custom_data($pid, $sid, $repeat, $scheduled);
-                    if ($update_live_segment_custom_data['success']) {
-                        $success = array('success' => true);
-                    } else {
-                        $success = array('success' => false);
-                    }
-                } else {
-                    $success = array('success' => false);
-                }
-                //syslog(LOG_NOTICE, "SMH DEBUG : delete_channel: " . print_r($live_channel_segment, true));
-            } else {
-                $success = array('success' => false, 'message' => 'Channel Manager service not active');
-            }
-        } else {
-            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
-        }
-        return $success;
-    }
-
-    public function delete_segment($pid, $ks, $sid) {
-        $success = array('success' => false);
-        $valid = $this->verfiy_ks($pid, $ks);
-        if ($valid['success']) {
-            $has_service = $this->verify_service($pid);
-            if ($has_service) {
-                $update_live_segment = $this->smportal->delete_live_segment($pid, $ks, $sid);
-                if ($update_live_segment['success']) {
-                    $push_schedule = $this->push_schedule($pid, $ks);
-                    if ($push_schedule['success']) {
-                        $success = array('success' => true);
-                    } else {
-                        $success = array('success' => false, 'message' => 'Could not push schedule');
-                    }
-                } else {
-                    $success = array('success' => false);
-                }
-                //syslog(LOG_NOTICE, "SMH DEBUG : delete_channel: " . print_r($live_channel_segment, true));
-            } else {
-                $success = array('success' => false, 'message' => 'Channel Manager service not active');
-            }
-        } else {
-            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
         }
         return $success;
     }
@@ -1140,6 +1049,11 @@ class Channel_config_model extends CI_Model {
         }
         $success = array('success' => true, 'timezone' => $timezone);
         return $success;
+    }
+
+    public function get_int_timezone($pid, $ks) {
+        $timezone = $this->smportal->get_int_timezone($pid, $ks);
+        return $timezone;
     }
 
     public function update_timezone($pid, $ks, $tz) {
