@@ -59,8 +59,7 @@ class Channel_config_model extends CI_Model {
                     }
                 }
                 $publish = ($channel['pushPublishEnabled']) ? $channel['pushPublishEnabled'] : 0;
-                $edit_arr = $channel['id'] . '\',\'' . htmlspecialchars(addslashes($channel['name']), ENT_QUOTES) . '\',\'' . htmlspecialchars(addslashes($channel['description']), ENT_QUOTES) . '\',\'' . htmlspecialchars(addslashes($channel['tags']), ENT_QUOTES) . '\',\'' . htmlspecialchars(addslashes($channel['referenceId']), ENT_QUOTES) . '\',\'' . htmlspecialchars(addslashes($channel['categories']), ENT_QUOTES) . '\',' . $channel['accessControlId'] . ',' . $channel['status'] . ',' . $publish . ',\'' . $channel['thumbnailUrl'] . '\'';
-                array_push($channels['channels'], array('key' => $channel['id'], 'label' => '<div class="channel_wrapper" title="' . $channel['name'] . '"><div class="channel-play-wrapper"><div class="channel_thumb"><img src="' . str_replace("http", "https", $channel['thumbnailUrl']) . '/quality/100/type/1/width/100/height/60" width="100" height="60"></div></div><div class="channel_title">' . $channel['name'] . '</div><div class="clear"></div></div>'));
+                array_push($channels['channels'], array('key' => $channel['id'], 'label' => '<div class="channel_wrapper" title="' . $channel['name'] . '" data-channel-id ="' . $channel['id'] . '" onclick="smhS.viewChannel(\'' . $channel['id'] . '\');"><div class="channel-play-wrapper"><div class="channel_thumb"><img src="' . str_replace("http", "https", $channel['thumbnailUrl']) . '/quality/100/type/1/width/100/height/60" width="100" height="60"></div></div><div class="channel_title">' . $channel['name'] . '</div><div class="clear"></div></div>'));
             }
         }
         $data['collections'] = $channels;
