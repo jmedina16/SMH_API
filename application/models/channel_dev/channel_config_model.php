@@ -15,6 +15,13 @@ class Channel_config_model extends CI_Model {
     }
 
     public function get_public_channels($pid) {
+        $imgs_url = '';
+        $cdn = json_decode($this->getCDN($pid), true);
+        if ($cdn[0]['edgecast'] || $cdn[0]['custom']) {
+            $imgs_url = 'https://ecimages.streamingmediahosting.com';
+        } else if ($cdn[0]['highwinds']) {
+            $imgs_url = 'https://hwimages.streamingmediahosting.com';
+        }
         $ks = $this->smportal->impersonate($pid);
         $tz_from = 'UTC';
         $tz_to = $this->get_int_timezone($pid, $ks);
@@ -54,12 +61,13 @@ class Channel_config_model extends CI_Model {
                             }
                         }
                         $entry_desc = ($segment['description']) ? $segment['description'] : '';
-                        $thumbnail_url = str_replace("http://mediaplatform.streamingmediahosting.com", "", $segment['thumbnail']);
+                        $thumbnail_url = str_replace("http://mediaplatform.streamingmediahosting.com", $imgs_url, $segment['thumbnail']);
                         array_push($data['data'], array('channel_id' => $channel['id'], 'channel_name' => $channel['name'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $segment['rec_type'], 'event_pid' => (int) $segment['event_pid'], 'event_length' => (int) $segment['event_length'], 'entryId' => $segment['entryId'], 'entry_desc' => $entry_desc, 'thumbnail_url' => $thumbnail_url));
                     }
                 }
                 $publish = ($channel['pushPublishEnabled']) ? $channel['pushPublishEnabled'] : 0;
-                array_push($channels['channels'], array('key' => $channel['id'], 'label' => '<div class="channel_wrapper" title="' . $channel['name'] . '" data-channel-id ="' . $channel['id'] . '" onclick="smhS.viewChannel(\'' . $channel['id'] . '\');"><div class="channel-play-wrapper"><div class="channel_thumb"><img src="' . str_replace("http", "https", $channel['thumbnailUrl']) . '/quality/100/type/1/width/100/height/60" width="100" height="60"></div></div><div class="channel_title">' . $channel['name'] . '</div><div class="clear"></div></div>'));
+                $ch_thumbnail_url = str_replace("http://mediaplatform.streamingmediahosting.com", $imgs_url, $channel['thumbnailUrl']);
+                array_push($channels['channels'], array('key' => $channel['id'], 'label' => '<div class="channel_wrapper" title="' . $channel['name'] . '" data-channel-id ="' . $channel['id'] . '" onclick="smhS.viewChannel(\'' . $channel['id'] . '\');"><div class="channel-play-wrapper"><div class="channel_thumb"><img src="' . $ch_thumbnail_url . '/quality/100/type/1/width/100/height/60" width="100" height="60"></div></div><div class="channel_title">' . $channel['name'] . '</div><div class="clear"></div></div>'));
             }
         }
         $data['collections'] = $channels;
@@ -1117,6 +1125,16 @@ class Channel_config_model extends CI_Model {
         $timezone = $this->smportal->set_new_timezone($pid, $ks, $tz);
         $success = array('success' => true, 'timezone' => $timezone);
         return $success;
+    }
+
+    public function getCDN($pid) {
+        $url = 'http://ecapps.streamingmediahosting.com/apps/scripts/getCDN.php?action=get_cdn&pid=' . $pid;
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $output = curl_exec($ch);
+        curl_close($ch);
+        return $output;
     }
 
     public function verfiy_ks($pid, $ks) {
