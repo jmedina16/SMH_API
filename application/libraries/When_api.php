@@ -331,7 +331,7 @@ class When_api {
                 $date_range_found['start_date'] = $occurrence_start_date;
                 $date_range_found['end_date'] = $occurrence_end_date;
 //                $success = array('collision' => true);
-//                break 2;
+                break;
             }
         }
 
