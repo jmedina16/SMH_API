@@ -373,6 +373,7 @@ class Channel_config_model extends CI_Model {
         if ($schedule['success']) {
             if (count($schedule['schedule']) > 0) {
                 $success = array('success' => true, 'schedule' => $schedule['schedule']);
+                syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . json_encode($schedule['schedule']));
                 syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule['schedule'], true));
             } else {
                 $schedule = array();
