@@ -372,6 +372,8 @@ class Channel_config_model extends CI_Model {
         $schedule = $this->build_account_schedule($pid, $ks);
         if ($schedule['success']) {
             if (count($schedule['schedule']) > 0) {
+                $url = 'http://10.5.22.94:1935/ott/update';
+                $this->curlPost($url, $schedule['schedule']);
                 $success = array('success' => true, 'schedule' => $schedule['schedule']);
                 syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . json_encode($schedule['schedule']));
                 syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule['schedule'], true));
@@ -381,6 +383,8 @@ class Channel_config_model extends CI_Model {
                 $schedule['ks'] = $ks;
                 $schedule['streams'] = array();
                 $schedule['playlists'] = array();
+                $url = 'http://10.5.22.94:1935/ott/update';
+                $this->curlPost($url, $schedule);
                 $success = array('success' => true, 'schedule' => $schedule);
                 syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule, true));
             }
@@ -1149,6 +1153,33 @@ class Channel_config_model extends CI_Model {
         $output = curl_exec($ch);
         curl_close($ch);
         return $output;
+    }
+
+    public function curlPost($url, $data) {
+        syslog(LOG_NOTICE, "SMH DEBUG : curlPostJson1: " . print_r($data, true));
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_HEADER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json'
+        ));
+        $response = curl_exec($ch);
+        $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $ch_error = curl_error($ch);
+        syslog(LOG_NOTICE, "SMH DEBUG : curlStatus: " . $status);
+        if ($ch_error) {
+            syslog(LOG_NOTICE, "SMH DEBUG : curlError: " . print_r($ch_error, true));
+        }
+        syslog(LOG_NOTICE, "SMH DEBUG : curlPostJson2: " . print_r($response, true));
+        curl_close($ch);
+
+        return $status;
     }
 
     public function verfiy_ks($pid, $ks) {
