@@ -373,7 +373,7 @@ class Channel_config_model extends CI_Model {
         if ($schedule['success']) {
             if (count($schedule['schedule']) > 0) {
                 $url = 'http://10.5.22.94:1935/ott/update';
-                $this->curlPost($url, $schedule['schedule']);
+                $this->curlPost($url, json_encode($schedule['schedule']));
                 $success = array('success' => true, 'schedule' => $schedule['schedule']);
                 syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . json_encode($schedule['schedule']));
                 syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule['schedule'], true));
@@ -384,7 +384,7 @@ class Channel_config_model extends CI_Model {
                 $schedule['streams'] = array();
                 $schedule['playlists'] = array();
                 $url = 'http://10.5.22.94:1935/ott/update';
-                $this->curlPost($url, $schedule);
+                $this->curlPost($url, json_encode($schedule));
                 $success = array('success' => true, 'schedule' => $schedule);
                 syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule, true));
             }
@@ -575,33 +575,37 @@ class Channel_config_model extends CI_Model {
                 $programs = $this->get_program_dates($partner_id, null, $channel, $start_date, $end_date);
                 if (count($programs['nonrepeat_programs']) > 0) {
                     foreach ($programs['nonrepeat_programs'] as $nonrepeat_program) {
-                        $video_srcs = array();
-                        $entry_details = $this->smportal->get_entry_details($partner_id, $nonrepeat_program['entry_id']);
-                        if ($entry_details['type'] === 1 || $entry_details['type'] === 7) {
-                            $video_src = $this->buildVideoSrcs($partner_id, $nonrepeat_program['entry_id'], $entry_details['type'], $entry_details['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date);
-                            array_push($video_srcs, $video_src);
-                        } else if ($entry_details['type'] === 5) {
-                            //TODO Playlist
+                        if ($nonrepeat_program['end_date'] >= $now_date) {
+                            $video_srcs = array();
+                            $entry_details = $this->smportal->get_entry_details($partner_id, $nonrepeat_program['entry_id']);
+                            if ($entry_details['type'] === 1 || $entry_details['type'] === 7) {
+                                $video_src = $this->buildVideoSrcs($partner_id, $nonrepeat_program['entry_id'], $entry_details['type'], $entry_details['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date);
+                                array_push($video_srcs, $video_src);
+                            } else if ($entry_details['type'] === 5) {
+                                //TODO Playlist
+                            }
+                            array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => false, 'scheduled' => $nonrepeat_program['start_date'], 'video_srcs' => $video_srcs));
+                            $plist_num++;
                         }
-                        array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => false, 'scheduled' => $nonrepeat_program['start_date'], 'video_srcs' => $video_srcs));
-                        $plist_num++;
                     }
                 }
                 if (count($programs['repeat_programs']) > 0) {
                     foreach ($programs['repeat_programs'] as $repeat_programs) {
                         $rec_programs = $this->when_api->process_rec_programs_build_schedule($repeat_programs['start_date'], $repeat_programs['end_date'], $start_date, $end_date, $repeat_programs['rec_type'], $repeat_programs['event_length']);
                         if (count($rec_programs['date_range_found']) > 0) {
-                            $video_srcs = array();
-                            $entry_details = $this->smportal->get_entry_details($partner_id, $repeat_programs['entry_id']);
-                            if ($entry_details['type'] === 1 || $entry_details['type'] === 7) {
-                                $video_src = $this->buildVideoSrcs($partner_id, $repeat_programs['entry_id'], $entry_details['type'], $entry_details['duration'], $repeat_programs['event_length'], $rec_programs['date_range_found']['start_date'], $now_date);
-                                array_push($video_srcs, $video_src);
-                            } else if ($entry_details['type'] === 5) {
-                                //TODO Playlist
+                            if ($rec_programs['date_range_found']['end_date'] >= $now_date) {
+                                $video_srcs = array();
+                                $entry_details = $this->smportal->get_entry_details($partner_id, $repeat_programs['entry_id']);
+                                if ($entry_details['type'] === 1 || $entry_details['type'] === 7) {
+                                    $video_src = $this->buildVideoSrcs($partner_id, $repeat_programs['entry_id'], $entry_details['type'], $entry_details['duration'], $repeat_programs['event_length'], $rec_programs['date_range_found']['start_date'], $now_date);
+                                    array_push($video_srcs, $video_src);
+                                } else if ($entry_details['type'] === 5) {
+                                    //TODO Playlist
+                                }
+                                array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => false, 'scheduled' => $rec_programs['date_range_found']['start_date'], 'video_srcs' => $video_srcs));
+                                $plist_num++;
+                                //syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: " . print_r($repeat_programs, true));                               
                             }
-                            array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => false, 'scheduled' => $rec_programs['date_range_found']['start_date'], 'video_srcs' => $video_srcs));
-                            $plist_num++;
-                            //syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: " . print_r($repeat_programs, true));
                         }
                     }
                 }
