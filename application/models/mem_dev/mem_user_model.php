@@ -490,7 +490,6 @@ class Mem_user_model extends CI_Model {
         $this->accounts->where('partner_id', $pid);
         $this->accounts->where('user_id', $userId);
         $this->accounts->update('user', $data);
-        $this->accounts->limit(1);
         if ($this->accounts->affected_rows() > 0) {
             $success = array('success' => true);
         } else {
@@ -514,9 +513,47 @@ class Mem_user_model extends CI_Model {
         }
         return $status;
     }
-    
-    public function logoutInactiveUsers(){
-        
+
+    public function logoutInactiveUsers() {
+        $users = array();
+        $this->accounts->select('*')
+                ->from('user')
+                ->where('logged_in', 1)
+                ->where('activated', 2);
+        $query = $this->accounts->get();
+        $result = $query->result_array();
+        foreach ($result as $r) {
+            array_push($users, array('pid' => $r['partner_id'], 'un' => $r['email'], 'uid' => $r['user_id']));
+        }
+        if (count($users) > 0) {
+            foreach ($users as $user) {
+                if (!$this->check_if_active($user['pid'], $user['un'])) {
+                    $this->log_user_out($user['pid'], $user['uid']);
+                }
+            }
+        }
+    }
+
+    public function log_user_out($pid, $uid) {
+        $data = array(
+            'auth_key' => null,
+            'logged_in' => 0,
+            'updated_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->accounts->where('partner_id', $pid);
+        $this->accounts->where('user_id', $uid);
+        $this->accounts->update('user', $data);
+        if ($this->accounts->affected_rows() > 0) {
+            $update_last_logout = $this->update_last_logout($pid, $uid);
+            if ($update_last_logout['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false, 'message' => 'Could not update last logout');
+            }
+        } else {
+            $success = array('success' => false);
+        }
     }
 
     public function check_if_active($pid, $un) {
@@ -541,7 +578,7 @@ class Mem_user_model extends CI_Model {
             $current_date = new DateTime($today);
             $last_active_date = new DateTime($last_active);
             $elapsed = $current_date->getTimestamp() - $last_active_date->getTimestamp();
-            if ($elapsed <= 600) {
+            if ($elapsed <= 300) {
                 $active = true;
             } else {
                 $active = false;
