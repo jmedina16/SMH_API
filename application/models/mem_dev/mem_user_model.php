@@ -1770,7 +1770,9 @@ class Mem_user_model extends CI_Model {
         $pid = $this->smcipher->decrypt($sm_ak);
 
         $data = array(
-            'logged_in' => 0
+            'auth_key' => null,
+            'logged_in' => 0,
+            'updated_at' => date("Y-m-d H:i:s")
         );
 
         $this->accounts->where('partner_id', $pid);
@@ -1779,11 +1781,11 @@ class Mem_user_model extends CI_Model {
         $this->accounts->limit(1);
         if ($this->accounts->affected_rows() > 0) {
             $update_last_logout = $this->update_last_logout($pid, $uid);
-            if($update_last_logout['success']){
+            if ($update_last_logout['success']) {
                 $success = array('success' => true);
             } else {
                 $success = array('success' => false, 'message' => 'Could not update last logout');
-            }            
+            }
         } else {
             $success = array('success' => false);
         }
