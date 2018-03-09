@@ -1068,4 +1068,15 @@ class Mem_user extends REST_Controller {
         $this->response($reset, 200); // 200 being the HTTP response code
     }
 
+    public function logout_inactive_users_get() {
+        $reset = $this->mem_user_model->logoutInactiveUsers();
+
+        if (!$reset) {
+
+            $this->response($reset, 200);
+        }
+
+        $this->response($reset, 200); // 200 being the HTTP response code
+    }
+
 }
