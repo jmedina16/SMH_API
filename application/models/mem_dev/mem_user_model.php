@@ -514,6 +514,10 @@ class Mem_user_model extends CI_Model {
         }
         return $status;
     }
+    
+    public function logoutInactiveUsers(){
+        
+    }
 
     public function check_if_active($pid, $un) {
         $active = false;
