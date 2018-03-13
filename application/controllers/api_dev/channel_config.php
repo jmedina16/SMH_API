@@ -430,4 +430,40 @@ class Channel_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code
     }
 
+    public function update_channel_status_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+        $cid = $this->get('cid');
+        $status = $this->get('status');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing pid'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        if (!isset($cid) || $cid == null) {
+
+            $this->response(array('error' => 'Missing cid'), 200);
+        }
+
+        if (!isset($status) || $status == null) {
+
+            $this->response(array('error' => 'Missing status'), 200);
+        }
+
+        $result = $this->channel_config_model->update_channel_status($pid, $ks, $cid, $status);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code
+    }
+
 }
