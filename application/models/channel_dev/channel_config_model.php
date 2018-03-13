@@ -579,7 +579,7 @@ class Channel_config_model extends CI_Model {
             foreach ($result as $res) {
                 array_push($channel_ids, $res['id']);
             }
-            syslog(LOG_NOTICE, "SMH DEBUG : get_channel_ids: " . print_r($channel_ids, true)); 
+            syslog(LOG_NOTICE, "SMH DEBUG : get_channel_ids: " . print_r($channel_ids, true));
         }
 
         return $channel_ids;
@@ -1172,6 +1172,32 @@ class Channel_config_model extends CI_Model {
                     }
                 }
                 //syslog(LOG_NOTICE, "SMH DEBUG : delete_channel: " . print_r($live_channel_segment, true));
+            } else {
+                $success = array('success' => false, 'message' => 'Channel Manager service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+        return $success;
+    }
+
+    public function update_channel_status($pid, $ks, $cid, $status) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $update_channel_status = $this->smportal->update_channel_status($pid, $ks, $cid, $status);
+                if ($update_channel_status['success']) {
+                    $push_schedule = $this->push_schedule($pid, $ks);
+                    if ($push_schedule['success']) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not push schedule');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not update channel status');
+                }
             } else {
                 $success = array('success' => false, 'message' => 'Channel Manager service not active');
             }
