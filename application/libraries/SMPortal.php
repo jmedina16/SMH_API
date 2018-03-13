@@ -593,9 +593,9 @@ class SMPortal {
         $id = '';
         $version = '';
         $ext = '';
+        $flavors = array();
         $sess = $this->impersonate($pid);
-        $partnerId = $pid;
-        $config = new KalturaConfiguration($partnerId);
+        $config = new KalturaConfiguration($pid);
         $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
         $client = new KalturaClient($config);
         $client->setKs($sess);
@@ -604,20 +604,36 @@ class SMPortal {
         $pager = null;
         $results = $client->flavorAsset->listAction($filter, $pager);
 
-        $flavors = array();
+        $media_type = $this->get_mediaType($entryId, $pid, $sess);
 
-        foreach ($results as $flavor) {
-            if ($this->ott_valid_playback_file($flavor->flavorAsset->fileExt) && $flavor->flavorAsset->isWeb) {
-                array_push($flavors, array('id' => $flavor->flavorAsset->id, 'version' => $flavor->flavorAsset->version, 'fileExt' => $flavor->flavorAsset->fileExt, 'flavorParamsId' => $flavor->flavorAsset->flavorParamsId));
+        foreach ($results->objects as $flavor) {
+            $flavors_tags = explode(',', $flavor->tags);
+            if ($media_type === 1) {
+                if ($this->ott_valid_playback_file($flavor->fileExt) && $flavor->isWeb && !in_array('audio', $flavors_tags)) {
+                    array_push($flavors, array('id' => $flavor->id, 'version' => $flavor->version, 'fileExt' => $flavor->fileExt, 'height' => $flavor->height, 'flavorParamsId' => $flavor->flavorParamsId));
+                }
+            } else if ($media_type === 5) {
+                if ($this->ott_valid_playback_file($flavor->fileExt) && $flavor->isWeb) {
+                    array_push($flavors, array('id' => $flavor->id, 'version' => $flavor->version, 'fileExt' => $flavor->fileExt, 'height' => $flavor->height, 'flavorParamsId' => $flavor->flavorParamsId));
+                }
             }
+
 //            if ($flavor->flavorAsset->isOriginal) {
 //                $id = $flavor->flavorAsset->id;
 //                $version = $flavor->flavorAsset->version;
 //                $ext = $flavor->flavorAsset->fileExt;
 //            }
         }
-        
-        syslog(LOG_NOTICE, "SMH DEBUG : get_entry_filename: " . print_r($flavors, true));
+
+        usort($flavors, function($a, $b) {
+            return $b['flavorParamsId'] - $a['flavorParamsId'];
+        });
+
+        usort($flavors, function($a, $b) {
+            return $b['height'] - $a['height'];
+        });
+
+        syslog(LOG_NOTICE, "SMH DEBUG : get_entry_filename2: " . print_r($flavors[0], true));
 
 //        $filename = $ext . ':' . $entryId . '_' . $id . '_' . $version . '.' . $ext;
 //
