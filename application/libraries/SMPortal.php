@@ -589,10 +589,7 @@ class SMPortal {
         return $success;
     }
 
-    public function get_entry_filename($pid, $entryId) {
-        $id = '';
-        $version = '';
-        $ext = '';
+    public function ott_get_flavor($pid, $entryId) {
         $flavors = array();
         $sess = $this->impersonate($pid);
         $config = new KalturaConfiguration($pid);
@@ -617,12 +614,6 @@ class SMPortal {
                     array_push($flavors, array('id' => $flavor->id, 'version' => $flavor->version, 'fileExt' => $flavor->fileExt, 'height' => $flavor->height, 'flavorParamsId' => $flavor->flavorParamsId));
                 }
             }
-
-//            if ($flavor->flavorAsset->isOriginal) {
-//                $id = $flavor->flavorAsset->id;
-//                $version = $flavor->flavorAsset->version;
-//                $ext = $flavor->flavorAsset->fileExt;
-//            }
         }
 
         usort($flavors, function($a, $b) {
@@ -633,13 +624,9 @@ class SMPortal {
             return $b['height'] - $a['height'];
         });
 
-        syslog(LOG_NOTICE, "SMH DEBUG : get_entry_filename2: " . print_r($flavors[0], true));
+        $success = array('success' => true, 'fileExt' => $flavors[0]['fileExt'], 'flavorId' => $flavors[0]['id'], 'flavorVersion' => $flavors[0]['version']);
 
-//        $filename = $ext . ':' . $entryId . '_' . $id . '_' . $version . '.' . $ext;
-//
-//        $success = array('success' => true, 'filename' => $filename);
-//
-//        return $success;
+        return $success;
     }
 
     public function ott_valid_playback_file($fileExt) {
