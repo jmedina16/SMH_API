@@ -430,7 +430,7 @@ class Channel_config_model extends CI_Model {
             $final_schedules = array();
             $schedules = array();
             foreach ($accounts['partner_ids'] as $partner_id) {
-                $live_channels = $this->smportal->get_channel_ids($partner_id);
+                $live_channels = $this->get_channel_ids($partner_id);
                 if (count($live_channels) > 0) {
                     $date = new DateTime('now');
                     $date->setTimezone(new DateTimeZone('UTC'));
@@ -561,6 +561,30 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
+    public function get_channel_ids($pid) {
+        $channel_ids = array();
+        $this->config = $this->load->database('kaltura', TRUE);
+        $this->config->select('*')
+                ->from('entry')
+                ->where('partner_id', $pid)
+                ->where('type', 8)
+                ->where('status', 2)
+                ->where('custom_data LIKE \'%s:20:"push_publish_enabled";i:1%\'')
+                ->order_by("created_at", "desc");
+        $query = $this->config->get();
+        $result = $query->result_array();
+
+        if ($query->num_rows() > 0) {
+
+            foreach ($result as $res) {
+                array_push($channel_ids, $res['id']);
+            }
+            syslog(LOG_NOTICE, "SMH DEBUG : get_channel_ids: " . print_r($channel_ids, true)); 
+        }
+
+        return $channel_ids;
+    }
+
     public function get_active_cm_accounts() {
         $success = array('success' => false);
         $this->config = $this->load->database('accounts', TRUE);
@@ -588,7 +612,7 @@ class Channel_config_model extends CI_Model {
     public function build_account_schedule($partner_id, $ks) {
         $success = array('success' => false);
         $schedule = array();
-        $live_channels = $this->smportal->get_channel_ids($partner_id);
+        $live_channels = $this->get_channel_ids($partner_id);
         if (count($live_channels) > 0) {
             $date = new DateTime('now');
             $date->setTimezone(new DateTimeZone('UTC'));
@@ -1061,7 +1085,7 @@ class Channel_config_model extends CI_Model {
 
     public function update_live_segment_custom_data($pid, $ks, $pcid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
         $success = array('success' => false);
-        
+
         syslog(LOG_NOTICE, "SMH DEBUG : update_live_segment_custom_data: start_date1: " . print_r($start_date, true));
 
         $tz_from = $this->get_int_timezone($pid, $ks);
@@ -1069,7 +1093,7 @@ class Channel_config_model extends CI_Model {
         $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
         $start_dt->setTimeZone(new DateTimeZone($tz_to));
         $start_date = $start_dt->format('Y-m-d H:i:s');
-        
+
         syslog(LOG_NOTICE, "SMH DEBUG : update_live_segment_custom_data: start_date2: " . print_r($start_date, true));
 
         if ($end_date !== '9999-02-01 00:00:00') {
