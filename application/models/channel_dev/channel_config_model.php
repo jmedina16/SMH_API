@@ -373,7 +373,7 @@ class Channel_config_model extends CI_Model {
         if ($schedule['success']) {
             if (count($schedule['schedule']) > 0) {
                 $url = 'http://10.5.22.94:1935/ott/update';
-                //$this->curlPost($url, json_encode($schedule['schedule']));
+                $this->curlPost($url, json_encode($schedule['schedule']));
                 $success = array('success' => true, 'schedule' => $schedule['schedule']);
                 syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . json_encode($schedule['schedule']));
                 syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule['schedule'], true));
@@ -384,7 +384,7 @@ class Channel_config_model extends CI_Model {
                 $schedule['streams'] = array();
                 $schedule['playlists'] = array();
                 $url = 'http://10.5.22.94:1935/ott/update';
-                //$this->curlPost($url, json_encode($schedule));
+                $this->curlPost($url, json_encode($schedule));
                 $success = array('success' => true, 'schedule' => $schedule);
                 syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule, true));
             }
@@ -513,8 +513,10 @@ class Channel_config_model extends CI_Model {
         $video_src = '';
         $start = 0;
         if ($entryType === 1) {
-            $filename = $this->smportal->get_entry_filename($pid, $entryId);
-            $video_src = 'httpcache1/' . $pid . '/content/' . $filename['filename'];
+            $flavor = $this->smportal->ott_get_flavor($pid, $entryId);
+            $file_path = $this->ott_get_raw_file($pid, $flavor['flavorId'], $flavor['flavorVersion']);
+            $filename = $flavor['fileExt'] . ':' . $file_path['file_path'];
+            $video_src = 'httpcache1/' . $pid . '/content/' . $filename;
             if ($now_date >= $start_date) {
                 $date1 = new DateTime($start_date);
                 $date2 = new DateTime($now_date);
@@ -532,6 +534,31 @@ class Channel_config_model extends CI_Model {
         $sources['start'] = (int) $start;
         $sources['length'] = (int) $length;
         return $sources;
+    }
+
+    public function ott_get_raw_file($pid, $flavorId, $flavorVersion) {
+        $success = array('success' => false);
+        $this->config = $this->load->database('kaltura', TRUE);
+        $this->config->select('*')
+                ->from('file_sync')
+                ->where('partner_id', $pid)
+                ->where('object_id', $flavorId)
+                ->where('version', $flavorVersion)
+                ->where('status', 2);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+
+        if ($query->num_rows() > 0) {
+            $file_path = '';
+            foreach ($result as $res) {
+                $fp_explode = explode('/', $res['file_path']);
+                $file_path = end($fp_explode);
+            }
+            $success = array('success' => true, 'file_path' => $file_path);
+        }
+
+        return $success;
     }
 
     public function get_active_cm_accounts() {
@@ -836,17 +863,17 @@ class Channel_config_model extends CI_Model {
 
         $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
         $start_dt->setTimeZone(new DateTimeZone($tz_to));
-        if (date("I", strtotime($start_date))) {
-            $start_dt->add(new DateInterval('PT1H'));
-        }
+//        if (date("I", strtotime($start_date))) {
+//            $start_dt->add(new DateInterval('PT1H'));
+//        }
         $start_date = $start_dt->format('Y-m-d H:i:s');
 
         if ($end_date !== '9999-02-01 00:00:00') {
             $end_dt = new DateTime($end_date, new DateTimeZone($tz_from));
             $end_dt->setTimeZone(new DateTimeZone($tz_to));
-            if (date("I", strtotime($end_date))) {
-                $end_dt->add(new DateInterval('PT1H'));
-            }
+//            if (date("I", strtotime($end_date))) {
+//                $end_dt->add(new DateInterval('PT1H'));
+//            }
             $end_date = $end_dt->format('Y-m-d H:i:s');
         }
 
@@ -1034,12 +1061,16 @@ class Channel_config_model extends CI_Model {
 
     public function update_live_segment_custom_data($pid, $ks, $pcid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length) {
         $success = array('success' => false);
+        
+        syslog(LOG_NOTICE, "SMH DEBUG : update_live_segment_custom_data: start_date1: " . print_r($start_date, true));
 
         $tz_from = $this->get_int_timezone($pid, $ks);
         $tz_to = 'UTC';
         $start_dt = new DateTime($start_date, new DateTimeZone($tz_from));
         $start_dt->setTimeZone(new DateTimeZone($tz_to));
         $start_date = $start_dt->format('Y-m-d H:i:s');
+        
+        syslog(LOG_NOTICE, "SMH DEBUG : update_live_segment_custom_data: start_date2: " . print_r($start_date, true));
 
         if ($end_date !== '9999-02-01 00:00:00') {
             $end_dt = new DateTime($end_date, new DateTimeZone($tz_from));
