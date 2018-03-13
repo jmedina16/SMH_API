@@ -599,21 +599,107 @@ class SMPortal {
         $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
         $client = new KalturaClient($config);
         $client->setKs($sess);
-        $results = $client->flavorAsset->getflavorassetswithparams($entryId);
+        $filter = new KalturaAssetFilter();
+        $filter->entryIdEqual = $entryId;
+        $pager = null;
+        $results = $client->flavorAsset->listAction($filter, $pager);
+
+        $flavors = array();
 
         foreach ($results as $flavor) {
-            if ($flavor->flavorAsset->isOriginal) {
-                $id = $flavor->flavorAsset->id;
-                $version = $flavor->flavorAsset->version;
-                $ext = $flavor->flavorAsset->fileExt;
+            if ($this->ott_valid_playback_file($flavor->flavorAsset->fileExt) && $flavor->flavorAsset->isWeb) {
+                array_push($flavors, array('id' => $flavor->flavorAsset->id, 'version' => $flavor->flavorAsset->version, 'fileExt' => $flavor->flavorAsset->fileExt, 'flavorParamsId' => $flavor->flavorAsset->flavorParamsId));
             }
+//            if ($flavor->flavorAsset->isOriginal) {
+//                $id = $flavor->flavorAsset->id;
+//                $version = $flavor->flavorAsset->version;
+//                $ext = $flavor->flavorAsset->fileExt;
+//            }
+        }
+        
+        syslog(LOG_NOTICE, "SMH DEBUG : get_entry_filename: " . print_r($flavors, true));
+
+//        $filename = $ext . ':' . $entryId . '_' . $id . '_' . $version . '.' . $ext;
+//
+//        $success = array('success' => true, 'filename' => $filename);
+//
+//        return $success;
+    }
+
+    public function ott_valid_playback_file($fileExt) {
+        $valid = false;
+        switch ($fileExt) {
+            case 'mp4':
+                $valid = true;
+                break;
+            case 'flv':
+                $valid = true;
+                break;
+            case 'f4v':
+                $valid = true;
+                break;
+            case 'm4v':
+                $valid = true;
+                break;
+            case 'asf':
+                $valid = true;
+                break;
+            case 'mov':
+                $valid = true;
+                break;
+            case 'avi':
+                $valid = true;
+                break;
+            case '3gp':
+                $valid = true;
+                break;
+            case 'ogg':
+                $valid = true;
+                break;
+            case 'mkv':
+                $valid = true;
+                break;
+            case 'wmv':
+                $valid = true;
+                break;
+            case 'wma':
+                $valid = true;
+                break;
+            case 'webm':
+                $valid = true;
+                break;
+            case 'mpeg':
+                $valid = true;
+                break;
+            case 'mpg':
+                $valid = true;
+                break;
+            case 'm1v':
+                $valid = true;
+                break;
+            case 'm2v':
+                $valid = true;
+                break;
+            case 'wav':
+                $valid = true;
+                break;
+            case 'mp3':
+                $valid = true;
+                break;
+            case 'aac':
+                $valid = true;
+                break;
+            case 'flac':
+                $valid = true;
+                break;
+            case 'ac3':
+                $valid = true;
+                break;
+            default:
+                $valid = false;
         }
 
-        $filename = $ext . ':' . $entryId . '_' . $id . '_' . $version . '.' . $ext;
-
-        $success = array('success' => true, 'filename' => $filename);
-
-        return $success;
+        return $valid;
     }
 
     public function get_stream_name($pid, $entryId) {
