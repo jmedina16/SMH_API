@@ -5721,3 +5721,4 @@ Stack trace:
 #2 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('\xB8\nA\e\xB29`F_$\xC7\xD7\x13\x81<...', NULL, NULL, NULL, NULL, 'Active', 'Pending')
 #3 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('1471081808:0 D:...', 'I-72796G1VEAR9', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Jorge', 'Medina', 'jmedina616@gmai...', '853NLG6TBL9TC', 'US', 'Pending', '41V058921152277...', 'instant', '07:08:13 Mar 13...')
 #4 [internal function]: in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 1191
+[13-Mar-2018 13:43:48 America/Los_Angeles] PHP Fatal error:  Class 'KalturaLivePublishStatus' not found in /var/www/vhosts/api/application/libraries/SMPortal.php on line 249

@@ -238,6 +238,24 @@ class SMPortal {
         }
     }
 
+    public function update_channel_status($pid, $ks, $cid, $status) {
+        $success = array('success' => false);
+        try {
+            $config = new KalturaConfiguration($pid);
+            $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
+            $client = new KalturaClient($config);
+            $client->setKs($ks);
+            $liveChannel = new KalturaLiveChannel();
+            $liveChannel->pushPublishEnabled = ($status === 'true') ? true : false;
+            $result = $client->liveChannel->update($cid, $liveChannel);
+            $success = array('success' => true);
+            return $success;
+        } catch (Exception $ex) {
+            syslog(LOG_NOTICE, "SMH DEBUG : update_channel_status: " . $ex->getCode() . " message is " . $ex->getMessage());
+            return $success;
+        }
+    }
+
     public function get_channel_ids($pid) {
         $ks = $this->impersonate($pid);
         $channel_ids = array();
