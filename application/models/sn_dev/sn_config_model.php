@@ -123,7 +123,7 @@ class Sn_config_model extends CI_Model {
                 $youtube = $this->youtube_platform($valid['pid'], $ks, $projection);
                 $twitter = $this->twitter_platform($valid['pid'], $ks);
                 $twitch = $this->twitch_platform($valid['pid'], $ks);
-                $weibo = $this->weibo_platform($valid['pid'], $ks);
+                $weibo = $this->weibo_platform($valid['pid'], $ks, $projection);
                 array_push($platforms, $facebook, $youtube, $twitter, $twitch, $weibo);
                 $success = array('success' => true, 'platforms' => $platforms);
             } else {
@@ -136,8 +136,8 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function weibo_platform($pid, $ks) {
-        $weibo = array('platform' => 'weibo', 'authorized' => false, 'channel_details' => null, 'settings' => null, 'redirect_url' => $this->weibo_client_api->getRedirectURL($pid, $ks));
+    public function weibo_platform($pid, $ks, $projection) {
+        $weibo = array('platform' => 'weibo', 'authorized' => false, 'channel_details' => null, 'settings' => null, 'redirect_url' => $this->weibo_client_api->getRedirectURL($pid, $ks, $projection));
         return $weibo;
     }
 
@@ -770,6 +770,18 @@ class Sn_config_model extends CI_Model {
         } else {
             $success = array('success' => true, 'notice' => 'no changes were made');
         }
+        return $success;
+    }
+
+    public function retrieve_weibo_profil_details($pid, $access_token) {
+        $success = array('success' => false);
+        $profile_details = $this->weibo_client_api->get_account_details($access_token);
+//        if ($profile_details['success']) {
+//            $user_details = array('channel_title' => $account_details['channel_title'], 'channel_thumb' => $account_details['channel_thumb'], 'channel_id' => $account_details['channel_id'], 'is_verified' => $account_details['is_verified'], 'ls_enabled' => $ls_enabled);
+//            $success = array('success' => true, 'user_details' => $user_details);
+//        } else {
+//            $success = array('success' => false);
+//        }
         return $success;
     }
 
@@ -2315,6 +2327,58 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
+    public function store_weibo_authorization($pid, $ks, $code, $projection) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $token = $this->weibo_client_api->getTokens($code);
+                if ($this->check_weibo($valid['pid'])) {
+                    $result = $this->update_weibo_tokens($valid['pid'], $token);
+                } else {
+                    $result = $this->insert_weibo_tokens($valid['pid'], $token);
+                }
+                if ($result['success']) {
+                    $channel = $this->retrieve_weibo_profil_details($pid, $token['access_token']);
+//                    if ($channel['success']) {
+//                        $update_youtube_channel_details = $this->update_youtube_channel_details($pid, $channel['channel_details']['channel_title'], $channel['channel_details']['channel_thumb'], $channel['channel_details']['channel_id'], $channel['channel_details']['is_verified'], $channel['channel_details']['ls_enabled']);
+//                        if ($update_youtube_channel_details['success']) {
+//                            $init_youtube_channel_settings = $this->init_youtube_channel_settings($pid, $projection);
+//                            if ($init_youtube_channel_settings['success']) {
+//                                $update_partner_notification = $this->smportal->update_partner_notification($pid, $ks);
+//                                if ($update_partner_notification['success']) {
+//                                    $update_status = $this->update_sn_config($pid, 'youtube', 1);
+//                                    if ($update_status['success']) {
+//                                        $success = array('success' => true);
+//                                    } else {
+//                                        $success = array('success' => false);
+//                                    }
+//                                } else {
+//                                    $success = array('success' => false, 'message' => 'Could not update partner notification');
+//                                }
+//                            } else {
+//                                $success = array('success' => false, 'message' => 'Could not init channel settings');
+//                            }
+//                        } else {
+//                            $success = array('success' => false, 'message' => 'Could not insert channel details');
+//                        }
+//                    } else {
+//                        $success = array('success' => false, 'message' => 'Could not get channel details');
+//                    }
+//                } else {
+//                    $success = array('success' => false);
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Social network service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+
+        return $success;
+    }
+
     public function store_youtube_authorization($pid, $ks, $code, $projection) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
@@ -2364,6 +2428,43 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
         }
 
+        return $success;
+    }
+
+    public function insert_weibo_tokens($pid, $token) {
+        $success = array('success' => false);
+        $data = array(
+            'partner_id' => $pid,
+            'access_token' => $this->smcipher->encrypt($token['access_token']),
+            'expires_in' => $token['expires_in'],
+            'created_at' => date("Y-m-d H:i:s")
+        );
+        $this->config->insert('weibo_user_profile', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function update_weibo_tokens($pid, $token) {
+        $success = array('success' => false);
+        $data = array(
+            'access_token' => $this->smcipher->encrypt($token['access_token']),
+            'expires_in' => $token['expires_in'],
+            'updated_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->where('partner_id', $pid);
+        $this->config->update('weibo_user_profile', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'notice' => 'no changes were made');
+        }
         return $success;
     }
 
@@ -2426,6 +2527,21 @@ class Sn_config_model extends CI_Model {
         } else {
             $success = array('success' => true, 'notice' => 'no changes were made');
         }
+        return $success;
+    }
+
+    public function check_weibo($pid) {
+        $success = false;
+        $this->config->select('*')
+                ->from('weibo_user_profile')
+                ->where('partner_id', $pid);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
         return $success;
     }
 
