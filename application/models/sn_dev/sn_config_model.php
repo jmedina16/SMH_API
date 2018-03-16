@@ -57,21 +57,32 @@ class Sn_config_model extends CI_Model {
                 'partner_id' => $pid,
                 'facebook_live' => $status,
                 'youtube_live' => 0,
-                'twitch' => 0
+                'twitch' => 0,
+                'weibo' => 0
             );
         } else if ($platform == 'youtube') {
             $data = array(
                 'partner_id' => $pid,
                 'facebook_live' => 0,
                 'youtube_live' => $status,
-                'twitch' => 0
+                'twitch' => 0,
+                'weibo' => 0
             );
         } else if ($platform == 'twitch') {
             $data = array(
                 'partner_id' => $pid,
                 'facebook_live' => 0,
                 'youtube_live' => 0,
-                'twitch' => $status
+                'twitch' => $status,
+                'weibo' => 0
+            );
+        } else if ($platform == 'weibo') {
+            $data = array(
+                'partner_id' => $pid,
+                'facebook_live' => 0,
+                'youtube_live' => 0,
+                'twitch' => 0,
+                'weibo' => $status
             );
         }
 
@@ -98,6 +109,10 @@ class Sn_config_model extends CI_Model {
         } else if ($platform == 'twitch') {
             $data = array(
                 'twitch' => $status,
+            );
+        } else if ($platform == 'weibo') {
+            $data = array(
+                'weibo' => $status,
             );
         }
 
@@ -773,15 +788,15 @@ class Sn_config_model extends CI_Model {
         return $success;
     }
 
-    public function retrieve_weibo_profil_details($pid, $access_token) {
+    public function retrieve_weibo_profile_details($pid, $access_token) {
         $success = array('success' => false);
         $profile_details = $this->weibo_client_api->get_account_details($access_token);
-//        if ($profile_details['success']) {
-//            $user_details = array('channel_title' => $account_details['channel_title'], 'channel_thumb' => $account_details['channel_thumb'], 'channel_id' => $account_details['channel_id'], 'is_verified' => $account_details['is_verified'], 'ls_enabled' => $ls_enabled);
-//            $success = array('success' => true, 'user_details' => $user_details);
-//        } else {
-//            $success = array('success' => false);
-//        }
+        if ($profile_details['success']) {
+            $user_details = array('name' => $profile_details['name'], 'user_thumb' => $profile_details['user_thumb'], 'user_id' => $profile_details['user_id']);
+            $success = array('success' => true, 'profile_details' => $user_details);
+        } else {
+            $success = array('success' => false);
+        }
         return $success;
     }
 
@@ -2340,34 +2355,29 @@ class Sn_config_model extends CI_Model {
                     $result = $this->insert_weibo_tokens($valid['pid'], $token);
                 }
                 if ($result['success']) {
-                    $channel = $this->retrieve_weibo_profil_details($pid, $token['access_token']);
-//                    if ($channel['success']) {
-//                        $update_youtube_channel_details = $this->update_youtube_channel_details($pid, $channel['channel_details']['channel_title'], $channel['channel_details']['channel_thumb'], $channel['channel_details']['channel_id'], $channel['channel_details']['is_verified'], $channel['channel_details']['ls_enabled']);
-//                        if ($update_youtube_channel_details['success']) {
-//                            $init_youtube_channel_settings = $this->init_youtube_channel_settings($pid, $projection);
-//                            if ($init_youtube_channel_settings['success']) {
-//                                $update_partner_notification = $this->smportal->update_partner_notification($pid, $ks);
-//                                if ($update_partner_notification['success']) {
-//                                    $update_status = $this->update_sn_config($pid, 'youtube', 1);
-//                                    if ($update_status['success']) {
-//                                        $success = array('success' => true);
-//                                    } else {
-//                                        $success = array('success' => false);
-//                                    }
-//                                } else {
-//                                    $success = array('success' => false, 'message' => 'Could not update partner notification');
-//                                }
-//                            } else {
-//                                $success = array('success' => false, 'message' => 'Could not init channel settings');
-//                            }
-//                        } else {
-//                            $success = array('success' => false, 'message' => 'Could not insert channel details');
-//                        }
-//                    } else {
-//                        $success = array('success' => false, 'message' => 'Could not get channel details');
-//                    }
-//                } else {
-//                    $success = array('success' => false);
+                    $profile = $this->retrieve_weibo_profile_details($pid, $token['access_token']);
+                    if ($profile['success']) {
+                        $update_weibo_profile_details = $this->update_weibo_profiile_details($pid, $profile['profile_details']['name'], $profile['profile_details']['user_thumb'], $profile['profile_details']['user_id']);
+                        if ($update_weibo_profile_details['success']) {
+                            $init_weibo_profile_settings = $this->init_weibo_profile_settings($pid, $projection);
+                            if ($init_weibo_profile_settings['success']) {
+                                $update_status = $this->update_sn_config($pid, 'weibo', 1);
+                                if ($update_status['success']) {
+                                    $success = array('success' => true);
+                                } else {
+                                    $success = array('success' => false);
+                                }
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not init channel settings');
+                            }
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not insert channel details');
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not get profile details');
+                    }
+                } else {
+                    $success = array('success' => false);
                 }
             } else {
                 $success = array('success' => false, 'message' => 'Social network service not active');
@@ -2526,6 +2536,44 @@ class Sn_config_model extends CI_Model {
             $success = array('success' => true);
         } else {
             $success = array('success' => true, 'notice' => 'no changes were made');
+        }
+        return $success;
+    }
+
+    public function update_weibo_profiile_details($pid, $name, $thumbnail, $id) {
+        $success = array('success' => false);
+        $data = array(
+            'name' => $this->config->escape_str($name),
+            'user_id' => $this->smcipher->encrypt($id),
+            'thumbnail' => $this->config->escape_str($thumbnail),
+            'updated_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->where('partner_id', $pid);
+        $this->config->update('weibo_user_profile', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'notice' => 'no changes were made');
+        }
+        return $success;
+    }
+
+    public function init_weibo_profile_settings($pid, $projection) {
+        $success = array('success' => false);
+        $data = array(
+            'partner_id' => $pid,
+            'projection' => $projection,
+            'created_at' => date("Y-m-d H:i:s")
+        );
+
+        $this->config->insert('weibo_profile_settings', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
         }
         return $success;
     }
