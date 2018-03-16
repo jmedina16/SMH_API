@@ -137,6 +137,42 @@ class Sn_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code
     }
 
+    public function store_weibo_authorization_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+        $code = $this->get('code');
+        $projection = $this->get('projection');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing pid'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        if (!isset($code) || $code == null) {
+
+            $this->response(array('error' => 'Missing code'), 200);
+        }
+
+        if (!isset($projection) || $projection == null) {
+
+            $this->response(array('error' => 'Missing projection'), 200);
+        }
+
+        $result = $this->sn_config_model->store_weibo_authorization($pid, $ks, $code, $projection);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code
+    }
+
     public function remove_facebook_authorization_get() {
         $pid = $this->get('pid');
         $ks = $this->get('ks');
