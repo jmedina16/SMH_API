@@ -16,6 +16,7 @@ class Sn_config_model extends CI_Model {
         $this->load->library('google_client_api');
         $this->load->library('facebook_client_api');
         $this->load->library('twitch_client_api');
+        $this->load->library('weibo_client_api');
     }
 
     public function update_sn_config($pid, $platform, $status) {
@@ -122,7 +123,8 @@ class Sn_config_model extends CI_Model {
                 $youtube = $this->youtube_platform($valid['pid'], $ks, $projection);
                 $twitter = $this->twitter_platform($valid['pid'], $ks);
                 $twitch = $this->twitch_platform($valid['pid'], $ks);
-                array_push($platforms, $facebook, $youtube, $twitter, $twitch);
+                $weibo = $this->weibo_platform($valid['pid'], $ks);
+                array_push($platforms, $facebook, $youtube, $twitter, $twitch, $weibo);
                 $success = array('success' => true, 'platforms' => $platforms);
             } else {
                 $success = array('success' => false, 'message' => 'Social network service not active');
@@ -132,6 +134,11 @@ class Sn_config_model extends CI_Model {
         }
 
         return $success;
+    }
+
+    public function weibo_platform($pid, $ks) {
+        $weibo = array('platform' => 'weibo', 'authorized' => false, 'channel_details' => null, 'settings' => null, 'redirect_url' => $this->weibo_client_api->getRedirectURL($pid, $ks));
+        return $weibo;
     }
 
     public function twitter_platform($pid, $ks) {
