@@ -153,7 +153,14 @@ class Sn_config_model extends CI_Model {
 
     public function weibo_platform($pid, $ks, $projection) {
         $weibo_auth = $this->validate_weibo_token($pid);
-        $weibo = array('platform' => 'weibo', 'authorized' => false, 'channel_details' => null, 'settings' => null, 'redirect_url' => $this->weibo_client_api->getRedirectURL($pid, $ks, $projection));
+        $auth = ($weibo_auth['success']) ? true : false;
+        if ($auth) {
+            $user_details = $this->get_weibo_account_details($pid);
+            $details = ($user_details['success']) ? $user_details['user_details'] : null;
+            $weibo = array('platform' => 'weibo', 'authorized' => $auth, 'user_details' => $details);
+        } else {
+            $weibo = array('platform' => 'weibo', 'authorized' => false, 'user_details' => null, 'redirect_url' => $this->weibo_client_api->getRedirectURL($pid, $ks, $projection));
+        }
         return $weibo;
     }
 
@@ -176,6 +183,27 @@ class Sn_config_model extends CI_Model {
         return $twitch;
     }
 
+    public function get_weibo_account_details($pid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('weibo_user_profile')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $name = $res['name'];
+                $thumbnail = $res['thumbnail'];
+            }
+            $user_details = array('user_name' => $name, 'user_thumb' => $thumbnail);
+            $success = array('success' => true, 'user_details' => $user_details);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
     public function validate_weibo_token($pid) {
         $success = array('success' => false);
         $this->config->select('*')
@@ -189,19 +217,66 @@ class Sn_config_model extends CI_Model {
                 $access_token = $this->smcipher->decrypt($res['access_token']);
             }
             $token_valid = $this->weibo_client_api->checkAuthToken($access_token);
-//            if ($token_valid['success']) {
-//                $success = array('success' => true, 'access_token' => $token_valid['access_token']);
-//            } else {
-//                $weibo_invalidation_removal = $this->weibo_invalidation_removal($pid);
-//                if ($weibo_invalidation_removal['success']) {
-//                    $success = array('success' => false);
-//                } else {
-//                    $success = array('success' => false);
-//                }
-//            }
+            if ($token_valid['success']) {
+                $success = array('success' => true, 'access_token' => $token_valid['access_token']);
+            } else {
+                $weibo_invalidation_removal = $this->weibo_invalidation_removal($pid);
+                if ($weibo_invalidation_removal['success']) {
+                    $success = array('success' => false);
+                } else {
+                    $success = array('success' => false);
+                }
+            }
         } else {
             $success = array('success' => false);
         }
+        return $success;
+    }
+
+    public function weibo_invalidation_removal($pid) {
+        $success = array('success' => false);
+        $remove_settings = $this->remove_weibo_settings($pid);
+        if ($remove_settings['success']) {
+            $update_status = $this->update_sn_config($pid, 'weibo', 0);
+            if ($update_status['success']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false);
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Could not remove weibo user settings');
+        }
+        return $success;
+    }
+
+    public function remove_weibo_settings($pid) {
+        $success = array('success' => false);
+        if ($this->check_weibo_settings($pid)) {
+            $this->config->where('partner_id = "' . $pid . '"');
+            $this->config->delete('weibo_profile_settings');
+            if ($this->config->affected_rows() > 0) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false);
+            }
+        } else {
+            $success = array('success' => true);
+        }
+        return $success;
+    }
+
+    public function check_weibo_settings($pid) {
+        $success = false;
+        $this->config->select('*')
+                ->from('weibo_profile_settings')
+                ->where('partner_id', $pid);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
         return $success;
     }
 
