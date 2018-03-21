@@ -338,6 +338,7 @@ class Sn_config_model extends CI_Model {
         $facebook_auth = $this->validate_facebook_token($pid);
         $auth = ($facebook_auth['success']) ? true : false;
         if ($auth) {
+            $this->facebook_client_api->get_user_details($pid, $auth['access_token']);
             $user_details = $this->get_fb_account_details($pid);
             $livestream_settings = $this->get_fb_ls_settings($pid);
             $details = ($user_details['success']) ? $user_details['user_details'] : null;
@@ -6018,7 +6019,7 @@ class Sn_config_model extends CI_Model {
                         }
                     }
 
-                    $get_user_details = $this->facebook_client_api->get_user_details($access_token['access_token']);
+                    $get_user_details = $this->facebook_client_api->get_user_details($pid, $access_token['access_token']);
                     $user_name = $get_user_details['user_name'];
                     $user_id = $get_user_details['user_id'];
                     $account_pic = $this->facebook_client_api->get_account_pic($access_token['access_token'], $user_id);
