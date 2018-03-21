@@ -56,9 +56,18 @@ class Weibo_client_api {
         try {
             $access_token_expiry = $this->get_token_info($access_token);
             syslog(LOG_NOTICE, "SMH DEBUG : checkAuthToken: access_token_expiry: " . print_r($access_token_expiry, true));
+            
+//            $removeAuth = $this->removeAuth($access_token);
+//            syslog(LOG_NOTICE, "SMH DEBUG : checkAuthToken: removeAuth: " . print_r($removeAuth, true));
+//
+//            $access_token_expiry = $this->get_token_info($access_token);
+//            syslog(LOG_NOTICE, "SMH DEBUG : checkAuthToken: access_token_expiry: " . print_r($access_token_expiry, true));
+
             if ($access_token_expiry['token_info']['expire_in']) {
+                syslog(LOG_NOTICE, "SMH DEBUG : checkAuthToken: VALID ");
                 $success = array('success' => true, 'message' => 'valid_access_token', 'access_token' => $access_token);
             } else {
+                syslog(LOG_NOTICE, "SMH DEBUG : checkAuthToken: NOT VALID ");
                 $success = array('success' => false, 'message' => 'Weibo: Access token not valid');
             }
             return $success;
@@ -74,6 +83,23 @@ class Weibo_client_api {
             $auth = new SaeTOAuthV2(WB_AKEY, WB_SKEY);
             $token_info = $auth->getTokenInfo($access_token);
             $success = array('success' => true, 'token_info' => $token_info);
+            return $success;
+        } catch (Exception $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Caught Weibo service Exception " . $e->getCode() . " message is " . $e->getMessage());
+            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+        }
+    }
+
+    public function removeAuth($access_token) {
+        $success = array('success' => false);
+        try {
+            $auth = new SaeTOAuthV2(WB_AKEY, WB_SKEY);
+            $removeApp = $auth->revokeAuth($access_token);
+            if ($removeApp['result']) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false);
+            }
             return $success;
         } catch (Exception $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Caught Weibo service Exception " . $e->getCode() . " message is " . $e->getMessage());

@@ -159,6 +159,13 @@ class SaeTOAuthV2 {
     }
 
     /**
+     * @ignore
+     */
+    function revokeOAuthURL() {
+        return 'https://api.weibo.com/oauth2/revokeoauth2';
+    }
+
+    /**
      * construct WeiboOAuth object
      */
     function __construct($client_id, $client_secret, $access_token = NULL, $refresh_token = NULL) {
@@ -207,6 +214,19 @@ class SaeTOAuthV2 {
             throw new OAuthException("get token info failed." . $token['error']);
         }
         return $info;
+    }
+
+    function revokeAuth($access_token) {
+        $params = array();
+        $params['access_token'] = $access_token;
+        $response = $this->oAuthRequest($this->revokeOAuthURL(), 'POST', $params);
+        $revoke = json_decode($response, true);
+        if (is_array($revoke) && !isset($revoke['error'])) {
+            $revoke_info = $revoke;
+        } else {
+            throw new OAuthException("revoke auth failed." . $revoke['error']);
+        }
+        return $revoke_info;
     }
 
     /**
