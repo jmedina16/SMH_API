@@ -55,7 +55,13 @@ class Weibo_client_api {
         $success = array('success' => false);
         try {
             $access_token_expiry = $this->get_token_info($access_token);
-            syslog(LOG_NOTICE, "SMH DEBUG : checkAuthToken: access_token_expiry: " . $access_token_expiry['expire_in']);
+            syslog(LOG_NOTICE, "SMH DEBUG : checkAuthToken: access_token_expiry: " . print_r($access_token_expiry, true));
+            if ($access_token_expiry['token_info']['expire_in']) {
+                $success = array('success' => true, 'message' => 'valid_access_token', 'access_token' => $access_token);
+            } else {
+                $success = array('success' => false, 'message' => 'Weibo: Access token not valid');
+            }
+            return $success;
         } catch (Exception $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Caught Weibo service Exception " . $e->getCode() . " message is " . $e->getMessage());
             syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
