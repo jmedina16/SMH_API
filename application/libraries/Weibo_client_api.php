@@ -13,16 +13,16 @@ class Weibo_client_api {
 
     public function getRedirectURL($pid, $ks, $projection) {
         $state = $pid . "|" . $ks . "|" . $projection;
-        $o = new SaeTOAuthV2(WB_AKEY, WB_SKEY);
-        $authUrl = $o->getAuthorizeURL(WB_CALLBACK_URL, 'code', $state, NULL);
+        $auth = new SaeTOAuthV2(WB_AKEY, WB_SKEY);
+        $authUrl = $auth->getAuthorizeURL(WB_CALLBACK_URL, 'code', $state, NULL);
         return $authUrl;
     }
 
     public function getTokens($code) {
         try {
-            $o = new SaeTOAuthV2(WB_AKEY, WB_SKEY);
+            $auth = new SaeTOAuthV2(WB_AKEY, WB_SKEY);
             $keys = array('code' => $code, 'redirect_uri' => WB_CALLBACK_URL);
-            $token = $o->getAccessToken('code', $keys);
+            $token = $auth->getAccessToken('code', $keys);
             return $token;
         } catch (Exception $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Caught Weibo service Exception " . $e->getCode() . " message is " . $e->getMessage());
@@ -33,9 +33,9 @@ class Weibo_client_api {
     public function get_account_details($access_token) {
         $success = array('success' => false);
         try {
-            $o = new SaeTClientV2(WB_AKEY, WB_SKEY, $access_token);
-            $uid = $o->get_uid();
-            $userResponse = $o->show_user_by_id($uid['uid']);
+            $client = new SaeTClientV2(WB_AKEY, WB_SKEY, $access_token);
+            $uid = $client->get_uid();
+            $userResponse = $client->show_user_by_id($uid['uid']);
             if (count($userResponse) >= 0) {
                 $name = $userResponse['screen_name'];
                 $thumbnail = $userResponse['avatar_large'];
@@ -44,6 +44,30 @@ class Weibo_client_api {
             } else {
                 $success = array('success' => false);
             }
+            return $success;
+        } catch (Exception $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Caught Weibo service Exception " . $e->getCode() . " message is " . $e->getMessage());
+            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+        }
+    }
+
+    public function checkAuthToken($access_token) {
+        $success = array('success' => false);
+        try {
+            $access_token_expiry = $this->get_token_info($access_token);
+            syslog(LOG_NOTICE, "SMH DEBUG : checkAuthToken: access_token_expiry: " . $access_token_expiry['expire_in']);
+        } catch (Exception $e) {
+            syslog(LOG_NOTICE, "SMH DEBUG : Caught Weibo service Exception " . $e->getCode() . " message is " . $e->getMessage());
+            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+        }
+    }
+
+    public function get_token_info($access_token) {
+        $success = array('success' => false);
+        try {
+            $auth = new SaeTOAuthV2(WB_AKEY, WB_SKEY);
+            $token_info = $auth->getTokenInfo($access_token);
+            $success = array('success' => true, 'token_info' => $token_info);
             return $success;
         } catch (Exception $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Caught Weibo service Exception " . $e->getCode() . " message is " . $e->getMessage());
