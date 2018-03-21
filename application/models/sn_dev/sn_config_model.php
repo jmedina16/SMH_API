@@ -152,6 +152,7 @@ class Sn_config_model extends CI_Model {
     }
 
     public function weibo_platform($pid, $ks, $projection) {
+        $weibo_auth = $this->validate_weibo_token($pid);
         $weibo = array('platform' => 'weibo', 'authorized' => false, 'channel_details' => null, 'settings' => null, 'redirect_url' => $this->weibo_client_api->getRedirectURL($pid, $ks, $projection));
         return $weibo;
     }
@@ -173,6 +174,35 @@ class Sn_config_model extends CI_Model {
             $twitch = array('platform' => 'twitch', 'authorized' => $auth, 'channel_details' => null, 'settings' => null, 'redirect_url' => $this->twitch_client_api->getRedirectURL($pid, $ks));
         }
         return $twitch;
+    }
+
+    public function validate_weibo_token($pid) {
+        $success = array('success' => false);
+        $this->config->select('*')
+                ->from('weibo_user_profile')
+                ->where('partner_id', $pid);
+
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                $access_token = $this->smcipher->decrypt($res['access_token']);
+            }
+            $token_valid = $this->weibo_client_api->checkAuthToken($access_token);
+//            if ($token_valid['success']) {
+//                $success = array('success' => true, 'access_token' => $token_valid['access_token']);
+//            } else {
+//                $weibo_invalidation_removal = $this->weibo_invalidation_removal($pid);
+//                if ($weibo_invalidation_removal['success']) {
+//                    $success = array('success' => false);
+//                } else {
+//                    $success = array('success' => false);
+//                }
+//            }
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
     }
 
     public function get_twch_channel_details($pid) {
