@@ -55,19 +55,9 @@ class Weibo_client_api {
         $success = array('success' => false);
         try {
             $access_token_expiry = $this->get_token_info($access_token);
-            syslog(LOG_NOTICE, "SMH DEBUG : checkAuthToken: access_token_expiry: " . print_r($access_token_expiry, true));
-            
-//            $removeAuth = $this->removeAuth($access_token);
-//            syslog(LOG_NOTICE, "SMH DEBUG : checkAuthToken: removeAuth: " . print_r($removeAuth, true));
-//
-//            $access_token_expiry = $this->get_token_info($access_token);
-//            syslog(LOG_NOTICE, "SMH DEBUG : checkAuthToken: access_token_expiry: " . print_r($access_token_expiry, true));
-
             if ($access_token_expiry['token_info']['expire_in']) {
-                syslog(LOG_NOTICE, "SMH DEBUG : checkAuthToken: VALID ");
                 $success = array('success' => true, 'message' => 'valid_access_token', 'access_token' => $access_token);
             } else {
-                syslog(LOG_NOTICE, "SMH DEBUG : checkAuthToken: NOT VALID ");
                 $success = array('success' => false, 'message' => 'Weibo: Access token not valid');
             }
             return $success;
