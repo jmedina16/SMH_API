@@ -44,8 +44,10 @@ class Facebook_client_api {
         return $success;
     }
 
-    public function get_user_details($access_token) {
+    public function get_user_details($pid, $access_token) {
         try {
+                        $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->get_user_details ($pid)] ERROR: Graph returned an error: " . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
             $fb = new Facebook\Facebook([
                 'app_id' => $this->OAUTH2_CLIENT_ID,
                 'app_secret' => $this->OAUTH2_CLIENT_SECRET,
@@ -57,7 +59,8 @@ class Facebook_client_api {
             $user_id = $user['id'];
             return array('user_name' => $user_name, 'user_id' => $user_id);
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->get_user_details ($pid)] ERROR:  Graph returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
             syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
         }

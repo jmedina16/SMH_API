@@ -1,0 +1,6 @@
+get_user_detailsget_user_detailsget_user_detailsget_user_details
+get_user_details
+get_user_details
+2018-03-21 15:55:34 [Facebook_client_api->get_user_details] ERROR: (10012) Graph returned an error: 
+2018-03-21 15:57:44 [Facebook_client_api->get_user_details (10012)] ERROR: Graph returned an error: 
+2018-03-21 15:58:01 [Facebook_client_api->get_user_details (10012)] ERROR: Graph returned an error: 
