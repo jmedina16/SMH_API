@@ -155,6 +155,7 @@ class Sn_config_model extends CI_Model {
         $weibo_auth = $this->validate_weibo_token($pid);
         $auth = ($weibo_auth['success']) ? true : false;
         if ($auth) {
+            $this->weibo_client_api->createLiveStream($pid, $weibo_auth['access_token'], 'test', 400, 333, NULL, 1, NULL, 0, 0);
             $user_details = $this->get_weibo_account_details($pid);
             $details = ($user_details['success']) ? $user_details['user_details'] : null;
             $weibo = array('platform' => 'weibo', 'authorized' => $auth, 'user_details' => $details);
