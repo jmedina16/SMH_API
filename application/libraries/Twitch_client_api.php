@@ -35,7 +35,10 @@ class Twitch_client_api {
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Twitch_client_api->getTokens ($pid)] ERROR:  Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
         }
     }
 
@@ -50,7 +53,10 @@ class Twitch_client_api {
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Twitch_client_api->get_account_details ($pid)] ERROR:  Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         }
@@ -70,7 +76,10 @@ class Twitch_client_api {
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Twitch_client_api->get_channel_details ($pid)] ERROR:  Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         }
@@ -171,7 +180,10 @@ class Twitch_client_api {
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Twitch_client_api->refreshToken ($pid)] ERROR:  Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         }
@@ -191,7 +203,10 @@ class Twitch_client_api {
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Twitch_client_api->removeAuth ($pid)] ERROR:  Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         }

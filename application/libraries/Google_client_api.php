@@ -33,11 +33,17 @@ class Google_client_api {
         } catch (Google_Service_Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->getRedirectURL ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->getRedirectURL ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
         }
     }
 
@@ -55,11 +61,17 @@ class Google_client_api {
         } catch (Google_Service_Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->getTokens ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->getTokens ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
         }
     }
 
@@ -93,13 +105,19 @@ class Google_client_api {
         } catch (Google_Service_Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->checkAuthToken ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->checkAuthToken ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         }
@@ -140,13 +158,19 @@ class Google_client_api {
         } catch (Google_Service_Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->removeAuth ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->removeAuth ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         }
@@ -248,7 +272,10 @@ class Google_client_api {
                 } catch (Google_Service_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->createLiveStream ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
 
                     $error = json_decode($e->getMessage());
                     if ($error->error->errors[0]->reason === 'invalidEmbedSetting') {
@@ -262,7 +289,10 @@ class Google_client_api {
                 } catch (Google_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->createLiveStream ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 }
@@ -270,13 +300,19 @@ class Google_client_api {
         } catch (Google_Service_Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->createLiveStream ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->createLiveStream ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         }
@@ -328,13 +364,19 @@ class Google_client_api {
                 } catch (Google_Service_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->updateLiveStream ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 } catch (Google_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->updateLiveStream ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 }
@@ -342,13 +384,19 @@ class Google_client_api {
         } catch (Google_Service_Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->updateLiveStream ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->updateLiveStream ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         }
@@ -381,13 +429,19 @@ class Google_client_api {
                 } catch (Google_Service_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->removeLiveStream ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 } catch (Google_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->removeLiveStream ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 }
@@ -395,13 +449,19 @@ class Google_client_api {
         } catch (Google_Service_Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->removeLiveStream ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->removeLiveStream ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         }
@@ -433,13 +493,19 @@ class Google_client_api {
                 } catch (Google_Service_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->removeLiveStreamObject ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 } catch (Google_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->removeLiveStreamObject ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 }
@@ -447,13 +513,19 @@ class Google_client_api {
         } catch (Google_Service_Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->removeLiveStreamObject ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->removeLiveStreamObject ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         }
@@ -499,13 +571,19 @@ class Google_client_api {
                 } catch (Google_Service_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->updateLiveMetaData ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 } catch (Google_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->updateLiveMetaData ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 }
@@ -513,13 +591,19 @@ class Google_client_api {
         } catch (Google_Service_Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->updateLiveMetaData ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->updateLiveMetaData ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         }
@@ -569,13 +653,19 @@ class Google_client_api {
                 } catch (Google_Service_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->updateVodMetaData ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 } catch (Google_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->updateVodMetaData ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 }
@@ -583,13 +673,19 @@ class Google_client_api {
         } catch (Google_Service_Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->updateVodMetaData ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->updateVodMetaData ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         }
@@ -647,13 +743,19 @@ class Google_client_api {
                 } catch (Google_Service_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->updateThumbnail ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 } catch (Google_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->updateThumbnail ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 }
@@ -661,13 +763,19 @@ class Google_client_api {
         } catch (Google_Service_Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->updateThumbnail ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->updateThumbnail ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         }
@@ -707,13 +815,19 @@ class Google_client_api {
                 } catch (Google_Service_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->getLiveStreamStatus ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 } catch (Google_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->getLiveStreamStatus ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 }
@@ -721,13 +835,19 @@ class Google_client_api {
         } catch (Google_Service_Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->getLiveStreamStatus ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->getLiveStreamStatus ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         }
@@ -759,13 +879,19 @@ class Google_client_api {
                 } catch (Google_Service_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->transitionLiveStream ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 } catch (Google_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->transitionLiveStream ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 }
@@ -773,13 +899,19 @@ class Google_client_api {
         } catch (Google_Service_Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->transitionLiveStream ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->transitionLiveStream ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         }
@@ -870,7 +1002,10 @@ class Google_client_api {
                 } catch (Google_Service_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->createNewBroadcast ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
 
                     $error = json_decode($e->getMessage());
                     if ($error->error->errors[0]->reason === 'invalidEmbedSetting') {
@@ -884,7 +1019,10 @@ class Google_client_api {
                 } catch (Google_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->createNewBroadcast ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 }
@@ -892,13 +1030,19 @@ class Google_client_api {
         } catch (Google_Service_Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->createNewBroadcast ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->createNewBroadcast ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         }
@@ -932,13 +1076,19 @@ class Google_client_api {
                 } catch (Google_Service_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->get_verification ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 } catch (Google_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->get_verification ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 }
@@ -946,13 +1096,19 @@ class Google_client_api {
         } catch (Google_Service_Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->get_verification ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->get_verification ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         }
@@ -986,13 +1142,19 @@ class Google_client_api {
                 } catch (Google_Service_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->is_ls_enabled ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 } catch (Google_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->is_ls_enabled ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 }
@@ -1000,13 +1162,19 @@ class Google_client_api {
         } catch (Google_Service_Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->is_ls_enabled ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->is_ls_enabled ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         }
@@ -1043,13 +1211,19 @@ class Google_client_api {
                 } catch (Google_Service_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->get_account_details ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 } catch (Google_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->get_account_details ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 }
@@ -1057,13 +1231,19 @@ class Google_client_api {
         } catch (Google_Service_Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->get_account_details ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->get_account_details ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         }
@@ -1121,13 +1301,19 @@ class Google_client_api {
                 } catch (Google_Service_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->uploadVideo ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 } catch (Google_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->uploadVideo ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 }
@@ -1135,13 +1321,19 @@ class Google_client_api {
         } catch (Google_Service_Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->uploadVideo ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->uploadVideo ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         }
@@ -1171,13 +1363,19 @@ class Google_client_api {
                 } catch (Google_Service_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->removeVideo ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 } catch (Google_Exception $e) {
                     $date = date('Y-m-d H:i:s');
                     error_log($date . " [Google_client_api->removeVideo ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-                    error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+                    ob_start();
+                    debug_print_backtrace();
+                    $backtrace = ob_get_clean();
+                    error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
                     $success = array('success' => false);
                     return $success;
                 }
@@ -1185,13 +1383,19 @@ class Google_client_api {
         } catch (Google_Service_Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->removeVideo ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         } catch (Exception $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Google_client_api->removeVideo ($pid)] ERROR:  Caught Google service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
-            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false);
             return $success;
         }
