@@ -216,7 +216,7 @@ class Sn_config_model extends CI_Model {
             foreach ($result as $res) {
                 $access_token = $this->smcipher->decrypt($res['access_token']);
             }
-            $token_valid = $this->weibo_client_api->checkAuthToken($access_token);
+            $token_valid = $this->weibo_client_api->checkAuthToken($pid, $access_token);
             if ($token_valid['success']) {
                 $success = array('success' => true, 'access_token' => $token_valid['access_token']);
             } else {
@@ -316,7 +316,7 @@ class Sn_config_model extends CI_Model {
                 $token['access_token'] = $this->smcipher->decrypt($res['access_token']);
                 $token['refresh_token'] = $this->smcipher->decrypt($res['refresh_token']);
             }
-            $tokens_valid = $this->twitch_client_api->checkAuthToken($token);
+            $tokens_valid = $this->twitch_client_api->checkAuthToken($pid, $token);
             if ($tokens_valid['success'] && ($tokens_valid['message'] == 'valid_access_token')) {
                 $success = array('success' => true, 'access_token' => $tokens_valid['access_token']);
             }
@@ -338,7 +338,6 @@ class Sn_config_model extends CI_Model {
         $facebook_auth = $this->validate_facebook_token($pid);
         $auth = ($facebook_auth['success']) ? true : false;
         if ($auth) {
-            $this->facebook_client_api->get_user_details($pid, $auth['access_token']);
             $user_details = $this->get_fb_account_details($pid);
             $livestream_settings = $this->get_fb_ls_settings($pid);
             $details = ($user_details['success']) ? $user_details['user_details'] : null;
@@ -361,7 +360,7 @@ class Sn_config_model extends CI_Model {
             foreach ($result as $res) {
                 $access_token = $this->smcipher->decrypt($res['user_access_token']);
             }
-            $token_valid = $this->facebook_client_api->checkAuthToken($access_token);
+            $token_valid = $this->facebook_client_api->checkAuthToken($pid, $access_token);
             if ($token_valid['success']) {
                 $success = array('success' => true, 'access_token' => $token_valid['access_token']);
             } else {
@@ -683,7 +682,7 @@ class Sn_config_model extends CI_Model {
 
     public function is_youtube_ls_enabled($pid, $access_token) {
         $success = array('success' => false);
-        $is_enabled = $this->google_client_api->is_ls_enabled($access_token);
+        $is_enabled = $this->google_client_api->is_ls_enabled($pid, $access_token);
         if ($is_enabled['success']) {
             $success = array('success' => true);
         } else {
@@ -805,7 +804,7 @@ class Sn_config_model extends CI_Model {
                 $token['expires_in'] = $res['expires_in'];
                 $token['created'] = $res['created'];
             }
-            $tokens_valid = $this->google_client_api->checkAuthToken($token);
+            $tokens_valid = $this->google_client_api->checkAuthToken($pid, $token);
             if ($tokens_valid['success'] && ($tokens_valid['message'] == 'valid_access_token')) {
                 $success = array('success' => true, 'access_token' => $tokens_valid['access_token']);
             }
@@ -863,7 +862,7 @@ class Sn_config_model extends CI_Model {
 
     public function update_youtube_verification($pid, $access_token) {
         $success = array('success' => false);
-        $verification = $this->google_client_api->get_verification($access_token);
+        $verification = $this->google_client_api->get_verification($pid, $access_token);
         if ($verification['success']) {
             $update_youtube_channel_verification = $this->update_youtube_channel_verification($pid, $verification['is_verified']);
             if ($update_youtube_channel_verification['success']) {
@@ -896,7 +895,7 @@ class Sn_config_model extends CI_Model {
 
     public function retrieve_weibo_profile_details($pid, $access_token) {
         $success = array('success' => false);
-        $profile_details = $this->weibo_client_api->get_account_details($access_token);
+        $profile_details = $this->weibo_client_api->get_account_details($pid, $access_token);
         if ($profile_details['success']) {
             $user_details = array('name' => $profile_details['name'], 'user_thumb' => $profile_details['user_thumb'], 'user_id' => $profile_details['user_id']);
             $success = array('success' => true, 'profile_details' => $user_details);
@@ -908,7 +907,7 @@ class Sn_config_model extends CI_Model {
 
     public function retrieve_youtube_channel_details($pid, $access_token) {
         $success = array('success' => false);
-        $account_details = $this->google_client_api->get_account_details($access_token);
+        $account_details = $this->google_client_api->get_account_details($pid, $access_token);
         if ($account_details['success']) {
             $is_youtube_ls_enabled = $this->is_youtube_ls_enabled($pid, $access_token);
             $ls_enabled = ($is_youtube_ls_enabled['success']) ? true : false;
@@ -962,7 +961,7 @@ class Sn_config_model extends CI_Model {
                     }
                     $remove_yt_live_events = $this->remove_yt_live_events($pid);
                     if ($remove_yt_live_events['success']) {
-                        $removeAuth = $this->google_client_api->removeAuth($access_token);
+                        $removeAuth = $this->google_client_api->removeAuth($pid, $access_token);
                         if ($removeAuth['success']) {
                             $remove_yt_channel = $this->remove_youtube_channel($pid);
                             if ($remove_yt_channel['success']) {
@@ -1090,7 +1089,7 @@ class Sn_config_model extends CI_Model {
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $tokens = $this->twitch_client_api->getTokens($code);
+                $tokens = $this->twitch_client_api->getTokens($pid, $code);
                 if ($this->check_twitch($valid['pid'])) {
                     $result = $this->update_twitch_tokens($valid['pid'], $tokens);
                 } else {
@@ -1101,7 +1100,7 @@ class Sn_config_model extends CI_Model {
                     if ($channel['success']) {
                         $update_twitch_channel_details = $this->update_twitch_channel_details($pid, $channel['channel_details']['channel_name'], $channel['channel_details']['channel_id'], $channel['channel_details']['channel_logo']);
                         if ($update_twitch_channel_details['success']) {
-                            $channel_stream = $this->twitch_client_api->get_channel_details($tokens['access_token']);
+                            $channel_stream = $this->twitch_client_api->get_channel_details($pid, $tokens['access_token']);
                             if ($channel_stream['success']) {
                                 $twch_channel_stream = $this->insert_twch_channel_stream($pid, $channel_stream['channel_stream']['ingestId'], $channel_stream['channel_stream']['channelName'], $channel_stream['channel_stream']['streamName'], $channel_stream['channel_stream']['ingestAddress']);
                                 if ($twch_channel_stream['success']) {
@@ -1229,7 +1228,7 @@ class Sn_config_model extends CI_Model {
 
     public function retrieve_twitch_channel_details($pid, $access_token) {
         $success = array('success' => false);
-        $account_details = $this->twitch_client_api->get_account_details($access_token);
+        $account_details = $this->twitch_client_api->get_account_details($pid, $access_token);
         if ($account_details['success']) {
             $channel_details = array('channel_name' => $account_details['channel_name'], 'channel_logo' => $account_details['channel_logo'], 'channel_id' => $account_details['channel_id']);
             $success = array('success' => true, 'channel_details' => $channel_details);
@@ -1275,7 +1274,7 @@ class Sn_config_model extends CI_Model {
                     foreach ($result as $res) {
                         $access_token = $this->smcipher->decrypt($res['access_token']);
                     }
-                    $removeAuth = $this->twitch_client_api->removeAuth($access_token);
+                    $removeAuth = $this->twitch_client_api->removeAuth($pid, $access_token);
                     if ($removeAuth['success']) {
                         $remove_channel = $this->remove_twitch_channel($pid);
                         if ($remove_channel['success']) {
@@ -1405,7 +1404,7 @@ class Sn_config_model extends CI_Model {
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $tokens = $this->facebook_client_api->getTokens($code);
+                $tokens = $this->facebook_client_api->getTokens($pid, $code);
                 if ($this->check_facebook($valid['pid'])) {
                     $result = $this->update_facebook_tokens($valid['pid'], $tokens);
                 } else {
@@ -1530,7 +1529,7 @@ class Sn_config_model extends CI_Model {
                 }
                 $user = $this->get_fb_user_name($pid);
                 if ($user['success']) {
-                    $remove = $this->facebook_client_api->removeAuth($access_token, $user['user_id']);
+                    $remove = $this->facebook_client_api->removeAuth($pid, $access_token, $user['user_id']);
                     if ($remove['success']) {
                         $remove_profile = $this->remove_fb_profile($pid);
                         if ($remove_profile['success']) {
@@ -2167,7 +2166,7 @@ class Sn_config_model extends CI_Model {
                 if ($access_token['success']) {
                     $get_asset = $this->get_asset($pid, $publish_to, $asset_id, $access_token['access_token']);
                     if ($get_asset['success']) {
-                        $livestream = $this->facebook_client_api->createLiveStream($get_asset['asset'], $privacy, $create_vod, $cont_streaming, $projection);
+                        $livestream = $this->facebook_client_api->createLiveStream($pid, $get_asset['asset'], $privacy, $create_vod, $cont_streaming, $projection);
                         if ($livestream['success']) {
                             $add_fb_livestream = $this->add_fb_livestream($pid, $livestream['address'], $livestream['stream_name'], $livestream['embed_code'], $livestream['live_id']);
                             if ($add_fb_livestream['success']) {
@@ -2454,7 +2453,7 @@ class Sn_config_model extends CI_Model {
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $token = $this->weibo_client_api->getTokens($code);
+                $token = $this->weibo_client_api->getTokens($pid, $code);
                 if ($this->check_weibo($valid['pid'])) {
                     $result = $this->update_weibo_tokens($valid['pid'], $token);
                 } else {
@@ -2501,7 +2500,7 @@ class Sn_config_model extends CI_Model {
         if ($valid['success']) {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
-                $tokens = $this->google_client_api->getTokens($code);
+                $tokens = $this->google_client_api->getTokens($pid, $code);
                 if ($this->check_youtube($valid['pid'])) {
                     $result = $this->update_youtube_tokens($valid['pid'], $tokens);
                 } else {
@@ -2864,7 +2863,7 @@ class Sn_config_model extends CI_Model {
         $access_token = $this->validate_youtube_token($pid);
         if ($access_token['success']) {
             $thumbnail = array('use_default' => true);
-            $livestream = $this->google_client_api->createLiveStream($access_token['access_token'], $name, $desc, $snConfig['youtube_res'], $eid, $thumbnail, $projection, $youtube_embed);
+            $livestream = $this->google_client_api->createLiveStream($pid, $access_token['access_token'], $name, $desc, $snConfig['youtube_res'], $eid, $thumbnail, $projection, $youtube_embed);
             if ($livestream['success']) {
                 $insert_live_event = $this->insert_youtube_live_event($pid, $eid, $livestream['liveBroadcastId'], $livestream['liveStreamId'], $livestream['streamName'], $livestream['ingestionAddress'], $projection);
                 if ($insert_live_event['success']) {
@@ -2879,7 +2878,7 @@ class Sn_config_model extends CI_Model {
                 }
             } else if (isset($livestream['retry'])) {
                 $youtube_embed = false;
-                $livestream = $this->google_client_api->createLiveStream($access_token['access_token'], $name, $desc, $snConfig['youtube_res'], $eid, $thumbnail, $projection, $youtube_embed);
+                $livestream = $this->google_client_api->createLiveStream($pid, $access_token['access_token'], $name, $desc, $snConfig['youtube_res'], $eid, $thumbnail, $projection, $youtube_embed);
                 if ($livestream['success']) {
                     $insert_live_event = $this->insert_youtube_live_event($pid, $eid, $livestream['liveBroadcastId'], $livestream['liveStreamId'], $livestream['streamName'], $livestream['ingestionAddress'], $projection);
                     if ($insert_live_event['success']) {
@@ -3399,7 +3398,7 @@ class Sn_config_model extends CI_Model {
             if ($access_token['success']) {
                 $youtube_ids = $this->get_youtube_event_ids($pid, $eid);
                 if ($youtube_ids['success']) {
-                    $livestream = $this->google_client_api->updateLiveStream($access_token['access_token'], $snConfig['youtube_res'], $name, $eid, $youtube_ids['bid'], $youtube_ids['lid']);
+                    $livestream = $this->google_client_api->updateLiveStream($pid, $access_token['access_token'], $snConfig['youtube_res'], $name, $eid, $youtube_ids['bid'], $youtube_ids['lid']);
                     if ($livestream['success']) {
                         $update_live_event = $this->update_youtube_live_event($pid, $eid, $livestream['liveStreamId'], $livestream['streamName'], $livestream['ingestionAddress'], $projection);
                         if ($update_live_event['success']) {
@@ -3417,7 +3416,7 @@ class Sn_config_model extends CI_Model {
                     }
                 } else {
                     $thumbnail = $this->smportal->get_default_thumb($pid, $eid, $ks);
-                    $livestream = $this->google_client_api->createLiveStream($access_token['access_token'], $name, $desc, $snConfig['youtube_res'], $eid, $thumbnail, $projection, $youtube_embed);
+                    $livestream = $this->google_client_api->createLiveStream($pid, $access_token['access_token'], $name, $desc, $snConfig['youtube_res'], $eid, $thumbnail, $projection, $youtube_embed);
                     if ($livestream['success']) {
                         $insert_live_event = $this->insert_youtube_live_event($pid, $eid, $livestream['liveBroadcastId'], $livestream['liveStreamId'], $livestream['streamName'], $livestream['ingestionAddress'], $projection);
                         if ($insert_live_event['success']) {
@@ -3432,7 +3431,7 @@ class Sn_config_model extends CI_Model {
                         }
                     } else if (isset($livestream['retry'])) {
                         $youtube_embed = false;
-                        $livestream = $this->google_client_api->createLiveStream($access_token['access_token'], $name, $desc, $snConfig['youtube_res'], $eid, $thumbnail, $projection, $youtube_embed);
+                        $livestream = $this->google_client_api->createLiveStream($pid, $access_token['access_token'], $name, $desc, $snConfig['youtube_res'], $eid, $thumbnail, $projection, $youtube_embed);
                         if ($livestream['success']) {
                             $insert_live_event = $this->insert_youtube_live_event($pid, $eid, $livestream['liveBroadcastId'], $livestream['liveStreamId'], $livestream['streamName'], $livestream['ingestionAddress'], $projection);
                             if ($insert_live_event['success']) {
@@ -3462,7 +3461,7 @@ class Sn_config_model extends CI_Model {
             if ($youtube_ids['success']) {
                 $access_token = $this->validate_youtube_token($pid);
                 if ($access_token['success']) {
-                    $removeLiveStream = $this->google_client_api->removeLiveStream($access_token['access_token'], $youtube_ids['bid'], $youtube_ids['lid']);
+                    $removeLiveStream = $this->google_client_api->removeLiveStream($pid, $access_token['access_token'], $youtube_ids['bid'], $youtube_ids['lid']);
                     if ($removeLiveStream['success']) {
                         $removeLiveEvent = $this->removeLiveEvent($pid, $eid);
                         if ($removeLiveEvent['success']) {
@@ -3836,7 +3835,7 @@ class Sn_config_model extends CI_Model {
         if ($youtube_ids['success']) {
             $access_token = $this->validate_youtube_token($pid);
             if ($access_token['success']) {
-                $updateMetaData = $this->google_client_api->updateLiveMetaData($access_token['access_token'], $youtube_ids['bid'], $name, $desc);
+                $updateMetaData = $this->google_client_api->updateLiveMetaData($pid, $access_token['access_token'], $youtube_ids['bid'], $name, $desc);
                 if ($updateMetaData['success']) {
                     $success = array('success' => true);
                 } else {
@@ -3873,7 +3872,7 @@ class Sn_config_model extends CI_Model {
         $facebook_video = $this->get_facebook_vod_id($pid, $eid);
         $access_token = $this->validate_facebook_token($pid);
         if ($access_token['success']) {
-            $updateMetaData = $this->facebook_client_api->updateVodMetaData($access_token['access_token'], $facebook_video['videoId'], $name, $desc);
+            $updateMetaData = $this->facebook_client_api->updateVodMetaData($pid, $access_token['access_token'], $facebook_video['videoId'], $name, $desc);
             if ($updateMetaData['success']) {
                 $success = array('success' => true);
             } else {
@@ -3890,7 +3889,7 @@ class Sn_config_model extends CI_Model {
         $youtube_video = $this->get_youtube_vod_id($pid, $eid);
         $access_token = $this->validate_youtube_token($pid);
         if ($access_token['success']) {
-            $updateMetaData = $this->google_client_api->updateVodMetaData($access_token['access_token'], $youtube_video['videoId'], $name, $desc);
+            $updateMetaData = $this->google_client_api->updateVodMetaData($pid, $access_token['access_token'], $youtube_video['videoId'], $name, $desc);
             if ($updateMetaData['success']) {
                 $success = array('success' => true);
             } else {
@@ -4002,7 +4001,7 @@ class Sn_config_model extends CI_Model {
         $success = array('success' => false);
         $access_token = $this->validate_youtube_token($pid);
         if ($access_token['success']) {
-            $upload_video = $this->google_client_api->uploadVideo($access_token['access_token'], $entry_details['name'], $entry_details['desc'], $video_path);
+            $upload_video = $this->google_client_api->uploadVideo($pid, $access_token['access_token'], $entry_details['name'], $entry_details['desc'], $video_path);
             if ($upload_video['success']) {
                 $success = array('success' => true, 'videoId' => $upload_video['videoId']);
             } else {
@@ -4018,7 +4017,7 @@ class Sn_config_model extends CI_Model {
         $success = array('success' => false);
         $access_token = $this->validate_youtube_token($pid);
         if ($access_token['success']) {
-            $remove_video = $this->google_client_api->removeVideo($access_token['access_token'], $videoId);
+            $remove_video = $this->google_client_api->removeVideo($pid, $access_token['access_token'], $videoId);
             if ($remove_video['success']) {
                 $success = array('success' => true);
             } else {
@@ -4034,7 +4033,7 @@ class Sn_config_model extends CI_Model {
         $success = array('success' => false);
         $access_token = $this->validate_facebook_token($pid);
         if ($access_token['success']) {
-            $remove_video = $this->facebook_client_api->removeVideo($access_token['access_token'], $videoId);
+            $remove_video = $this->facebook_client_api->removeVideo($pid, $access_token['access_token'], $videoId);
             if ($remove_video['success']) {
                 $success = array('success' => true);
             } else {
@@ -4158,7 +4157,7 @@ class Sn_config_model extends CI_Model {
             if ($get_user_settings['success']) {
                 $get_asset = $this->get_asset($pid, $get_user_settings['userSettings'][0]['publish_to'], $get_user_settings['userSettings'][0]['asset_id'], $access_token['access_token']);
                 if ($get_asset['success']) {
-                    $upload_video = $this->facebook_client_api->uploadVideo($get_asset['asset'], $entry_details['name'], $entry_details['desc'], $get_user_settings['userSettings'][0]['privacy'], $video_path);
+                    $upload_video = $this->facebook_client_api->uploadVideo($pid, $get_asset['asset'], $entry_details['name'], $entry_details['desc'], $get_user_settings['userSettings'][0]['privacy'], $video_path);
                     if ($upload_video['success']) {
                         $success = array('success' => true, 'videoId' => $upload_video['videoId']);
                     } else {
@@ -4213,7 +4212,7 @@ class Sn_config_model extends CI_Model {
             $access_token = $this->validate_youtube_token($pid);
             if ($access_token['success']) {
                 $thumbnail = $this->smportal->get_default_thumb($pid, $eid, $ks);
-                $updateThumbnail = $this->google_client_api->updateThumbnail($access_token['access_token'], $youtube_ids['bid'], $thumbnail);
+                $updateThumbnail = $this->google_client_api->updateThumbnail($pid, $access_token['access_token'], $youtube_ids['bid'], $thumbnail);
                 if ($updateThumbnail['success']) {
                     $success = array('success' => true);
                 } else {
@@ -4271,7 +4270,7 @@ class Sn_config_model extends CI_Model {
         if ($youtube_ids['success']) {
             $access_token = $this->validate_youtube_token($pid);
             if ($access_token['success']) {
-                $removeLiveStream = $this->google_client_api->removeLiveStream($access_token['access_token'], $youtube_ids['bid'], $youtube_ids['lid']);
+                $removeLiveStream = $this->google_client_api->removeLiveStream($pid, $access_token['access_token'], $youtube_ids['bid'], $youtube_ids['lid']);
                 if ($removeLiveStream['success']) {
                     $removeLiveEvent = $this->removeLiveEvent($pid, $eid);
                     if ($removeLiveEvent['success']) {
@@ -4541,7 +4540,7 @@ class Sn_config_model extends CI_Model {
         if ($get_fb_livestream['success']) {
             $access_token = $this->validate_facebook_token($pid);
             if ($access_token['success']) {
-                $updateLiveStream = $this->facebook_client_api->updateLiveStream($get_fb_livestream['live_id'], $entry_details['name'], $entry_details['desc'], $access_token['access_token']);
+                $updateLiveStream = $this->facebook_client_api->updateLiveStream($pid, $get_fb_livestream['live_id'], $entry_details['name'], $entry_details['desc'], $access_token['access_token']);
                 if ($updateLiveStream['success']) {
                     $success = array('success' => true);
                 } else {
@@ -5573,7 +5572,7 @@ class Sn_config_model extends CI_Model {
             if ($event_ids['success']) {
                 $access_token = $this->validate_youtube_token($pid);
                 if ($access_token['success']) {
-                    $transitionLiveStream = $this->google_client_api->transitionLiveStream($access_token['access_token'], $event_ids['bid'], $status);
+                    $transitionLiveStream = $this->google_client_api->transitionLiveStream($pid, $access_token['access_token'], $event_ids['bid'], $status);
                     if ($transitionLiveStream['success']) {
                         $updateLiveStreamStatus = $this->update_youtube_entry_status($pid, $eid, $status);
                         if ($updateLiveStreamStatus['success']) {
@@ -5595,7 +5594,7 @@ class Sn_config_model extends CI_Model {
             if ($event_ids['success']) {
                 $access_token = $this->validate_youtube_token($pid);
                 if ($access_token['success']) {
-                    $liveStreamStatus = $this->google_client_api->getLiveStreamStatus($access_token['access_token'], $event_ids['bid']);
+                    $liveStreamStatus = $this->google_client_api->getLiveStreamStatus($pid, $access_token['access_token'], $event_ids['bid']);
                     if ($liveStreamStatus['success']) {
                         $updateLiveStreamStatus = $this->update_youtube_entry_status($pid, $eid, $liveStreamStatus['status']);
                         if ($updateLiveStreamStatus['success']) {
@@ -5764,7 +5763,7 @@ class Sn_config_model extends CI_Model {
         if ($access_token['success']) {
             $get_asset = $this->get_asset($pid, $publish_to, $asset_id, $access_token['access_token']);
             if ($get_asset['success']) {
-                $livestream = $this->facebook_client_api->createLiveStream($get_asset['asset'], $privacy, $create_vod, $cont_streaming, $projection);
+                $livestream = $this->facebook_client_api->createLiveStream($pid, $get_asset['asset'], $privacy, $create_vod, $cont_streaming, $projection);
                 if ($livestream['success']) {
                     $add_fb_livestream = $this->add_fb_livestream($pid, $livestream['address'], $livestream['stream_name'], $livestream['embed_code'], $livestream['live_id']);
                     if ($add_fb_livestream['success']) {
@@ -5791,14 +5790,14 @@ class Sn_config_model extends CI_Model {
         if ($event_ids['success']) {
             $access_token = $this->validate_youtube_token($pid);
             if ($access_token['success']) {
-                $transitionLiveStream = $this->google_client_api->transitionLiveStream($access_token['access_token'], $event_ids['bid'], 'complete');
+                $transitionLiveStream = $this->google_client_api->transitionLiveStream($pid, $access_token['access_token'], $event_ids['bid'], 'complete');
                 if ($transitionLiveStream['success']) {
                     $updateLiveStreamStatus = $this->update_youtube_entry_status($pid, $eid, 'complete');
                     if ($updateLiveStreamStatus['success']) {
                         $youtube_embed = true;
                         $thumbnail = $this->smportal->get_default_thumb($pid, $eid, $ks);
                         $entry_details = $this->smportal->get_entry_details($pid, $eid);
-                        $createNewBroadCast = $this->google_client_api->createNewBroadcast($access_token['access_token'], $event_ids['bid'], $event_ids['lid'], $entry_details['name'], $entry_details['desc'], $thumbnail, $event_ids['proj'], $youtube_embed);
+                        $createNewBroadCast = $this->google_client_api->createNewBroadcast($pid, $access_token['access_token'], $event_ids['bid'], $event_ids['lid'], $entry_details['name'], $entry_details['desc'], $thumbnail, $event_ids['proj'], $youtube_embed);
                         if ($createNewBroadCast['success']) {
                             $updateBid = $this->update_youtube_live_event_bid($pid, $eid, $createNewBroadCast['liveBroadcastId']);
                             if ($updateBid['success']) {
@@ -5818,7 +5817,7 @@ class Sn_config_model extends CI_Model {
                             }
                         } else if (isset($createNewBroadCast['retry'])) {
                             $youtube_embed = false;
-                            $createNewBroadCast = $this->google_client_api->createNewBroadcast($access_token['access_token'], $event_ids['bid'], $event_ids['lid'], $entry_details['name'], $entry_details['desc'], $thumbnail, $event_ids['proj'], $youtube_embed);
+                            $createNewBroadCast = $this->google_client_api->createNewBroadcast($pid, $access_token['access_token'], $event_ids['bid'], $event_ids['lid'], $entry_details['name'], $entry_details['desc'], $thumbnail, $event_ids['proj'], $youtube_embed);
                             if ($createNewBroadCast['success']) {
                                 $updateBid = $this->update_youtube_live_event_bid($pid, $eid, $createNewBroadCast['liveBroadcastId']);
                                 if ($updateBid['success']) {
@@ -5840,7 +5839,7 @@ class Sn_config_model extends CI_Model {
                                 $success = array('success' => false, 'message' => 'Could not create and bind new broadcast');
                             }
                         } else if (isset($createNewBroadCast['blocked'])) {
-                            $removeLiveStream = $this->google_client_api->removeLiveStreamObject($access_token['access_token'], $event_ids['bid'], $event_ids['lid']);
+                            $removeLiveStream = $this->google_client_api->removeLiveStreamObject($pid, $access_token['access_token'], $event_ids['bid'], $event_ids['lid']);
                             if ($removeLiveStream['success']) {
                                 $removeLiveEvent = $this->removeLiveEvent($pid, $eid);
                                 if ($removeLiveEvent['success']) {
@@ -5927,7 +5926,7 @@ class Sn_config_model extends CI_Model {
                     if ($channel['success']) {
                         $update_twitch_channel_details = $this->update_twitch_channel_details($pid, $channel['channel_details']['channel_name'], $channel['channel_details']['channel_id'], $channel['channel_details']['channel_logo']);
                         if ($update_twitch_channel_details['success']) {
-                            $channel_stream = $this->twitch_client_api->get_channel_details($access_token['access_token']);
+                            $channel_stream = $this->twitch_client_api->get_channel_details($pid, $access_token['access_token']);
                             $update_twch_channel_stream = $this->update_twch_channel_stream($pid, $channel_stream['channel_stream']['ingestId'], $channel_stream['channel_stream']['channelName'], $channel_stream['channel_stream']['streamName'], $channel_stream['channel_stream']['ingestAddress']);
                             if ($update_twch_channel_stream['success']) {
                                 $channel_details = array('channel_name' => $channel['channel_details']['channel_name'], 'channel_logo' => $channel['channel_details']['channel_logo']);
@@ -6022,11 +6021,11 @@ class Sn_config_model extends CI_Model {
                     $get_user_details = $this->facebook_client_api->get_user_details($pid, $access_token['access_token']);
                     $user_name = $get_user_details['user_name'];
                     $user_id = $get_user_details['user_id'];
-                    $account_pic = $this->facebook_client_api->get_account_pic($access_token['access_token'], $user_id);
+                    $account_pic = $this->facebook_client_api->get_account_pic($pid, $access_token['access_token'], $user_id);
                     $user = array('user_id' => $user_id, 'user_name' => $user_name, 'user_thumbnail' => $account_pic['user_pic'], 'access_token' => $access_token['access_token']);
                     $update_facebook_profile = $this->update_facebook_profile($pid, $user);
 
-                    $get_pages_details = $this->facebook_client_api->get_pages_details($access_token['access_token'], $user_id);
+                    $get_pages_details = $this->facebook_client_api->get_pages_details($pid, $access_token['access_token'], $user_id);
                     $pages = $get_pages_details['pages'];
                     if ($this->check_fb_pages($pid)) {
                         $remove_pages = $this->remove_facebook_pages($pid);
@@ -6053,7 +6052,7 @@ class Sn_config_model extends CI_Model {
                         }
                     }
 
-                    $get_groups_details = $this->facebook_client_api->get_groups_details($access_token['access_token'], $user_id);
+                    $get_groups_details = $this->facebook_client_api->get_groups_details($pid, $access_token['access_token'], $user_id);
                     $groups = $get_groups_details['groups'];
                     if ($this->check_fb_groups($pid)) {
                         $remove_groups = $this->remove_facebook_groups($pid);
@@ -6080,7 +6079,7 @@ class Sn_config_model extends CI_Model {
                         }
                     }
 
-                    $get_events_details = $this->facebook_client_api->get_events_details($access_token['access_token'], $user_id);
+                    $get_events_details = $this->facebook_client_api->get_events_details($pid, $access_token['access_token'], $user_id);
                     $events = $get_events_details['events'];
                     if ($this->check_fb_events($pid)) {
                         $remove_events = $this->remove_facebook_events($pid);
