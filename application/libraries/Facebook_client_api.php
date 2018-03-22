@@ -27,16 +27,16 @@ class Facebook_client_api {
         return $authUrl;
     }
 
-    public function getTokens($code) {
+    public function getTokens($pid, $code) {
         $success = array('success' => false);
         $user_access_token = $this->get_user_access_token($code);
         if ($user_access_token['success']) {
-            $user_details = $this->get_user_details($user_access_token['access_token']);
-            $get_account_pic = $this->get_account_pic($user_access_token['access_token'], $user_details['user_id']);
+            $user_details = $this->get_user_details($pid, $user_access_token['access_token']);
+            $get_account_pic = $this->get_account_pic($pid, $user_access_token['access_token'], $user_details['user_id']);
             $user = array('user_name' => $user_details['user_name'], 'user_thumbnail' => $get_account_pic['user_pic'], 'user_id' => $user_details['user_id'], 'access_token' => $user_access_token['access_token']);
-            $pages_details = $this->get_pages_details($user_access_token['access_token'], $user_details['user_id']);
-            $groups_details = $this->get_groups_details($user_access_token['access_token'], $user_details['user_id']);
-            $events_details = $this->get_events_details($user_access_token['access_token'], $user_details['user_id']);
+            $pages_details = $this->get_pages_details($pid, $user_access_token['access_token'], $user_details['user_id']);
+            $groups_details = $this->get_groups_details($pid, $user_access_token['access_token'], $user_details['user_id']);
+            $events_details = $this->get_events_details($pid, $user_access_token['access_token'], $user_details['user_id']);
             $success = array('success' => true, 'user' => $user, 'pages' => $pages_details['pages'], 'groups' => $groups_details['groups'], 'events' => $events_details['events']);
         } else {
             $success = array('success' => false);
@@ -46,8 +46,6 @@ class Facebook_client_api {
 
     public function get_user_details($pid, $access_token) {
         try {
-                        $date = date('Y-m-d H:i:s');
-            error_log($date . " [Facebook_client_api->get_user_details ($pid)] ERROR: Graph returned an error: " . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
             $fb = new Facebook\Facebook([
                 'app_id' => $this->OAUTH2_CLIENT_ID,
                 'app_secret' => $this->OAUTH2_CLIENT_SECRET,
@@ -61,12 +59,15 @@ class Facebook_client_api {
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
             $date = date('Y-m-d H:i:s');
             error_log($date . " [Facebook_client_api->get_user_details ($pid)] ERROR:  Graph returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->get_user_details ($pid)] ERROR:  Facebook SDK returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
         }
     }
 
-    public function get_pages_details($access_token, $user_id) {
+    public function get_pages_details($pid, $access_token, $user_id) {
         $success = array('success' => false);
         try {
             $fb = new Facebook\Facebook([
@@ -87,13 +88,23 @@ class Facebook_client_api {
             }
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->get_pages_details ($pid)] ERROR:  Graph returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $pages = array();
+            $success = array('success' => false, 'pages' => $pages);
+            return $success;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->get_pages_details ($pid)] ERROR:  Facebook SDK returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $pages = array();
+            $success = array('success' => false, 'pages' => $pages);
+            return $success;
         }
     }
 
-    public function get_groups_details($access_token, $user_id) {
+    public function get_groups_details($pid, $access_token, $user_id) {
         $success = array('success' => false);
         try {
             $fb = new Facebook\Facebook([
@@ -114,13 +125,23 @@ class Facebook_client_api {
             }
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->get_groups_details ($pid)] ERROR:  Graph returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $groups = array();
+            $success = array('success' => false, 'groups' => $groups);
+            return $success;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->get_groups_details ($pid)] ERROR:  Facebook SDK returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $groups = array();
+            $success = array('success' => false, 'groups' => $groups);
+            return $success;
         }
     }
 
-    public function get_events_details($access_token, $user_id) {
+    public function get_events_details($pid, $access_token, $user_id) {
         $success = array('success' => false);
         try {
             $fb = new Facebook\Facebook([
@@ -141,9 +162,19 @@ class Facebook_client_api {
             }
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->get_events_details ($pid)] ERROR:  Graph returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $events = array();
+            $success = array('success' => false, 'events' => $events);
+            return $success;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->get_events_details ($pid)] ERROR:  Facebook SDK returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $events = array();
+            $success = array('success' => false, 'events' => $events);
+            return $success;
         }
     }
 
@@ -182,7 +213,7 @@ class Facebook_client_api {
         return $success;
     }
 
-    public function checkAuthToken($access_token) {
+    public function checkAuthToken($pid, $access_token) {
         $success = array('success' => false);
         try {
             $fb = new Facebook\Facebook([
@@ -209,13 +240,21 @@ class Facebook_client_api {
             }
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->checkAuthToken ($pid)] ERROR:  Graph returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => false, 'message' => 'Facebook: Could not get user access token');
+            return $success;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->checkAuthToken ($pid)] ERROR:  Facebook SDK returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => false, 'message' => 'Facebook: Could not get user access token');
+            return $success;
         }
     }
 
-    public function get_account_pic($access_token, $user_id) {
+    public function get_account_pic($pid, $access_token, $user_id) {
         $success = array('success' => false);
         try {
             $fb = new Facebook\Facebook([
@@ -228,13 +267,21 @@ class Facebook_client_api {
             $success = array('success' => true, 'user_pic' => $picture['url']);
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->get_account_pic ($pid)] ERROR:  Graph returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => false);
+            return $success;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->get_account_pic ($pid)] ERROR:  Facebook SDK returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => false);
+            return $success;
         }
     }
 
-    public function createLiveStream($asset, $privacy, $create_vod, $cont_streaming, $projection) {
+    public function createLiveStream($pid, $asset, $privacy, $create_vod, $cont_streaming, $projection) {
         $success = array('success' => false);
         try {
             $fb = new Facebook\Facebook([
@@ -280,15 +327,21 @@ class Facebook_client_api {
             }
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->createLiveStream ($pid)] ERROR:  Graph returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
             $success = array('success' => false, 'message' => 'Does not have permission to create live stream');
             return $success;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->createLiveStream ($pid)] ERROR:  Facebook SDK returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => false, 'message' => 'Does not have permission to create live stream');
+            return $success;
         }
     }
 
-    public function uploadVideo($asset, $name, $desc, $privacy, $videoPath) {
+    public function uploadVideo($pid, $asset, $name, $desc, $privacy, $videoPath) {
         $success = array('success' => false);
         try {
             $fb = new Facebook\Facebook([
@@ -324,15 +377,21 @@ class Facebook_client_api {
             }
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
-            $success = array('success' => false, 'message' => 'Does not have permission to create live stream');
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->uploadVideo ($pid)] ERROR:  Graph returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => false);
             return $success;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->uploadVideo ($pid)] ERROR:  Facebook SDK returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => false);
+            return $success;
         }
     }
 
-    public function removeVideo($access_token, $videoId) {
+    public function removeVideo($pid, $access_token, $videoId) {
         $success = array('success' => false);
         try {
             $fb = new Facebook\Facebook([
@@ -352,7 +411,9 @@ class Facebook_client_api {
             }
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->removeVideo ($pid)] ERROR:  Graph returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
 
             if ($e->getCode() == 100) {
                 $success = array('success' => true);
@@ -362,11 +423,15 @@ class Facebook_client_api {
                 return $success;
             }
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->removeVideo ($pid)] ERROR:  Facebook SDK returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => false);
+            return $success;
         }
     }
 
-    public function updateVodMetaData($access_token, $vid, $name, $desc) {
+    public function updateVodMetaData($pid, $access_token, $vid, $name, $desc) {
         $success = array('success' => false);
         try {
             $fb = new Facebook\Facebook([
@@ -389,13 +454,21 @@ class Facebook_client_api {
             }
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->updateVodMetaData ($pid)] ERROR:  Graph returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => false);
+            return $success;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->updateVodMetaData ($pid)] ERROR:  Facebook SDK returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => false);
+            return $success;
         }
     }
 
-    public function updateLiveStream($asset_id, $name, $desc, $access_token) {
+    public function updateLiveStream($pid, $asset_id, $name, $desc, $access_token) {
         $success = array('success' => false);
         try {
             $fb = new Facebook\Facebook([
@@ -418,13 +491,21 @@ class Facebook_client_api {
             }
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->updateLiveStream ($pid)] ERROR:  Graph returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => true);
+            return $success;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->updateLiveStream ($pid)] ERROR:  Facebook SDK returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => true);
+            return $success;
         }
     }
 
-    public function removeAuth($access_token, $user_id) {
+    public function removeAuth($pid, $access_token, $user_id) {
         $success = array('success' => false);
         try {
             $fb = new Facebook\Facebook([
@@ -443,9 +524,17 @@ class Facebook_client_api {
             }
             return $success;
         } catch (\Facebook\Exceptions\FacebookResponseException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Graph returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->removeAuth ($pid)] ERROR:  Graph returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => false);
+            return $success;
         } catch (\Facebook\Exceptions\FacebookSDKException $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Facebook SDK returned an error: " . $e->getMessage());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Facebook_client_api->removeAuth ($pid)] ERROR:  Facebook SDK returned an error: " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => false);
+            return $success;
         }
     }
 

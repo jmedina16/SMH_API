@@ -18,19 +18,20 @@ class Weibo_client_api {
         return $authUrl;
     }
 
-    public function getTokens($code) {
+    public function getTokens($pid, $code) {
         try {
             $auth = new SaeTOAuthV2(WB_AKEY, WB_SKEY);
             $keys = array('code' => $code, 'redirect_uri' => WB_CALLBACK_URL);
             $token = $auth->getAccessToken('code', $keys);
             return $token;
         } catch (Exception $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Caught Weibo service Exception " . $e->getCode() . " message is " . $e->getMessage());
-            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Weibo_client_api->getTokens ($pid)] ERROR:  Caught Weibo service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
         }
     }
 
-    public function get_account_details($access_token) {
+    public function get_account_details($pid, $access_token) {
         $success = array('success' => false);
         try {
             $client = new SaeTClientV2(WB_AKEY, WB_SKEY, $access_token);
@@ -46,15 +47,18 @@ class Weibo_client_api {
             }
             return $success;
         } catch (Exception $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Caught Weibo service Exception " . $e->getCode() . " message is " . $e->getMessage());
-            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Weibo_client_api->get_account_details ($pid)] ERROR:  Caught Weibo service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => false);
+            return $success;
         }
     }
 
-    public function checkAuthToken($access_token) {
+    public function checkAuthToken($pid, $access_token) {
         $success = array('success' => false);
         try {
-            $access_token_expiry = $this->get_token_info($access_token);
+            $access_token_expiry = $this->get_token_info($pid, $access_token);
             if ($access_token_expiry['token_info']['expire_in']) {
                 $success = array('success' => true, 'message' => 'valid_access_token', 'access_token' => $access_token);
             } else {
@@ -62,12 +66,15 @@ class Weibo_client_api {
             }
             return $success;
         } catch (Exception $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Caught Weibo service Exception " . $e->getCode() . " message is " . $e->getMessage());
-            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Weibo_client_api->checkAuthToken ($pid)] ERROR:  Caught Weibo service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => false);
+            return $success;
         }
     }
 
-    public function get_token_info($access_token) {
+    public function get_token_info($pid, $access_token) {
         $success = array('success' => false);
         try {
             $auth = new SaeTOAuthV2(WB_AKEY, WB_SKEY);
@@ -75,12 +82,13 @@ class Weibo_client_api {
             $success = array('success' => true, 'token_info' => $token_info);
             return $success;
         } catch (Exception $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Caught Weibo service Exception " . $e->getCode() . " message is " . $e->getMessage());
-            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Weibo_client_api->get_token_info ($pid)] ERROR:  Caught Weibo service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
         }
     }
 
-    public function removeAuth($access_token) {
+    public function removeAuth($pid, $access_token) {
         $success = array('success' => false);
         try {
             $auth = new SaeTOAuthV2(WB_AKEY, WB_SKEY);
@@ -92,8 +100,11 @@ class Weibo_client_api {
             }
             return $success;
         } catch (Exception $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Caught Weibo service Exception " . $e->getCode() . " message is " . $e->getMessage());
-            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Weibo_client_api->removeAuth ($pid)] ERROR:  Caught Weibo service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => false);
+            return $success;
         }
     }
 

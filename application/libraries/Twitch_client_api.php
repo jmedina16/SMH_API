@@ -23,7 +23,7 @@ class Twitch_client_api {
         return $authUrl;
     }
 
-    public function getTokens($code) {
+    public function getTokens($pid, $code) {
         try {
             $tokens = array();
             $url = 'https://api.twitch.tv/kraken/oauth2/token';
@@ -33,12 +33,13 @@ class Twitch_client_api {
             $tokens['refresh_token'] = $token_response['refresh_token'];
             return $tokens;
         } catch (Exception $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage());
-            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Twitch_client_api->getTokens ($pid)] ERROR:  Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
         }
     }
 
-    public function get_account_details($access_token) {
+    public function get_account_details($pid, $access_token) {
         $success = array('success' => false);
         try {
             $url = 'https://api.twitch.tv/kraken/user';
@@ -47,12 +48,15 @@ class Twitch_client_api {
             $success = array('success' => true, 'channel_name' => $response['display_name'], 'channel_logo' => $response['logo'], 'channel_id' => $response['_id']);
             return $success;
         } catch (Exception $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage());
-            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Twitch_client_api->get_account_details ($pid)] ERROR:  Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => false);
+            return $success;
         }
     }
 
-    public function get_channel_details($access_token) {
+    public function get_channel_details($pid, $access_token) {
         $success = array('success' => false);
         try {
             $channel_url = 'https://api.twitch.tv/kraken/channel';
@@ -64,8 +68,11 @@ class Twitch_client_api {
             $success = array('success' => true, 'channel_stream' => $channel_stream);
             return $success;
         } catch (Exception $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage());
-            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Twitch_client_api->get_channel_details ($pid)] ERROR:  Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => false);
+            return $success;
         }
     }
 
@@ -135,14 +142,14 @@ class Twitch_client_api {
         return $ingest_west;
     }
 
-    public function checkAuthToken($token) {
+    public function checkAuthToken($pid, $token) {
         $success = array('success' => false);
         $url = 'https://api.twitch.tv/kraken';
         $data = array();
         $response = $this->curlValidateGet($url, $data, $token['access_token']);
         if (isset($response['error'])) {
             if ($response['status'] == 401) {
-                $new_access_token = $this->refreshToken($token);
+                $new_access_token = $this->refreshToken($pid, $token);
                 $success = array('success' => true, 'message' => 'new_access_token', 'access_token' => $new_access_token['new_token']);
             }
         } else if ($response['token']['valid']) {
@@ -151,7 +158,7 @@ class Twitch_client_api {
         return $success;
     }
 
-    public function refreshToken($token) {
+    public function refreshToken($pid, $token) {
         $success = array('success' => false);
         try {
             $url = 'https://api.twitch.tv/kraken/oauth2/token';
@@ -162,12 +169,15 @@ class Twitch_client_api {
             $success = array('success' => true, 'new_token' => $new_token);
             return $success;
         } catch (Exception $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage());
-            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Twitch_client_api->refreshToken ($pid)] ERROR:  Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => false);
+            return $success;
         }
     }
 
-    public function removeAuth($access_token) {
+    public function removeAuth($pid, $access_token) {
         $success = array('success' => false);
         try {
             $tokens = array();
@@ -179,8 +189,11 @@ class Twitch_client_api {
             }
             return $success;
         } catch (Exception $e) {
-            syslog(LOG_NOTICE, "SMH DEBUG : Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage());
-            syslog(LOG_NOTICE, "SMH DEBUG : Stack trace is " . $e->getTraceAsString());
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Twitch_client_api->removeAuth ($pid)] ERROR:  Caught Twitch service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            error_log($date . " [Stack trace] " . json_encode(debug_backtrace()), 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => false);
+            return $success;
         }
     }
 
