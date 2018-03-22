@@ -3216,4 +3216,24 @@ class SaeTClientV2 {
         }
     }
 
+    function create_live_stream($title, $width, $height, $summary = NULL, $published = 0, $image = NULL, $replay = 0, $is_panolive = 0) {
+        $params = array();
+        $params['title'] = $title;
+        $params['width'] = $width;
+        $params['height'] = $height;
+        if ($summary) {
+            $params['summary'] = $summary;
+        }
+
+        $params['published'] = $published;
+        if ($image) {
+            $params['image'] = $image;
+        }
+
+        $params['replay'] = $replay;
+        $params['is_panolive'] = $is_panolive;
+
+        return $this->oauth->post('proxy/live/create', $params);
+    }
+
 }

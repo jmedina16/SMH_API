@@ -123,4 +123,22 @@ class Weibo_client_api {
         }
     }
 
+    public function createLiveStream($pid, $access_token, $title, $width, $height, $summary, $published, $image, $replay, $projection) {
+        $success = array('success' => false);
+        try {
+            $client = new SaeTClientV2(WB_AKEY, WB_SKEY, $access_token);
+            $liveStreamResponse = $client->create_live_stream($title, $width, $height, $summary, $published, $image, $replay, $projection);
+            syslog(LOG_NOTICE, "SMH DEBUG : createLiveStream: " . print_r($liveStreamResponse, true));
+        } catch (Exception $e) {
+            $date = date('Y-m-d H:i:s');
+            error_log($date . " [Weibo_client_api->createLiveStream ($pid)] ERROR:  Caught Weibo service Exception " . $e->getCode() . " message is " . $e->getMessage() . PHP_EOL, 3, dirname(__FILE__) . '/sn_debug.log');
+            ob_start();
+            debug_print_backtrace();
+            $backtrace = ob_get_clean();
+            error_log($date . " [Stack trace]: " . PHP_EOL . $backtrace, 3, dirname(__FILE__) . '/sn_debug.log');
+            $success = array('success' => false);
+            return $success;
+        }
+    }
+
 }
