@@ -215,6 +215,30 @@ class Sn_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code
     }
 
+    public function remove_weibo_authorization_get() {
+        $pid = $this->get('pid');
+        $ks = $this->get('ks');
+
+        if (!isset($pid) || $pid == null) {
+
+            $this->response(array('error' => 'Missing pid'), 200);
+        }
+
+        if (!isset($ks) || $ks == null) {
+
+            $this->response(array('error' => 'Missing ks'), 200);
+        }
+
+        $result = $this->sn_config_model->remove_weibo_authorization($pid, $ks);
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code
+    }
+
     public function remove_youtube_authorization_get() {
         $pid = $this->get('pid');
         $ks = $this->get('ks');
