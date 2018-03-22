@@ -338,7 +338,6 @@ class Sn_config_model extends CI_Model {
         $facebook_auth = $this->validate_facebook_token($pid);
         $auth = ($facebook_auth['success']) ? true : false;
         if ($auth) {
-            $this->facebook_client_api->get_user_details($pid, $auth['access_token']);
             $user_details = $this->get_fb_account_details($pid);
             $livestream_settings = $this->get_fb_ls_settings($pid);
             $details = ($user_details['success']) ? $user_details['user_details'] : null;
@@ -2490,6 +2489,97 @@ class Sn_config_model extends CI_Model {
             }
         } else {
             $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+
+        return $success;
+    }
+
+    public function remove_weibo_authorization($pid, $ks) {
+        $success = array('success' => false);
+        $valid = $this->verfiy_ks($pid, $ks);
+        if ($valid['success']) {
+            $has_service = $this->verify_service($pid);
+            if ($has_service) {
+                $this->config->select('*')
+                        ->from('weibo_user_profile')
+                        ->where('partner_id', $valid['pid']);
+
+                $query = $this->config->get();
+                $result = $query->result_array();
+                if ($query->num_rows() > 0) {
+                    foreach ($result as $res) {
+                        $access_token = $this->smcipher->decrypt($res['access_token']);
+                    }
+                }
+                $remove = $this->weibo_client_api->removeAuth($pid, $access_token);
+                if ($remove['success']) {
+                    $remove_profile = $this->remove_weibo_profile($pid);
+                    if ($remove_profile['success']) {
+                        $remove_settings = $this->remove_weibo_publish_settings($pid);
+                        if ($remove_settings['success']) {
+                            $update_status = $this->update_sn_config($pid, 'weibo', 0);
+                            if ($update_status['success']) {
+                                $success = array('success' => true);
+                            } else {
+                                $success = array('success' => false);
+                            }
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not remove weibo user settings');
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not remove weibo user profile');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not remove authorization');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Social network service not active');
+            }
+        } else {
+            $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+
+        return $success;
+    }
+
+    public function remove_weibo_profile($pid) {
+        $success = array('success' => false);
+        $this->config->where('partner_id = "' . $pid . '"');
+        $this->config->delete('weibo_user_profile');
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => false);
+        }
+        return $success;
+    }
+
+    public function remove_weibo_publish_settings($pid) {
+        $success = array('success' => false);
+        if ($this->check_weibo_publish_settings($pid)) {
+            $this->config->where('partner_id = "' . $pid . '"');
+            $this->config->delete('weibo_profile_settings');
+            if ($this->config->affected_rows() > 0) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false);
+            }
+        } else {
+            $success = array('success' => true);
+        }
+        return $success;
+    }
+
+    public function check_weibo_publish_settings($pid) {
+        $success = false;
+        $this->config->select('*')
+                ->from('weibo_profile_settings')
+                ->where('partner_id', $pid);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
         }
 
         return $success;
