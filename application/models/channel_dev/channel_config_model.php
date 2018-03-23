@@ -529,8 +529,7 @@ class Channel_config_model extends CI_Model {
             $start = -2;
         }
 
-        //$length = ((int) $entryDuration === (int) $event_length) ? -1 : $event_length;
-        $length = -1;
+        $length = ((int) $entryDuration === (int) $event_length) ? -1 : $event_length;
         $sources['video_src'] = $video_src;
         $sources['start'] = (int) $start;
         $sources['length'] = (int) $length;
