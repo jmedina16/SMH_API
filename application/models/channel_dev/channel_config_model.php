@@ -529,8 +529,7 @@ class Channel_config_model extends CI_Model {
             $start = -2;
         }
 
-        //$length = ((int) $entryDuration === (int) $event_length) ? -1 : $event_length;
-        $length = -1;
+        $length = ((int) $entryDuration === (int) $event_length) ? -1 : $event_length;
         $sources['video_src'] = $video_src;
         $sources['start'] = (int) $start;
         $sources['length'] = (int) $length;
@@ -636,7 +635,7 @@ class Channel_config_model extends CI_Model {
                             } else if ($entry_details['type'] === 5) {
                                 //TODO Playlist
                             }
-                            array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => true, 'scheduled' => $nonrepeat_program['start_date'], 'video_srcs' => $video_srcs));
+                            array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => false, 'scheduled' => $nonrepeat_program['start_date'], 'video_srcs' => $video_srcs));
                             $plist_num++;
                         }
                     }
@@ -654,7 +653,7 @@ class Channel_config_model extends CI_Model {
                                 } else if ($entry_details['type'] === 5) {
                                     //TODO Playlist
                                 }
-                                array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => true, 'scheduled' => $rec_programs['date_range_found']['start_date'], 'video_srcs' => $video_srcs));
+                                array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => false, 'scheduled' => $rec_programs['date_range_found']['start_date'], 'video_srcs' => $video_srcs));
                                 $plist_num++;
                                 //syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: " . print_r($repeat_programs, true));                               
                             }
