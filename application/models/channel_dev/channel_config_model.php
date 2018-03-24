@@ -513,25 +513,29 @@ class Channel_config_model extends CI_Model {
         $video_src = '';
         $start = 0;
         if ($entryType === 1) {
-            $flavor = $this->smportal->ott_get_flavor($pid, $entryId);
-            $file_path = $this->ott_get_raw_file($pid, $flavor['flavorId'], $flavor['flavorVersion']);
-            $filename = $flavor['fileExt'] . ':' . $file_path['file_path'];
-            $video_src = 'httpcache1/' . $pid . '/content/' . $filename;
+            if ($entryId) {
+                $flavor = $this->smportal->ott_get_flavor($pid, $entryId);
+                $file_path = $this->ott_get_raw_file($pid, $flavor['flavorId'], $flavor['flavorVersion']);
+                $filename = $flavor['fileExt'] . ':' . $file_path['file_path'];
+                $video_src = 'httpcache1/' . $pid . '/content/' . $filename;
+            } else {
+                $video_src = '';
+            }
+
             if ($now_date >= $start_date) {
                 $date1 = new DateTime($start_date);
                 $date2 = new DateTime($now_date);
                 $diffInSeconds = $date2->getTimestamp() - $date1->getTimestamp();
                 $start = $diffInSeconds;
             }
-            //$final_event_length = ((int) $entryDuration === (int) $event_length) ? -1 : $event_length;
+            $length = ((int) $entryDuration === (int) $event_length) ? -1 : $event_length;
         } else if ($entryType === 7) {
             $streamName = $this->smportal->get_stream_name($pid, $entryId);
             $video_src = $streamName;
             $start = -2;
-            //$final_event_length = -1;
+            $length = -1;
         }
 
-        $length = ((int) $entryDuration === (int) $event_length) ? -1 : $event_length;
         $sources['video_src'] = $video_src;
         $sources['start'] = (int) $start;
         $sources['length'] = (int) $length;
@@ -642,8 +646,21 @@ class Channel_config_model extends CI_Model {
                             } else if ($entry_details['type'] === 5) {
                                 //TODO Playlist
                             }
-                            array_push($playlist, array('playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $nonrepeat_program['start_date'], 'video_srcs' => $video_srcs));
-                            //$plist_num++;
+                            array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $nonrepeat_program['start_date'], 'video_srcs' => $video_srcs));
+                            $plist_num++;
+                            if ($entry_details['type'] === 7) {
+                                $video_srcs = array();
+                                $start_date_mod = new DateTime($nonrepeat_program['start_date']);
+                                $new_event_length = (int) $nonrepeat_program['event_length'] + 1;
+                                $start_date_mod->add(new DateInterval('PT' . $new_event_length . 'S'));
+                                $start_date = $start_date_mod->format('Y-m-d H:i:s');
+
+                                $video_src = $this->buildVideoSrcs($partner_id, null, 1, $entry_details['duration'], 1, $start_date, $now_date);
+                                array_push($video_srcs, $video_src);
+                                $repeat = false;
+                                array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $start_date, 'video_srcs' => $video_srcs));
+                                $plist_num++;
+                            }
                         }
                     }
                 }
@@ -665,8 +682,8 @@ class Channel_config_model extends CI_Model {
                                 } else if ($entry_details['type'] === 5) {
                                     //TODO Playlist
                                 }
-                                array_push($playlist, array('playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $rec_programs['date_range_found']['start_date'], 'video_srcs' => $video_srcs));
-                                //$plist_num++;
+                                array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $rec_programs['date_range_found']['start_date'], 'video_srcs' => $video_srcs));
+                                $plist_num++;
                                 //syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: " . print_r($repeat_programs, true));                               
                             }
                         }
@@ -676,14 +693,46 @@ class Channel_config_model extends CI_Model {
                     array_push($ready_channels, $channel);
                 }
             }
-            
-            syslog(LOG_NOTICE, "SMH DEBUG : build_account_schedule: playlist1: " . print_r($playlist, true)); 
-            foreach($playlist as &$p){
-                $p['name'] = 'pl' . $plist_num;
-                $plist_num++;
+
+            syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: " . print_r($repeat_programs, true));
+
+            syslog(LOG_NOTICE, "SMH DEBUG : build_account_schedule: playlist1: " . print_r($playlist, true));
+            $live_stopper_found = false;
+            $live_stopper_name = '';
+            $live_stopper_schedule = '';
+            $index = 0;
+            $live_stopper_index = 0;
+            $duplicate_found = false;
+            foreach ($playlist as $p) {
+                foreach ($p['video_srcs'] as $srcs) {
+                    if ($srcs['video_src'] == '') {
+                        $live_stopper_found = true;
+                        $live_stopper_name = $p['name'];
+                        $live_stopper_schedule = $p['scheduled'];
+                        $live_stopper_index = $index;
+                        break 2;
+                    }
+                }
+                $index++;
             }
-            syslog(LOG_NOTICE, "SMH DEBUG : build_account_schedule: playlist2: " . print_r($playlist, true)); 
+
+            if ($live_stopper_found) {
+                foreach ($playlist as $p) {
+                    if ($live_stopper_name != $p['name']) {
+                        if ($live_stopper_schedule == $p['scheduled']) {
+                            $duplicate_found = true;
+                            break;
+                        }
+                    }
+                    $index++;
+                }
+            }
             
+            if($duplicate_found){
+                unset($playlist[$live_stopper_index]);
+            }
+            syslog(LOG_NOTICE, "SMH DEBUG : build_account_schedule: playlist2: " . print_r($playlist, true));
+
             if (count($ready_channels) > 0) {
                 $schedule['account'] = (int) $partner_id;
                 $schedule['ks'] = $ks;
