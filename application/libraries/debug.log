@@ -5773,3 +5773,22 @@ Stack trace:
 #4 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(96): Channel_config_model->get_channels('10012', 'ZmRkYTIxNWY4MmN...', '', '', '', 'America/Los_Ang...')
 #5 [internal function]: Channel_config->get_channels_get()
 #6 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_ in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
+[27-Mar-2018 15:41:46 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Entry id "0_bnofl23b" not found' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(438): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(564): KalturaBaseEntryService->get('0_bnofl23b', NULL)
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(285): SMPortal->get_entry_details('10012', '0_bnofl23b')
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(99): Channel_config_model->get_live_channel_segment('10012', '0_77s19ixu')
+#4 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(96): Channel_config_model->get_channels('10012', 'ZmRkYTIxNWY4MmN...', '', '', '', 'America/Los_Ang...')
+#5 [internal function]: Channel_config->get_channels_get()
+#6 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_ in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
+[27-Mar-2018 15:58:31 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Entry id "0_ze1spytk" not found' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(438): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(564): KalturaBaseEntryService->get('0_ze1spytk', NULL)
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(285): SMPortal->get_entry_details('10012', '0_ze1spytk')
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(40): Channel_config_model->get_live_channel_segment('10012', '0_77s19ixu')
+#4 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(423): Channel_config_model->get_public_channels('10012')
+#5 [internal function]: Channel_config->get_public_channels_get()
+#6 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_func_array(Array, Array)
+#7 /var/www/vhos in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
