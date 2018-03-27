@@ -5755,3 +5755,21 @@ Stack trace:
 #3 /var/www/vhosts/api/application/models/ppv_dev/ppv_orders_model.php(2668): Ppv_orders_model->add_recurr_order('10012', NULL, NULL, NULL, NULL, 'Active', 'Pending')
 #4 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('vpinBl9VANmX1f2...', 'I-2S75BNCUA6VF', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Test', 'User', 'user2@smh.com', 'Z2NPJYZKK2RSY', 'US', 'Pending', '69C46898TE38357...', 'instant', '14:54:42 Mar 21...')
 #5 [internal  in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
+[27-Mar-2018 14:52:48 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Entry id "0_nozkrtkd" not found' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(438): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(564): KalturaBaseEntryService->get('0_nozkrtkd', NULL)
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(285): SMPortal->get_entry_details('10012', '0_nozkrtkd')
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(99): Channel_config_model->get_live_channel_segment('10012', '0_77s19ixu')
+#4 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(96): Channel_config_model->get_channels('10012', 'ZmRkYTIxNWY4MmN...', '', '', '', 'America/Los_Ang...')
+#5 [internal function]: Channel_config->get_channels_get()
+#6 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_ in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
+[27-Mar-2018 14:53:15 America/Los_Angeles] PHP Fatal error:  Uncaught exception 'KalturaException' with message 'Entry id "0_nozkrtkd" not found' in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php:734
+Stack trace:
+#0 /var/www/vhosts/api/application/libraries/kaltura/KalturaClient.php(438): KalturaClientBase->throwExceptionIfError(Array)
+#1 /var/www/vhosts/api/application/libraries/SMPortal.php(564): KalturaBaseEntryService->get('0_nozkrtkd', NULL)
+#2 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(285): SMPortal->get_entry_details('10012', '0_nozkrtkd')
+#3 /var/www/vhosts/api/application/models/channel_dev/channel_config_model.php(99): Channel_config_model->get_live_channel_segment('10012', '0_77s19ixu')
+#4 /var/www/vhosts/api/application/controllers/api_dev/channel_config.php(96): Channel_config_model->get_channels('10012', 'ZmRkYTIxNWY4MmN...', '', '', '', 'America/Los_Ang...')
+#5 [internal function]: Channel_config->get_channels_get()
+#6 /var/www/vhosts/api/application/libraries/REST_Controller.php(329): call_user_ in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 734
