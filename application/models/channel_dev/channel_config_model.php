@@ -762,17 +762,18 @@ class Channel_config_model extends CI_Model {
 
             syslog(LOG_NOTICE, "SMH DEBUG : build_account_schedule: playlist1: " . print_r($playlist, true));
             $playlists = $this->remove_live_stream_duplicates($playlist);
-            syslog(LOG_NOTICE, "SMH DEBUG : build_account_schedule: playlist2: " . print_r($playlist, true));
+            syslog(LOG_NOTICE, "SMH DEBUG : build_account_schedule: playlist2: " . print_r($playlists, true));
 
             if (count($ready_channels) > 0) {
                 $schedule['account'] = (int) $partner_id;
                 $schedule['ks'] = $ks;
                 $schedule['streams'] = array();
                 $schedule['streams'] = $ready_channels;
-                $schedule['playlists'] = $playlists;
+                $schedule['playlists'] = array_values($playlists);
             }
         }
         $success = array('success' => true, 'schedule' => $schedule);
+        syslog(LOG_NOTICE, "SMH DEBUG : build_account_schedule: success: " . print_r($success, true));
         return $success;
     }
 
@@ -795,6 +796,10 @@ class Channel_config_model extends CI_Model {
             }
             $index++;
         }
+        syslog(LOG_NOTICE, "SMH DEBUG : remove_live_stream_duplicates: live_stopper_found: " . print_r($live_stopper_found, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : remove_live_stream_duplicates: live_stopper_name: " . print_r($live_stopper_name, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : remove_live_stream_duplicates: live_stopper_schedule: " . print_r($live_stopper_schedule, true));
+        syslog(LOG_NOTICE, "SMH DEBUG : remove_live_stream_duplicates: live_stopper_index: " . print_r($live_stopper_index, true));
 
         if ($live_stopper_found) {
             foreach ($playlist as $p) {
@@ -807,6 +812,8 @@ class Channel_config_model extends CI_Model {
                 $index++;
             }
         }
+
+        syslog(LOG_NOTICE, "SMH DEBUG : remove_live_stream_duplicates: duplicate_found: " . print_r($duplicate_found, true));
 
         if ($duplicate_found) {
             unset($playlist[$live_stopper_index]);
