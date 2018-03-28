@@ -608,6 +608,7 @@ class SMPortal {
     }
 
     public function ott_get_flavor($pid, $entryId) {
+        $source = array();
         $flavors = array();
         $sess = $this->impersonate($pid);
         $config = new KalturaConfiguration($pid);
@@ -625,24 +626,38 @@ class SMPortal {
             $flavors_tags = explode(',', $flavor->tags);
             if ($media_type === 1) {
                 if ($this->ott_valid_playback_file($flavor->fileExt) && $flavor->isWeb && !in_array('audio', $flavors_tags)) {
-                    array_push($flavors, array('id' => $flavor->id, 'version' => $flavor->version, 'fileExt' => $flavor->fileExt, 'height' => $flavor->height, 'flavorParamsId' => $flavor->flavorParamsId));
+                    if ($flavor->isOriginal) {
+                        array_push($source, array('id' => $flavor->id, 'version' => $flavor->version, 'fileExt' => $flavor->fileExt, 'height' => $flavor->height, 'flavorParamsId' => $flavor->flavorParamsId));
+                    } else {
+                        array_push($flavors, array('id' => $flavor->id, 'version' => $flavor->version, 'fileExt' => $flavor->fileExt, 'height' => $flavor->height, 'flavorParamsId' => $flavor->flavorParamsId));
+                    }
                 }
             } else if ($media_type === 5) {
                 if ($this->ott_valid_playback_file($flavor->fileExt) && $flavor->isWeb) {
-                    array_push($flavors, array('id' => $flavor->id, 'version' => $flavor->version, 'fileExt' => $flavor->fileExt, 'height' => $flavor->height, 'flavorParamsId' => $flavor->flavorParamsId));
+                    if ($flavor->isOriginal) {
+                        array_push($source, array('id' => $flavor->id, 'version' => $flavor->version, 'fileExt' => $flavor->fileExt, 'height' => $flavor->height, 'flavorParamsId' => $flavor->flavorParamsId));
+                    } else {
+                        array_push($flavors, array('id' => $flavor->id, 'version' => $flavor->version, 'fileExt' => $flavor->fileExt, 'height' => $flavor->height, 'flavorParamsId' => $flavor->flavorParamsId));
+                    }
                 }
             }
         }
 
-        usort($flavors, function($a, $b) {
-            return $b['flavorParamsId'] - $a['flavorParamsId'];
-        });
+        if (count($flavors) > 0) {
+            usort($flavors, function($a, $b) {
+                return $b['flavorParamsId'] - $a['flavorParamsId'];
+            });
 
-        usort($flavors, function($a, $b) {
-            return $b['height'] - $a['height'];
-        });
+            usort($flavors, function($a, $b) {
+                return $b['height'] - $a['height'];
+            });
+            syslog(LOG_NOTICE, "SMH DEBUG : ott_get_flavor: " . print_r($flavors, true));
 
-        $success = array('success' => true, 'fileExt' => $flavors[0]['fileExt'], 'flavorId' => $flavors[0]['id'], 'flavorVersion' => $flavors[0]['version']);
+            $success = array('success' => true, 'fileExt' => $flavors[0]['fileExt'], 'flavorId' => $flavors[0]['id'], 'flavorVersion' => $flavors[0]['version']);
+        } else {
+            $success = array('success' => true, 'fileExt' => $source[0]['fileExt'], 'flavorId' => $source[0]['id'], 'flavorVersion' => $source[0]['version']);
+            syslog(LOG_NOTICE, "SMH DEBUG : ott_get_flavor: " . print_r($source, true));
+        }
 
         return $success;
     }
