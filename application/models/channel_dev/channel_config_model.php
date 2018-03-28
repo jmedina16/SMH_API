@@ -37,7 +37,7 @@ class Channel_config_model extends CI_Model {
             $data['data'] = array();
             foreach ($live_channels['data'] as $channel) {
                 $live_status = 'Off Air';
-                $live_channel_segment = $this->get_live_channel_segment($pid, $channel['id']);
+                $live_channel_segment = $this->get_live_channel_segment($pid, $ks, $channel['id']);
                 if ($live_channel_segment['success']) {
                     foreach ($live_channel_segment['live_channel_segment'] as $segment) {
                         $start_dt = new DateTime($segment['start_date'], new DateTimeZone($tz_from));
@@ -96,7 +96,7 @@ class Channel_config_model extends CI_Model {
                     $data['data'] = array();
                     foreach ($live_channels['data'] as $channel) {
                         $live_status = 'Off Air';
-                        $live_channel_segment = $this->get_live_channel_segment($pid, $channel['id']);
+                        $live_channel_segment = $this->get_live_channel_segment($pid, $ks, $channel['id']);
                         if ($live_channel_segment['success']) {
                             foreach ($live_channel_segment['live_channel_segment'] as $segment) {
                                 $start_dt = new DateTime($segment['start_date'], new DateTimeZone($tz_from));
@@ -170,7 +170,7 @@ class Channel_config_model extends CI_Model {
             $has_service = $this->verify_service($pid);
             if ($has_service) {
                 $this->config = $this->load->database('kaltura', TRUE);
-                $live_channel_segments = $this->get_live_channel_segment_entries($pid, $cid, $start, $length, $search);
+                $live_channel_segments = $this->get_live_channel_segment_entries($pid, $ks, $cid, $start, $length, $search);
 
                 $output = array(
                     "orderBy" => '-createdAt',
@@ -266,7 +266,7 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function get_live_channel_segment($pid, $cid) {
+    public function get_live_channel_segment($pid, $ks, $cid) {
         $success = array('success' => false);
         $this->config = $this->load->database('ch', TRUE);
         $this->config->select('*')
@@ -282,21 +282,28 @@ class Channel_config_model extends CI_Model {
             $segments = array();
             foreach ($result as $res) {
                 $entry_id = $res['entry_id'];
-                $entry_details = $this->smportal->get_entry_details($pid, $entry_id);
-                $pcid = (int) $res['id'];
-                $id = (int) $res['live_segment_id'];
-                $name = $entry_details['name'];
-                $description = $entry_details['desc'];
-                $status = (int) $res['status'];
-                $created_at = $res['created_at'];
-                $thumbnail = $entry_details['thumbnailUrl'];
-                $start_date = $res['start_date'];
-                $end_date = $res['end_date'];
-                $rec_type = $res['rec_type'];
-                $event_pid = (int) $res['event_pid'];
-                $event_length = (int) $res['event_length'];
-                $repeat = ($res['repeat']) ? true : false;
-                array_push($segments, array('pcid' => $pcid, 'id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $rec_type, 'event_pid' => $event_pid, 'event_length' => $event_length, 'created_at' => $created_at, 'repeat' => (bool) $repeat));
+                $entry_details = $this->smportal->get_ott_entry_details($pid, $entry_id);
+                if ($entry_details['success']) {
+                    $pcid = (int) $res['id'];
+                    $id = (int) $res['live_segment_id'];
+                    $name = $entry_details['entry_info']['name'];
+                    $description = $entry_details['entry_info']['desc'];
+                    $status = (int) $res['status'];
+                    $created_at = $res['created_at'];
+                    $thumbnail = $entry_details['entry_info']['thumbnailUrl'];
+                    $start_date = $res['start_date'];
+                    $end_date = $res['end_date'];
+                    $rec_type = $res['rec_type'];
+                    $event_pid = (int) $res['event_pid'];
+                    $event_length = (int) $res['event_length'];
+                    $repeat = ($res['repeat']) ? true : false;
+                    array_push($segments, array('pcid' => $pcid, 'id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $rec_type, 'event_pid' => $event_pid, 'event_length' => $event_length, 'created_at' => $created_at, 'repeat' => (bool) $repeat));
+                    syslog(LOG_NOTICE, "SMH DEBUG : get_live_channel_segment: entry_details: " . print_r($entry_details, true));
+                } else {
+                    $sid = (int) $res['live_segment_id'];
+                    $this->delete_program_int($pid, $ks, $sid);
+                    syslog(LOG_NOTICE, "SMH DEBUG : get_live_channel_segment: entry_details: " . print_r($entry_details, true));
+                }
             }
             $success = array('success' => true, 'live_channel_segment' => $segments);
         }
@@ -304,7 +311,7 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function get_live_channel_segment_entries($pid, $cid, $start, $length, $search) {
+    public function get_live_channel_segment_entries($pid, $ks, $cid, $start, $length, $search) {
         $success = array('success' => false);
         $this->config = $this->load->database('ch', TRUE);
         if (isset($start) && $length != '-1') {
@@ -345,21 +352,26 @@ class Channel_config_model extends CI_Model {
             $segments = array();
             foreach ($result as $res) {
                 $entry_id = $res['entry_id'];
-                $entry_details = $this->smportal->get_entry_details($pid, $entry_id);
-                $pcid = (int) $res['id'];
-                $id = (int) $res['live_segment_id'];
-                $name = $entry_details['name'];
-                $description = $entry_details['desc'];
-                $status = (int) $res['status'];
-                $created_at = $res['created_at'];
-                $thumbnail = $entry_details['thumbnailUrl'];
-                $start_date = $res['start_date'];
-                $end_date = $res['end_date'];
-                $rec_type = $res['rec_type'];
-                $event_pid = (int) $res['event_pid'];
-                $event_length = (int) $res['event_length'];
-                $repeat = ($res['repeat']) ? true : false;
-                array_push($segments, array('pcid' => $pcid, 'id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $rec_type, 'event_pid' => $event_pid, 'event_length' => $event_length, 'created_at' => $created_at, 'repeat' => (bool) $repeat));
+                $entry_details = $this->smportal->get_ott_entry_details($pid, $entry_id);
+                if ($entry_details['success']) {
+                    $pcid = (int) $res['id'];
+                    $id = (int) $res['live_segment_id'];
+                    $name = $entry_details['name'];
+                    $description = $entry_details['desc'];
+                    $status = (int) $res['status'];
+                    $created_at = $res['created_at'];
+                    $thumbnail = $entry_details['thumbnailUrl'];
+                    $start_date = $res['start_date'];
+                    $end_date = $res['end_date'];
+                    $rec_type = $res['rec_type'];
+                    $event_pid = (int) $res['event_pid'];
+                    $event_length = (int) $res['event_length'];
+                    $repeat = ($res['repeat']) ? true : false;
+                    array_push($segments, array('pcid' => $pcid, 'id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $rec_type, 'event_pid' => $event_pid, 'event_length' => $event_length, 'created_at' => $created_at, 'repeat' => (bool) $repeat));
+                } else {
+                    $sid = (int) $res['live_segment_id'];
+                    $this->delete_program_int($pid, $ks, $sid);
+                }
             }
             $success = array('success' => true, 'live_channel_segment' => $segments, 'recordsFiltered' => $filteredTotal, 'recordsTotal' => $total);
         }
@@ -446,34 +458,39 @@ class Channel_config_model extends CI_Model {
                             foreach ($programs['nonrepeat_programs'] as $nonrepeat_program) {
                                 if ($nonrepeat_program['end_date'] >= $now_date) {
                                     $video_srcs = array();
-                                    $entry_details = $this->smportal->get_entry_details($partner_id, $nonrepeat_program['entry_id']);
-                                    if ($entry_details['type'] === 1) {
-                                        $video_src = $this->buildVideoSrcs($partner_id, $nonrepeat_program['entry_id'], $entry_details['type'], $entry_details['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date);
-                                        array_push($video_srcs, $video_src);
-                                        $repeat = false;
-                                    } else if ($entry_details['type'] === 7) {
-                                        $video_src = $this->buildVideoSrcs($partner_id, $nonrepeat_program['entry_id'], $entry_details['type'], $entry_details['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date);
-                                        array_push($video_srcs, $video_src);
-                                        $repeat = true;
-                                    } else if ($entry_details['type'] === 5) {
-                                        //TODO Playlist
-                                    }
-                                    array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $nonrepeat_program['start_date'], 'video_srcs' => $video_srcs));
-                                    $plist_num++;
-
-                                    //force stop of a live stream
-                                    if ($entry_details['type'] === 7) {
-                                        $video_srcs = array();
-                                        $start_date_mod = new DateTime($nonrepeat_program['start_date']);
-                                        $new_event_length = (int) $nonrepeat_program['event_length'] + 1;
-                                        $start_date_mod->add(new DateInterval('PT' . $new_event_length . 'S'));
-                                        $new_start_date = $start_date_mod->format('Y-m-d H:i:s');
-
-                                        $video_src = $this->buildVideoSrcs($partner_id, null, 7, $entry_details['duration'], 1, $new_start_date, $now_date);
-                                        array_push($video_srcs, $video_src);
-                                        $repeat = false;
-                                        array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $new_start_date, 'video_srcs' => $video_srcs));
+                                    $entry_details = $this->smportal->get_ott_entry_details($partner_id, $nonrepeat_program['entry_id']);
+                                    if ($entry_details['success']) {
+                                        if ($entry_details['type'] === 1) {
+                                            $video_src = $this->buildVideoSrcs($partner_id, $nonrepeat_program['entry_id'], $entry_details['type'], $entry_details['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date);
+                                            array_push($video_srcs, $video_src);
+                                            $repeat = false;
+                                        } else if ($entry_details['type'] === 7) {
+                                            $video_src = $this->buildVideoSrcs($partner_id, $nonrepeat_program['entry_id'], $entry_details['type'], $entry_details['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date);
+                                            array_push($video_srcs, $video_src);
+                                            $repeat = true;
+                                        } else if ($entry_details['type'] === 5) {
+                                            //TODO Playlist
+                                        }
+                                        array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $nonrepeat_program['start_date'], 'video_srcs' => $video_srcs));
                                         $plist_num++;
+
+                                        //force stop of a live stream
+                                        if ($entry_details['type'] === 7) {
+                                            $video_srcs = array();
+                                            $start_date_mod = new DateTime($nonrepeat_program['start_date']);
+                                            $new_event_length = (int) $nonrepeat_program['event_length'] + 1;
+                                            $start_date_mod->add(new DateInterval('PT' . $new_event_length . 'S'));
+                                            $new_start_date = $start_date_mod->format('Y-m-d H:i:s');
+
+                                            $video_src = $this->buildVideoSrcs($partner_id, null, 7, $entry_details['duration'], 1, $new_start_date, $now_date);
+                                            array_push($video_srcs, $video_src);
+                                            $repeat = false;
+                                            array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $new_start_date, 'video_srcs' => $video_srcs));
+                                            $plist_num++;
+                                        }
+                                    } else {
+                                        $sid = (int) $nonrepeat_program['lsid'];
+                                        $this->delete_program_int($partner_id, $entry_details['ks'], $sid);
                                     }
                                 }
                             }
@@ -484,34 +501,39 @@ class Channel_config_model extends CI_Model {
                                 if (count($rec_programs['date_range_found']) > 0) {
                                     if ($rec_programs['date_range_found']['end_date'] >= $now_date) {
                                         $video_srcs = array();
-                                        $entry_details = $this->smportal->get_entry_details($partner_id, $repeat_programs['entry_id']);
-                                        if ($entry_details['type'] === 1) {
-                                            $video_src = $this->buildVideoSrcs($partner_id, $repeat_programs['entry_id'], $entry_details['type'], $entry_details['duration'], $repeat_programs['event_length'], $rec_programs['date_range_found']['start_date'], $now_date);
-                                            array_push($video_srcs, $video_src);
-                                            $repeat = false;
-                                        } else if ($entry_details['type'] === 7) {
-                                            $video_src = $this->buildVideoSrcs($partner_id, $repeat_programs['entry_id'], $entry_details['type'], $entry_details['duration'], $repeat_programs['event_length'], $rec_programs['date_range_found']['start_date'], $now_date);
-                                            array_push($video_srcs, $video_src);
-                                            $repeat = true;
-                                        } else if ($entry_details['type'] === 5) {
-                                            //TODO Playlist
-                                        }
-                                        array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => false, 'scheduled' => $rec_programs['date_range_found']['start_date'], 'video_srcs' => $video_srcs));
-                                        $plist_num++;
-                                        //syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: " . print_r($repeat_programs, true));  
-                                        //force stop of a live stream
-                                        if ($entry_details['type'] === 7) {
-                                            $video_srcs = array();
-                                            $start_date_mod = new DateTime($repeat_programs['start_date']);
-                                            $new_event_length = (int) $repeat_programs['event_length'] + 1;
-                                            $start_date_mod->add(new DateInterval('PT' . $new_event_length . 'S'));
-                                            $new_start_date = $start_date_mod->format('Y-m-d H:i:s');
-
-                                            $video_src = $this->buildVideoSrcs($partner_id, null, 7, $entry_details['duration'], 1, $new_start_date, $now_date);
-                                            array_push($video_srcs, $video_src);
-                                            $repeat = false;
-                                            array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $new_start_date, 'video_srcs' => $video_srcs));
+                                        $entry_details = $this->smportal->get_ott_entry_details($partner_id, $repeat_programs['entry_id']);
+                                        if ($entry_details['success']) {
+                                            if ($entry_details['type'] === 1) {
+                                                $video_src = $this->buildVideoSrcs($partner_id, $repeat_programs['entry_id'], $entry_details['type'], $entry_details['duration'], $repeat_programs['event_length'], $rec_programs['date_range_found']['start_date'], $now_date);
+                                                array_push($video_srcs, $video_src);
+                                                $repeat = false;
+                                            } else if ($entry_details['type'] === 7) {
+                                                $video_src = $this->buildVideoSrcs($partner_id, $repeat_programs['entry_id'], $entry_details['type'], $entry_details['duration'], $repeat_programs['event_length'], $rec_programs['date_range_found']['start_date'], $now_date);
+                                                array_push($video_srcs, $video_src);
+                                                $repeat = true;
+                                            } else if ($entry_details['type'] === 5) {
+                                                //TODO Playlist
+                                            }
+                                            array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => false, 'scheduled' => $rec_programs['date_range_found']['start_date'], 'video_srcs' => $video_srcs));
                                             $plist_num++;
+                                            //syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: " . print_r($repeat_programs, true));  
+                                            //force stop of a live stream
+                                            if ($entry_details['type'] === 7) {
+                                                $video_srcs = array();
+                                                $start_date_mod = new DateTime($repeat_programs['start_date']);
+                                                $new_event_length = (int) $repeat_programs['event_length'] + 1;
+                                                $start_date_mod->add(new DateInterval('PT' . $new_event_length . 'S'));
+                                                $new_start_date = $start_date_mod->format('Y-m-d H:i:s');
+
+                                                $video_src = $this->buildVideoSrcs($partner_id, null, 7, $entry_details['duration'], 1, $new_start_date, $now_date);
+                                                array_push($video_srcs, $video_src);
+                                                $repeat = false;
+                                                array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $new_start_date, 'video_srcs' => $video_srcs));
+                                                $plist_num++;
+                                            }
+                                        } else {
+                                            $sid = (int) $repeat_programs['lsid'];
+                                            $this->delete_program_int($partner_id, $entry_details['ks'], $sid);
                                         }
                                     }
                                 }
@@ -682,34 +704,39 @@ class Channel_config_model extends CI_Model {
                     foreach ($programs['nonrepeat_programs'] as $nonrepeat_program) {
                         if ($nonrepeat_program['end_date'] >= $now_date) {
                             $video_srcs = array();
-                            $entry_details = $this->smportal->get_entry_details($partner_id, $nonrepeat_program['entry_id']);
-                            if ($entry_details['type'] === 1) {
-                                $video_src = $this->buildVideoSrcs($partner_id, $nonrepeat_program['entry_id'], $entry_details['type'], $entry_details['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date);
-                                array_push($video_srcs, $video_src);
-                                $repeat = false;
-                            } else if ($entry_details['type'] === 7) {
-                                $video_src = $this->buildVideoSrcs($partner_id, $nonrepeat_program['entry_id'], $entry_details['type'], $entry_details['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date);
-                                array_push($video_srcs, $video_src);
-                                $repeat = true;
-                            } else if ($entry_details['type'] === 5) {
-                                //TODO Playlist
-                            }
-                            array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $nonrepeat_program['start_date'], 'video_srcs' => $video_srcs));
-                            $plist_num++;
-
-                            //force stop of a live stream
-                            if ($entry_details['type'] === 7) {
-                                $video_srcs = array();
-                                $start_date_mod = new DateTime($nonrepeat_program['start_date']);
-                                $new_event_length = (int) $nonrepeat_program['event_length'] + 1;
-                                $start_date_mod->add(new DateInterval('PT' . $new_event_length . 'S'));
-                                $new_start_date = $start_date_mod->format('Y-m-d H:i:s');
-
-                                $video_src = $this->buildVideoSrcs($partner_id, null, 7, $entry_details['duration'], 1, $new_start_date, $now_date);
-                                array_push($video_srcs, $video_src);
-                                $repeat = false;
-                                array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $new_start_date, 'video_srcs' => $video_srcs));
+                            $entry_details = $this->smportal->get_ott_entry_details($partner_id, $nonrepeat_program['entry_id']);
+                            if ($entry_details['success']) {
+                                if ($entry_details['type'] === 1) {
+                                    $video_src = $this->buildVideoSrcs($partner_id, $nonrepeat_program['entry_id'], $entry_details['type'], $entry_details['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date);
+                                    array_push($video_srcs, $video_src);
+                                    $repeat = false;
+                                } else if ($entry_details['type'] === 7) {
+                                    $video_src = $this->buildVideoSrcs($partner_id, $nonrepeat_program['entry_id'], $entry_details['type'], $entry_details['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date);
+                                    array_push($video_srcs, $video_src);
+                                    $repeat = true;
+                                } else if ($entry_details['type'] === 5) {
+                                    //TODO Playlist
+                                }
+                                array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $nonrepeat_program['start_date'], 'video_srcs' => $video_srcs));
                                 $plist_num++;
+
+                                //force stop of a live stream
+                                if ($entry_details['type'] === 7) {
+                                    $video_srcs = array();
+                                    $start_date_mod = new DateTime($nonrepeat_program['start_date']);
+                                    $new_event_length = (int) $nonrepeat_program['event_length'] + 1;
+                                    $start_date_mod->add(new DateInterval('PT' . $new_event_length . 'S'));
+                                    $new_start_date = $start_date_mod->format('Y-m-d H:i:s');
+
+                                    $video_src = $this->buildVideoSrcs($partner_id, null, 7, $entry_details['duration'], 1, $new_start_date, $now_date);
+                                    array_push($video_srcs, $video_src);
+                                    $repeat = false;
+                                    array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $new_start_date, 'video_srcs' => $video_srcs));
+                                    $plist_num++;
+                                }
+                            } else {
+                                $sid = (int) $nonrepeat_program['lsid'];
+                                $this->delete_program_int($partner_id, $entry_details['ks'], $sid);
                             }
                         }
                     }
@@ -720,34 +747,39 @@ class Channel_config_model extends CI_Model {
                         if (count($rec_programs['date_range_found']) > 0) {
                             if ($rec_programs['date_range_found']['end_date'] >= $now_date) {
                                 $video_srcs = array();
-                                $entry_details = $this->smportal->get_entry_details($partner_id, $repeat_programs['entry_id']);
-                                if ($entry_details['type'] === 1) {
-                                    $video_src = $this->buildVideoSrcs($partner_id, $repeat_programs['entry_id'], $entry_details['type'], $entry_details['duration'], $repeat_programs['event_length'], $rec_programs['date_range_found']['start_date'], $now_date);
-                                    array_push($video_srcs, $video_src);
-                                    $repeat = false;
-                                } else if ($entry_details['type'] === 7) {
-                                    $video_src = $this->buildVideoSrcs($partner_id, $repeat_programs['entry_id'], $entry_details['type'], $entry_details['duration'], $repeat_programs['event_length'], $rec_programs['date_range_found']['start_date'], $now_date);
-                                    array_push($video_srcs, $video_src);
-                                    $repeat = true;
-                                } else if ($entry_details['type'] === 5) {
-                                    //TODO Playlist
-                                }
-                                array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $rec_programs['date_range_found']['start_date'], 'video_srcs' => $video_srcs));
-                                $plist_num++;
-                                //syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: " . print_r($repeat_programs, true)); 
-                                //force stop of a live stream
-                                if ($entry_details['type'] === 7) {
-                                    $video_srcs = array();
-                                    $start_date_mod = new DateTime($repeat_programs['start_date']);
-                                    $new_event_length = (int) $repeat_programs['event_length'] + 1;
-                                    $start_date_mod->add(new DateInterval('PT' . $new_event_length . 'S'));
-                                    $new_start_date = $start_date_mod->format('Y-m-d H:i:s');
-
-                                    $video_src = $this->buildVideoSrcs($partner_id, null, 7, $entry_details['duration'], 1, $new_start_date, $now_date);
-                                    array_push($video_srcs, $video_src);
-                                    $repeat = false;
-                                    array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $new_start_date, 'video_srcs' => $video_srcs));
+                                $entry_details = $this->smportal->get_ott_entry_details($partner_id, $repeat_programs['entry_id']);
+                                if ($entry_details['success']) {
+                                    if ($entry_details['type'] === 1) {
+                                        $video_src = $this->buildVideoSrcs($partner_id, $repeat_programs['entry_id'], $entry_details['type'], $entry_details['duration'], $repeat_programs['event_length'], $rec_programs['date_range_found']['start_date'], $now_date);
+                                        array_push($video_srcs, $video_src);
+                                        $repeat = false;
+                                    } else if ($entry_details['type'] === 7) {
+                                        $video_src = $this->buildVideoSrcs($partner_id, $repeat_programs['entry_id'], $entry_details['type'], $entry_details['duration'], $repeat_programs['event_length'], $rec_programs['date_range_found']['start_date'], $now_date);
+                                        array_push($video_srcs, $video_src);
+                                        $repeat = true;
+                                    } else if ($entry_details['type'] === 5) {
+                                        //TODO Playlist
+                                    }
+                                    array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $rec_programs['date_range_found']['start_date'], 'video_srcs' => $video_srcs));
                                     $plist_num++;
+                                    //syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: " . print_r($repeat_programs, true)); 
+                                    //force stop of a live stream
+                                    if ($entry_details['type'] === 7) {
+                                        $video_srcs = array();
+                                        $start_date_mod = new DateTime($repeat_programs['start_date']);
+                                        $new_event_length = (int) $repeat_programs['event_length'] + 1;
+                                        $start_date_mod->add(new DateInterval('PT' . $new_event_length . 'S'));
+                                        $new_start_date = $start_date_mod->format('Y-m-d H:i:s');
+
+                                        $video_src = $this->buildVideoSrcs($partner_id, null, 7, $entry_details['duration'], 1, $new_start_date, $now_date);
+                                        array_push($video_srcs, $video_src);
+                                        $repeat = false;
+                                        array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $new_start_date, 'video_srcs' => $video_srcs));
+                                        $plist_num++;
+                                    }
+                                } else {
+                                    $sid = (int) $repeat_programs['lsid'];
+                                    $this->delete_program_int($partner_id, $entry_details['ks'], $sid);
                                 }
                             }
                         }
@@ -929,6 +961,60 @@ class Channel_config_model extends CI_Model {
         } else {
             $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
         }
+        return $success;
+    }
+
+    public function delete_program_int($pid, $ks, $sid) {
+        $success = array('success' => false);
+        if (strpos($sid, ',') !== false) {
+            $sid_explode = array_map('intval', explode(',', $sid));
+            foreach ($sid_explode as $lsid) {
+                $delete_live_segment = $this->smportal->delete_live_segment($pid, $ks, $lsid);
+                if ($delete_live_segment['success']) {
+                    $get_program_config_id = $this->get_program_config_id($pid, $lsid);
+                    if ($get_program_config_id['success']) {
+                        $update_program_config_status = $this->update_program_config_status($pid, $get_program_config_id['pcid'], 3);
+                        if ($update_program_config_status['success']) {
+                            $push_schedule = $this->push_schedule($pid, $ks);
+                            if ($push_schedule['success']) {
+                                $success = array('success' => true);
+                            } else {
+                                $success = array('success' => false, 'message' => 'Could not push schedule');
+                            }
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not delete program config');
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not get program config id');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not delete live segment');
+                }
+            }
+        } else {
+            $delete_live_segment = $this->smportal->delete_live_segment($pid, $ks, $sid);
+            if ($delete_live_segment['success']) {
+                $get_program_config_id = $this->get_program_config_id($pid, $sid);
+                if ($get_program_config_id['success']) {
+                    $update_program_config_status = $this->update_program_config_status($pid, $get_program_config_id['pcid'], 3);
+                    if ($update_program_config_status['success']) {
+                        $push_schedule = $this->push_schedule($pid, $ks);
+                        if ($push_schedule['success']) {
+                            $success = array('success' => true);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not push schedule');
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not delete program config');
+                    }
+                } else {
+                    $success = array('success' => false, 'message' => 'Could not get program config id');
+                }
+            } else {
+                $success = array('success' => false, 'message' => 'Could not delete live segment');
+            }
+        }
+
         return $success;
     }
 
@@ -1125,9 +1211,9 @@ class Channel_config_model extends CI_Model {
             $programs_nonrepeat = array();
             foreach ($result as $res) {
                 if ($res['repeat']) {
-                    array_push($programs_repeat, array('start_date' => $res['start_date'], 'end_date' => $res['end_date'], 'rec_type' => $res['rec_type'], 'event_length' => $res['event_length'], 'entry_id' => $res['entry_id']));
+                    array_push($programs_repeat, array('lsid' => $res['live_segment_id'], 'start_date' => $res['start_date'], 'end_date' => $res['end_date'], 'rec_type' => $res['rec_type'], 'event_length' => $res['event_length'], 'entry_id' => $res['entry_id']));
                 } else {
-                    array_push($programs_nonrepeat, array('start_date' => $res['start_date'], 'end_date' => $res['end_date'], 'event_length' => $res['event_length'], 'entry_id' => $res['entry_id']));
+                    array_push($programs_nonrepeat, array('lsid' => $res['live_segment_id'], 'start_date' => $res['start_date'], 'end_date' => $res['end_date'], 'event_length' => $res['event_length'], 'entry_id' => $res['entry_id']));
                 }
             }
             $success = array('success' => true, 'repeat_programs' => $programs_repeat, 'nonrepeat_programs' => $programs_nonrepeat);
