@@ -579,6 +579,40 @@ class SMPortal {
         return $entry_info;
     }
 
+    public function get_ott_entry_details($pid, $entryId) {
+        $success = array('success' => false);
+        $sess = $this->impersonate($pid);
+        try {
+            $version = null;
+            $config = new KalturaConfiguration($pid);
+            $config->serviceUrl = 'http://mediaplatform.streamingmediahosting.com/';
+            $client = new KalturaClient($config);
+            $client->setKs($sess);
+            $results = $client->baseEntry->get($entryId, $version);
+
+            $partnerData = json_decode($results->partnerData);
+            $entry_info = array();
+            $entry_info['name'] = $results->name;
+            $entry_info['desc'] = $results->description;
+            $entry_info['duration'] = $results->duration;
+            $entry_info['thumbnailUrl'] = $results->thumbnailUrl . '/quality/100/type/1/width/300/height/90';
+            $entry_info['startDate'] = $results->startDate;
+            $entry_info['endDate'] = $results->endDate;
+            $entry_info['status'] = $results->status;
+            $entry_info['type'] = $results->type;
+            $entry_info['countdown'] = ($partnerData) ? ((isset($partnerData->ppvConfig)) ? $partnerData->ppvConfig[0]->countdown : null) : null;
+            $entry_info['timezone'] = ($partnerData) ? ((isset($partnerData->ppvConfig)) ? $partnerData->ppvConfig[0]->timezone : null) : null;
+
+            $success = array('success' => true, 'entry_info' => $entry_info);
+
+            return $success;
+        } catch (Exception $ex) {
+            syslog(LOG_NOTICE, "SMH DEBUG : get_ott_entry_details: " . $ex->getCode() . " message is " . $ex->getMessage());
+            $success = array('success' => false, 'ks' => $sess);
+            return $success;
+        }
+    }
+
     public function get_entry_path($pid, $entryId) {
         $id = '';
         $version = '';
