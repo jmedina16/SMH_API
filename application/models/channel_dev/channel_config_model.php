@@ -1039,11 +1039,13 @@ class Channel_config_model extends CI_Model {
                 } else {
                     //$success = array('success' => false, 'collision' => false);
                     $add_live_segment = $this->smportal->add_live_segment($pid, $ks, $cid, $eid);
-                    syslog(LOG_NOTICE, "SMH DEBUG : add_program: " . print_r($add_live_segment, true));
+                    syslog(LOG_NOTICE, "SMH DEBUG : add_program: add_live_segment:" . print_r($add_live_segment, true));
                     if ($add_live_segment['success']) {
                         $add_custom_data = $this->add_live_segment_custom_data($pid, $ks, $add_live_segment['id'], $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
+                        syslog(LOG_NOTICE, "SMH DEBUG : add_program: add_custom_data:" . print_r($add_custom_data, true));
                         if ($add_custom_data['success']) {
                             $add_live_segment_id = $this->add_live_segment_id($pid, $add_live_segment['id'], $add_custom_data['id']);
+                            syslog(LOG_NOTICE, "SMH DEBUG : add_program: add_live_segment_id:" . print_r($add_live_segment_id, true));
                             if ($add_live_segment_id['success']) {
                                 $push_schedule = $this->push_schedule($pid, $ks);
                                 if ($push_schedule['success']) {
