@@ -385,7 +385,7 @@ class Channel_config_model extends CI_Model {
         if ($schedule['success']) {
             if (count($schedule['schedule']) > 0) {
                 $url = 'http://10.5.22.94:1935/ott/update';
-                $this->curlPost($url, json_encode($schedule['schedule']));
+                //$this->curlPost($url, json_encode($schedule['schedule']));
                 $success = array('success' => true, 'schedule' => $schedule['schedule']);
                 syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . json_encode($schedule['schedule']));
                 syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule['schedule'], true));
@@ -396,7 +396,7 @@ class Channel_config_model extends CI_Model {
                 $schedule['streams'] = array();
                 $schedule['playlists'] = array();
                 $url = 'http://10.5.22.94:1935/ott/update';
-                $this->curlPost($url, json_encode($schedule));
+                //$this->curlPost($url, json_encode($schedule));
                 $success = array('success' => true, 'schedule' => $schedule);
                 syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule, true));
             }
@@ -901,6 +901,7 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
+    //UPDATE
     public function delete_program($pid, $ks, $sid) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
@@ -916,12 +917,7 @@ class Channel_config_model extends CI_Model {
                             if ($get_program_config_id['success']) {
                                 $update_program_config_status = $this->update_program_config_status($pid, $get_program_config_id['pcid'], 3);
                                 if ($update_program_config_status['success']) {
-                                    $push_schedule = $this->push_schedule($pid, $ks);
-                                    if ($push_schedule['success']) {
-                                        $success = array('success' => true);
-                                    } else {
-                                        $success = array('success' => false, 'message' => 'Could not push schedule');
-                                    }
+                                    $success = array('success' => true);
                                 } else {
                                     $success = array('success' => false, 'message' => 'Could not delete program config');
                                 }
@@ -931,6 +927,12 @@ class Channel_config_model extends CI_Model {
                         } else {
                             $success = array('success' => false, 'message' => 'Could not delete live segment');
                         }
+                    }
+                    $push_schedule = $this->push_schedule($pid, $ks);
+                    if ($push_schedule['success']) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not push schedule');
                     }
                 } else {
                     $delete_live_segment = $this->smportal->delete_live_segment($pid, $ks, $sid);
@@ -1047,12 +1049,13 @@ class Channel_config_model extends CI_Model {
                             $add_live_segment_id = $this->add_live_segment_id($pid, $add_live_segment['id'], $add_custom_data['id']);
                             syslog(LOG_NOTICE, "SMH DEBUG : add_program: add_live_segment_id:" . print_r($add_live_segment_id, true));
                             if ($add_live_segment_id['success']) {
-                                $push_schedule = $this->push_schedule($pid, $ks);
-                                if ($push_schedule['success']) {
-                                    $success = array('success' => true);
-                                } else {
-                                    $success = array('success' => false, 'message' => 'Could not push schedule');
-                                }
+//                                $push_schedule = $this->push_schedule($pid, $ks);
+//                                if ($push_schedule['success']) {
+//                                    $success = array('success' => true);
+//                                } else {
+//                                    $success = array('success' => false, 'message' => 'Could not push schedule');
+//                                }
+                                $success = array('success' => true);
                             } else {
                                 $success = array('success' => false, 'message' => 'Could not add custom data id');
                             }
