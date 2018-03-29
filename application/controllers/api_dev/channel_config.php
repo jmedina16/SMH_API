@@ -466,4 +466,15 @@ class Channel_config extends REST_Controller {
         $this->response($result, 200); // 200 being the HTTP response code
     }
 
+    public function push_routine_get() {
+        $result = $this->channel_config_model->push_routine();
+
+        if (!$result) {
+
+            $this->response($result, 200);
+        }
+
+        $this->response($result, 200); // 200 being the HTTP response code 
+    }
+
 }
