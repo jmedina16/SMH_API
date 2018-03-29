@@ -385,7 +385,7 @@ class Channel_config_model extends CI_Model {
         if ($schedule['success']) {
             if (count($schedule['schedule']) > 0) {
                 $url = 'http://10.5.22.94:1935/ott/update';
-                //$this->curlPost($url, json_encode($schedule['schedule']));
+                $this->curlPost($url, json_encode($schedule['schedule']));
                 $success = array('success' => true, 'schedule' => $schedule['schedule']);
                 syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . json_encode($schedule['schedule']));
                 syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule['schedule'], true));
@@ -396,7 +396,7 @@ class Channel_config_model extends CI_Model {
                 $schedule['streams'] = array();
                 $schedule['playlists'] = array();
                 $url = 'http://10.5.22.94:1935/ott/update';
-                //$this->curlPost($url, json_encode($schedule));
+                $this->curlPost($url, json_encode($schedule));
                 $success = array('success' => true, 'schedule' => $schedule);
                 syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule, true));
             }
@@ -928,11 +928,11 @@ class Channel_config_model extends CI_Model {
                             $success = array('success' => false, 'message' => 'Could not delete live segment');
                         }
                     }
-                    $push_schedule = $this->push_schedule($pid, $ks);
-                    if ($push_schedule['success']) {
+                    $insert_into_push_queue = $this->insert_into_push_queue($pid);
+                    if ($insert_into_push_queue['success']) {
                         $success = array('success' => true);
                     } else {
-                        $success = array('success' => false, 'message' => 'Could not push schedule');
+                        $success = array('success' => false, 'message' => 'Could not insert into push queue');
                     }
                 } else {
                     $delete_live_segment = $this->smportal->delete_live_segment($pid, $ks, $sid);
@@ -941,11 +941,11 @@ class Channel_config_model extends CI_Model {
                         if ($get_program_config_id['success']) {
                             $update_program_config_status = $this->update_program_config_status($pid, $get_program_config_id['pcid'], 3);
                             if ($update_program_config_status['success']) {
-                                $push_schedule = $this->push_schedule($pid, $ks);
-                                if ($push_schedule['success']) {
+                                $insert_into_push_queue = $this->insert_into_push_queue($pid);
+                                if ($insert_into_push_queue['success']) {
                                     $success = array('success' => true);
                                 } else {
-                                    $success = array('success' => false, 'message' => 'Could not push schedule');
+                                    $success = array('success' => false, 'message' => 'Could not insert into push queue');
                                 }
                             } else {
                                 $success = array('success' => false, 'message' => 'Could not delete program config');
@@ -977,11 +977,11 @@ class Channel_config_model extends CI_Model {
                     if ($get_program_config_id['success']) {
                         $update_program_config_status = $this->update_program_config_status($pid, $get_program_config_id['pcid'], 3);
                         if ($update_program_config_status['success']) {
-                            $push_schedule = $this->push_schedule($pid, $ks);
-                            if ($push_schedule['success']) {
+                            $insert_into_push_queue = $this->insert_into_push_queue($pid);
+                            if ($insert_into_push_queue['success']) {
                                 $success = array('success' => true);
                             } else {
-                                $success = array('success' => false, 'message' => 'Could not push schedule');
+                                $success = array('success' => false, 'message' => 'Could not insert into push queue');
                             }
                         } else {
                             $success = array('success' => false, 'message' => 'Could not delete program config');
@@ -1000,11 +1000,11 @@ class Channel_config_model extends CI_Model {
                 if ($get_program_config_id['success']) {
                     $update_program_config_status = $this->update_program_config_status($pid, $get_program_config_id['pcid'], 3);
                     if ($update_program_config_status['success']) {
-                        $push_schedule = $this->push_schedule($pid, $ks);
-                        if ($push_schedule['success']) {
+                        $insert_into_push_queue = $this->insert_into_push_queue($pid);
+                        if ($insert_into_push_queue['success']) {
                             $success = array('success' => true);
                         } else {
-                            $success = array('success' => false, 'message' => 'Could not push schedule');
+                            $success = array('success' => false, 'message' => 'Could not insert into push queue');
                         }
                     } else {
                         $success = array('success' => false, 'message' => 'Could not delete program config');
@@ -1049,12 +1049,12 @@ class Channel_config_model extends CI_Model {
                             $add_live_segment_id = $this->add_live_segment_id($pid, $add_live_segment['id'], $add_custom_data['id']);
                             syslog(LOG_NOTICE, "SMH DEBUG : add_program: add_live_segment_id:" . print_r($add_live_segment_id, true));
                             if ($add_live_segment_id['success']) {
-//                                $push_schedule = $this->push_schedule($pid, $ks);
-//                                if ($push_schedule['success']) {
-//                                    $success = array('success' => true);
-//                                } else {
-//                                    $success = array('success' => false, 'message' => 'Could not push schedule');
-//                                }
+                                $insert_into_push_queue = $this->insert_into_push_queue($pid);
+                                if ($insert_into_push_queue['success']) {
+                                    $success = array('success' => true);
+                                } else {
+                                    $success = array('success' => false, 'message' => 'Could not insert into push queue');
+                                }
                                 $success = array('success' => true);
                             } else {
                                 $success = array('success' => false, 'message' => 'Could not add custom data id');
@@ -1099,11 +1099,11 @@ class Channel_config_model extends CI_Model {
                     if ($update_live_segment['success']) {
                         $update_custom_data = $this->update_live_segment_custom_data($pid, $ks, $pcid, $cid, $eid, $start_date, $end_date, $repeat, $rec_type, $event_length);
                         if ($update_custom_data['success']) {
-                            $push_schedule = $this->push_schedule($pid, $ks);
-                            if ($push_schedule['success']) {
+                            $insert_into_push_queue = $this->insert_into_push_queue($pid);
+                            if ($insert_into_push_queue['success']) {
                                 $success = array('success' => true);
                             } else {
-                                $success = array('success' => false, 'message' => 'Could not push schedule');
+                                $success = array('success' => false, 'message' => 'Could not insert into push queue');
                             }
                         } else {
                             $success = array('success' => false, 'message' => 'Could not update custom data');
@@ -1117,6 +1117,100 @@ class Channel_config_model extends CI_Model {
             }
         } else {
             $success = array('success' => false, 'message' => 'Invalid KS: Access Denied');
+        }
+        return $success;
+    }
+
+    public function push_routine() {
+        $push_schedules = array();
+        $this->config = $this->load->database('ch', TRUE);
+        $this->config->select('*')
+                ->from('push_updates')
+                ->where('status', 0);
+        $query = $this->config->get();
+        $result = $query->result_array();
+        if ($query->num_rows() > 0) {
+            foreach ($result as $res) {
+                array_push($push_schedules, $res['partner_id']);
+            }
+            if (count($push_schedules) > 0) {
+                foreach ($push_schedules as $pid) {
+                    $ks = $this->smportal->impersonate($pid);
+                    $push_schedule = $this->push_schedule($pid, $ks);
+                    if ($push_schedule['success']) {
+                        $set_push_queue_done = $this->set_push_queue_done($pid);
+                        if ($set_push_queue_done['success']) {
+                            $success = array('success' => true);
+                        } else {
+                            $success = array('success' => false, 'message' => 'Could not set queue status to done');
+                        }
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not push schedule');
+                    }
+                }
+            }
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true);
+        }
+
+        return $success;
+    }
+
+    public function insert_into_push_queue($pid) {
+        if (!$this->check_push_queue($pid)) {
+            $this->config = $this->load->database('ch', TRUE);
+            $success = array('success' => false);
+            $data = array(
+                'partner_id' => $pid,
+                'status' => 0,
+                'created_at' => date("Y-m-d H:i:s")
+            );
+            $this->config->insert('push_updates', $data);
+            $this->config->limit(1);
+            if ($this->config->affected_rows() > 0) {
+                $success = array('success' => true);
+            } else {
+                $success = array('success' => false);
+            }
+        } else {
+            $success = array('success' => true);
+        }
+
+        return $success;
+    }
+
+    public function check_push_queue($pid) {
+        $success = false;
+        $this->config = $this->load->database('ch', TRUE);
+        $this->config->select('*')
+                ->from('push_updates')
+                ->where('partner_id', $pid)
+                ->where('status', 0);
+        $query = $this->config->get();
+        if ($query->num_rows() > 0) {
+            $success = true;
+        } else {
+            $success = false;
+        }
+
+        return $success;
+    }
+
+    public function set_push_queue_done($pid) {
+        $data = array(
+            'status' => 1,
+            'updated_at' => date("Y-m-d H:i:s")
+        );
+        $this->config = $this->load->database('ch', TRUE);
+        $this->config->where('partner_id', $pid);
+        $this->config->where('status', 0);
+        $this->config->update('push_updates', $data);
+        $this->config->limit(1);
+        if ($this->config->affected_rows() > 0) {
+            $success = array('success' => true);
+        } else {
+            $success = array('success' => true, 'notice' => 'no changes were made');
         }
         return $success;
     }
@@ -1397,11 +1491,11 @@ class Channel_config_model extends CI_Model {
                     }
                     $delete_channel_resp = $this->smportal->delete_live_channel($pid, $ks, $cid);
                     if ($delete_channel_resp['success']) {
-                        $push_schedule = $this->push_schedule($pid, $ks);
-                        if ($push_schedule['success']) {
+                        $insert_into_push_queue = $this->insert_into_push_queue($pid);
+                        if ($insert_into_push_queue['success']) {
                             $success = array('success' => true);
                         } else {
-                            $success = array('success' => false, 'message' => 'Could not push schedule');
+                            $success = array('success' => false, 'message' => 'Could not insert into push queue');
                         }
                     } else {
                         $success = array('success' => false);
@@ -1409,11 +1503,11 @@ class Channel_config_model extends CI_Model {
                 } else {
                     $delete_channel_resp = $this->smportal->delete_live_channel($pid, $ks, $cid);
                     if ($delete_channel_resp['success']) {
-                        $push_schedule = $this->push_schedule($pid, $ks);
-                        if ($push_schedule['success']) {
+                        $insert_into_push_queue = $this->insert_into_push_queue($pid);
+                        if ($insert_into_push_queue['success']) {
                             $success = array('success' => true);
                         } else {
-                            $success = array('success' => false, 'message' => 'Could not push schedule');
+                            $success = array('success' => false, 'message' => 'Could not insert into push queue');
                         }
                     } else {
                         $success = array('success' => false);
@@ -1437,11 +1531,11 @@ class Channel_config_model extends CI_Model {
             if ($has_service) {
                 $update_channel_status = $this->smportal->update_channel_status($pid, $ks, $cid, $status);
                 if ($update_channel_status['success']) {
-                    $push_schedule = $this->push_schedule($pid, $ks);
-                    if ($push_schedule['success']) {
+                    $insert_into_push_queue = $this->insert_into_push_queue($pid);
+                    if ($insert_into_push_queue['success']) {
                         $success = array('success' => true);
                     } else {
-                        $success = array('success' => false, 'message' => 'Could not push schedule');
+                        $success = array('success' => false, 'message' => 'Could not insert into push queue');
                     }
                 } else {
                     $success = array('success' => false, 'message' => 'Could not update channel status');
