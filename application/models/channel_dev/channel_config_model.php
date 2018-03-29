@@ -413,6 +413,8 @@ class Channel_config_model extends CI_Model {
             $schedule['ks'] = $ks;
             $schedule['streams'] = array();
             $schedule['playlists'] = array();
+            $url = 'http://10.5.22.94:1935/ott/update';
+            $this->curlPost($url, json_encode($schedule));
             $success = array('success' => true, 'schedule' => $schedule);
             syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule, true));
         } else {
