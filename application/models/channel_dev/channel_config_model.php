@@ -1055,7 +1055,6 @@ class Channel_config_model extends CI_Model {
                                 } else {
                                     $success = array('success' => false, 'message' => 'Could not insert into push queue');
                                 }
-                                $success = array('success' => true);
                             } else {
                                 $success = array('success' => false, 'message' => 'Could not add custom data id');
                             }
