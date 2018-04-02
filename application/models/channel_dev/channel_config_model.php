@@ -298,11 +298,11 @@ class Channel_config_model extends CI_Model {
                     $event_length = (int) $res['event_length'];
                     $repeat = ($res['repeat']) ? true : false;
                     array_push($segments, array('pcid' => $pcid, 'id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $rec_type, 'event_pid' => $event_pid, 'event_length' => $event_length, 'created_at' => $created_at, 'repeat' => (bool) $repeat));
-                    syslog(LOG_NOTICE, "SMH DEBUG : get_live_channel_segment: entry_details: " . print_r($entry_details, true));
+                    //syslog(LOG_NOTICE, "SMH DEBUG : get_live_channel_segment: entry_details: " . print_r($entry_details, true));
                 } else {
                     $sid = (int) $res['live_segment_id'];
                     $this->delete_program_int($pid, $ks, $sid);
-                    syslog(LOG_NOTICE, "SMH DEBUG : get_live_channel_segment: entry_details: " . print_r($entry_details, true));
+                    //syslog(LOG_NOTICE, "SMH DEBUG : get_live_channel_segment: entry_details: " . print_r($entry_details, true));
                 }
             }
             $success = array('success' => true, 'live_channel_segment' => $segments);
@@ -463,11 +463,11 @@ class Channel_config_model extends CI_Model {
                                     $entry_details = $this->smportal->get_ott_entry_details($partner_id, $nonrepeat_program['entry_id']);
                                     if ($entry_details['success']) {
                                         if ($entry_details['entry_info']['type'] === 1) {
-                                            $video_src = $this->buildVideoSrcs($partner_id, $nonrepeat_program['entry_id'], $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date);
+                                            $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $nonrepeat_program['entry_id'], $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date);
                                             array_push($video_srcs, $video_src);
                                             $repeat = false;
                                         } else if ($entry_details['entry_info']['type'] === 7) {
-                                            $video_src = $this->buildVideoSrcs($partner_id, $nonrepeat_program['entry_id'], $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date);
+                                            $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $nonrepeat_program['entry_id'], $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date);
                                             array_push($video_srcs, $video_src);
                                             $repeat = true;
                                         } else if ($entry_details['entry_info']['type'] === 5) {
@@ -484,7 +484,7 @@ class Channel_config_model extends CI_Model {
                                             $start_date_mod->add(new DateInterval('PT' . $new_event_length . 'S'));
                                             $new_start_date = $start_date_mod->format('Y-m-d H:i:s');
 
-                                            $video_src = $this->buildVideoSrcs($partner_id, null, 7, $entry_details['entry_info']['duration'], 1, $new_start_date, $now_date);
+                                            $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], null, 7, $entry_details['entry_info']['duration'], 1, $new_start_date, $now_date);
                                             array_push($video_srcs, $video_src);
                                             $repeat = false;
                                             array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $new_start_date, 'video_srcs' => $video_srcs));
@@ -506,11 +506,11 @@ class Channel_config_model extends CI_Model {
                                         $entry_details = $this->smportal->get_ott_entry_details($partner_id, $repeat_programs['entry_id']);
                                         if ($entry_details['success']) {
                                             if ($entry_details['entry_info']['type'] === 1) {
-                                                $video_src = $this->buildVideoSrcs($partner_id, $repeat_programs['entry_id'], $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $repeat_programs['event_length'], $rec_programs['date_range_found']['start_date'], $now_date);
+                                                $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $repeat_programs['entry_id'], $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $repeat_programs['event_length'], $rec_programs['date_range_found']['start_date'], $now_date);
                                                 array_push($video_srcs, $video_src);
                                                 $repeat = false;
                                             } else if ($entry_details['entry_info']['type'] === 7) {
-                                                $video_src = $this->buildVideoSrcs($partner_id, $repeat_programs['entry_id'], $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $repeat_programs['event_length'], $rec_programs['date_range_found']['start_date'], $now_date);
+                                                $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $repeat_programs['entry_id'], $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $repeat_programs['event_length'], $rec_programs['date_range_found']['start_date'], $now_date);
                                                 array_push($video_srcs, $video_src);
                                                 $repeat = true;
                                             } else if ($entry_details['entry_info']['type'] === 5) {
@@ -527,7 +527,7 @@ class Channel_config_model extends CI_Model {
                                                 $start_date_mod->add(new DateInterval('PT' . $new_event_length . 'S'));
                                                 $new_start_date = $start_date_mod->format('Y-m-d H:i:s');
 
-                                                $video_src = $this->buildVideoSrcs($partner_id, null, 7, $entry_details['entry_info']['duration'], 1, $new_start_date, $now_date);
+                                                $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], null, 7, $entry_details['entry_info']['duration'], 1, $new_start_date, $now_date);
                                                 array_push($video_srcs, $video_src);
                                                 $repeat = false;
                                                 array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $new_start_date, 'video_srcs' => $video_srcs));
@@ -576,7 +576,8 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    public function buildVideoSrcs($pid, $entryId, $entryType, $entryDuration, $event_length, $start_date, $now_date) {
+    //SMH UPDATE
+    public function buildVideoSrcs($pid, $ks, $entryId, $entryType, $entryDuration, $event_length, $start_date, $now_date) {
         $sources = array();
         $video_src = '';
         $start = 0;
@@ -599,7 +600,12 @@ class Channel_config_model extends CI_Model {
             $length = ((int) $entryDuration === (int) $event_length) ? -1 : $event_length;
         } else if ($entryType === 7) {
             if ($entryId) {
-                $streamName = $this->smportal->get_stream_name($pid, $entryId);
+                $getStreamName = $this->smportal->get_highest_bitrate($pid, $ks, $entryId);                
+                if ($getStreamName['multiBitrate']['status']) {
+                    $streamName = $getStreamName['multiBitrate']['highestBitrate'];
+                } else {
+                    $streamName = $getStreamName['multiBitrate']['streamName'];
+                }
                 $video_src = $streamName;
             } else {
                 $video_src = '';
@@ -709,11 +715,11 @@ class Channel_config_model extends CI_Model {
                             $entry_details = $this->smportal->get_ott_entry_details($partner_id, $nonrepeat_program['entry_id']);
                             if ($entry_details['success']) {
                                 if ($entry_details['entry_info']['type'] === 1) {
-                                    $video_src = $this->buildVideoSrcs($partner_id, $nonrepeat_program['entry_id'], $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date);
+                                    $video_src = $this->buildVideoSrcs($partner_id, $ks, $nonrepeat_program['entry_id'], $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date);
                                     array_push($video_srcs, $video_src);
                                     $repeat = false;
                                 } else if ($entry_details['entry_info']['type'] === 7) {
-                                    $video_src = $this->buildVideoSrcs($partner_id, $nonrepeat_program['entry_id'], $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date);
+                                    $video_src = $this->buildVideoSrcs($partner_id, $ks, $nonrepeat_program['entry_id'], $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date);
                                     array_push($video_srcs, $video_src);
                                     $repeat = true;
                                 } else if ($entry_details['entry_info']['type'] === 5) {
@@ -730,7 +736,7 @@ class Channel_config_model extends CI_Model {
                                     $start_date_mod->add(new DateInterval('PT' . $new_event_length . 'S'));
                                     $new_start_date = $start_date_mod->format('Y-m-d H:i:s');
 
-                                    $video_src = $this->buildVideoSrcs($partner_id, null, 7, $entry_details['entry_info']['duration'], 1, $new_start_date, $now_date);
+                                    $video_src = $this->buildVideoSrcs($partner_id, $ks, null, 7, $entry_details['entry_info']['duration'], 1, $new_start_date, $now_date);
                                     array_push($video_srcs, $video_src);
                                     $repeat = false;
                                     array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $new_start_date, 'video_srcs' => $video_srcs));
@@ -752,11 +758,11 @@ class Channel_config_model extends CI_Model {
                                 $entry_details = $this->smportal->get_ott_entry_details($partner_id, $repeat_programs['entry_id']);
                                 if ($entry_details['success']) {
                                     if ($entry_details['entry_info']['type'] === 1) {
-                                        $video_src = $this->buildVideoSrcs($partner_id, $repeat_programs['entry_id'], $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $repeat_programs['event_length'], $rec_programs['date_range_found']['start_date'], $now_date);
+                                        $video_src = $this->buildVideoSrcs($partner_id, $ks, $repeat_programs['entry_id'], $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $repeat_programs['event_length'], $rec_programs['date_range_found']['start_date'], $now_date);
                                         array_push($video_srcs, $video_src);
                                         $repeat = false;
                                     } else if ($entry_details['entry_info']['type'] === 7) {
-                                        $video_src = $this->buildVideoSrcs($partner_id, $repeat_programs['entry_id'], $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $repeat_programs['event_length'], $rec_programs['date_range_found']['start_date'], $now_date);
+                                        $video_src = $this->buildVideoSrcs($partner_id, $ks, $repeat_programs['entry_id'], $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $repeat_programs['event_length'], $rec_programs['date_range_found']['start_date'], $now_date);
                                         array_push($video_srcs, $video_src);
                                         $repeat = true;
                                     } else if ($entry_details['entry_info']['type'] === 5) {
@@ -773,7 +779,7 @@ class Channel_config_model extends CI_Model {
                                         $start_date_mod->add(new DateInterval('PT' . $new_event_length . 'S'));
                                         $new_start_date = $start_date_mod->format('Y-m-d H:i:s');
 
-                                        $video_src = $this->buildVideoSrcs($partner_id, null, 7, $entry_details['entry_info']['duration'], 1, $new_start_date, $now_date);
+                                        $video_src = $this->buildVideoSrcs($partner_id, $ks, null, 7, $entry_details['entry_info']['duration'], 1, $new_start_date, $now_date);
                                         array_push($video_srcs, $video_src);
                                         $repeat = false;
                                         array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $new_start_date, 'video_srcs' => $video_srcs));
@@ -903,7 +909,6 @@ class Channel_config_model extends CI_Model {
         return $success;
     }
 
-    //UPDATE
     public function delete_program($pid, $ks, $sid) {
         $success = array('success' => false);
         $valid = $this->verfiy_ks($pid, $ks);
