@@ -520,6 +520,8 @@ class SMPortal {
             $streamName = $sn[0];
         } else {
             $isMultiBitrate = false;
+            $sn = explode("?", $result->streamName);
+            $streamName = $sn[0];
         }
 
         $max = max($temp_arr);
@@ -547,7 +549,7 @@ class SMPortal {
             $multiBitrate = array('status' => $isMultiBitrate, 'highestBitrate' => $streamName);
             $success = array('success' => true, 'multiBitrate' => $multiBitrate);
         } else {
-            $multiBitrate = array('status' => false);
+            $multiBitrate = array('status' => false, 'streamName' => $streamName);
             $success = array('success' => true, 'multiBitrate' => $multiBitrate);
         }
         return $success;
@@ -578,7 +580,8 @@ class SMPortal {
 
         return $entry_info;
     }
-
+    
+    //SMH UPDATE
     public function get_ott_entry_details($pid, $entryId) {
         $success = array('success' => false);
         $sess = $this->impersonate($pid);
@@ -602,6 +605,7 @@ class SMPortal {
             $entry_info['type'] = $results->type;
             $entry_info['countdown'] = ($partnerData) ? ((isset($partnerData->ppvConfig)) ? $partnerData->ppvConfig[0]->countdown : null) : null;
             $entry_info['timezone'] = ($partnerData) ? ((isset($partnerData->ppvConfig)) ? $partnerData->ppvConfig[0]->timezone : null) : null;
+            $entry_info['ks'] = $sess;
 
             $success = array('success' => true, 'entry_info' => $entry_info);
 
