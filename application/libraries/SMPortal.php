@@ -501,6 +501,7 @@ class SMPortal {
         return $success;
     }
 
+    //SMH UPDATE
     public function get_highest_bitrate($pid, $ks, $eid) {
         $success = array('success' => false);
         $config = new KalturaConfiguration($pid);
