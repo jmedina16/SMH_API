@@ -216,7 +216,7 @@ class Channel_config_model extends CI_Model {
                     }
 
                     $repeat = ($channel_segment['repeat']) ? 1 : 0;
-                    $edit_arr = $channel_segment['id'] . ',' . $channel_segment['pcid'] . ',\'' . $cid . '\',\'' . $channel_segment['entryId'] . '\',\'' . $channel_segment['name'] . '\',' . $channel_segment['event_length'] . ',' . $repeat . ',\'' . $channel_segment['rec_type'] . '\',\'' . $edit_start_date . '\',\'' . $edit_end_date . '\'';
+                    $edit_arr = $channel_segment['id'] . ',' . $channel_segment['pcid'] . ',\'' . $cid . '\',\'' . $channel_segment['entryId'] . '\',\'' . $channel_segment['name'] . '\',\'' . $channel_segment['thumbId'] . '\',' . $channel_segment['event_length'] . ',' . $repeat . ',\'' . $channel_segment['rec_type'] . '\',\'' . $edit_start_date . '\',\'' . $edit_end_date . '\'';
                     $edit_action = '<li role="presentation"><a role="menuitem" tabindex="-1" onclick="smhCM.editChannelProgram(' . $edit_arr . ');">Program</a></li>';
 
                     $delete_arr = $channel_segment['id'] . '\',\'' . addslashes($channel_segment['name']) . '\',\'' . $cid . '\',\'channel';
@@ -234,7 +234,7 @@ class Channel_config_model extends CI_Model {
                     </span>';
 
                     $channel_thumbnail = '<div class="livestream-wrapper">
-                        <img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $channel_segment['entryId'] . '/quality/100/type/1/width/100/height/60" width="100" height="60">
+                        <img onerror="smhMain.imgError(this)" src="/p/' . $pid . '/thumbnail/entry_id/' . $channel_segment['thumbId'] . '/quality/100/type/1/width/100/height/60" width="100" height="60">
                     </div>';
 
 //                    $tz_from = 'UTC';
@@ -361,6 +361,7 @@ class Channel_config_model extends CI_Model {
                     $description = $entry_details['entry_info']['desc'];
                     $status = (int) $res['status'];
                     $created_at = $res['created_at'];
+                    $thumbId = $entry_details['entry_info']['thumbnail_entryid'];
                     $thumbnail = $entry_details['entry_info']['thumbnailUrl'];
                     $start_date = $res['start_date'];
                     $end_date = $res['end_date'];
@@ -368,7 +369,7 @@ class Channel_config_model extends CI_Model {
                     $event_pid = (int) $res['event_pid'];
                     $event_length = (int) $res['event_length'];
                     $repeat = ($res['repeat']) ? true : false;
-                    array_push($segments, array('pcid' => $pcid, 'id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $rec_type, 'event_pid' => $event_pid, 'event_length' => $event_length, 'created_at' => $created_at, 'repeat' => (bool) $repeat));
+                    array_push($segments, array('pcid' => $pcid, 'id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbId' => $thumbId, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $rec_type, 'event_pid' => $event_pid, 'event_length' => $event_length, 'created_at' => $created_at, 'repeat' => (bool) $repeat));
                 } else {
                     $sid = (int) $res['live_segment_id'];
                     $this->delete_program_int($pid, $ks, $sid);
@@ -601,7 +602,7 @@ class Channel_config_model extends CI_Model {
             $length = ((int) $entryDuration === (int) $event_length) ? -1 : $event_length;
         } else if ($entryType === 7) {
             if ($entryId) {
-                $getStreamName = $this->smportal->get_highest_bitrate($pid, $ks, $entryId);                
+                $getStreamName = $this->smportal->get_highest_bitrate($pid, $ks, $entryId);
                 if ($getStreamName['multiBitrate']['status']) {
                     $streamName = $getStreamName['multiBitrate']['highestBitrate'];
                 } else {
@@ -1059,7 +1060,7 @@ class Channel_config_model extends CI_Model {
                             if ($add_live_segment_id['success']) {
 //                                $insert_into_push_queue = $this->insert_into_push_queue($pid);
 //                                if ($insert_into_push_queue['success']) {
-                                    $success = array('success' => true);
+                                $success = array('success' => true);
 //                                } else {
 //                                    $success = array('success' => false, 'message' => 'Could not insert into push queue');
 //                                }
