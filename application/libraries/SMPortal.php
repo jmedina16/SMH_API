@@ -604,6 +604,7 @@ class SMPortal {
             $entry_info['endDate'] = $results->endDate;
             $entry_info['status'] = $results->status;
             $entry_info['type'] = $results->type;
+            $entry_info['thumbnail_entryid'] = ($results->type == 5)? $this->get_ott_playlist_thumb($results->playlistContent) : $results->id;
             $entry_info['countdown'] = ($partnerData) ? ((isset($partnerData->ppvConfig)) ? $partnerData->ppvConfig[0]->countdown : null) : null;
             $entry_info['timezone'] = ($partnerData) ? ((isset($partnerData->ppvConfig)) ? $partnerData->ppvConfig[0]->timezone : null) : null;
             $entry_info['ks'] = $sess;
@@ -616,6 +617,11 @@ class SMPortal {
             $success = array('success' => false, 'ks' => $sess);
             return $success;
         }
+    }
+    
+    public function get_ott_playlist_thumb($plist_content) {
+        $explode = explode(',',$plist_content);
+        return $explode[0];
     }
 
     public function get_entry_path($pid, $entryId) {
