@@ -122,7 +122,7 @@ class Channel_config_model extends CI_Model {
 
                                 //array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => '2018-02-19 23:35:00', 'end_date' => '2018-05-22 23:35:00', 'rec_type' => 'month_2_1_3_#2', 'event_pid' => 0, 'event_length' => 300));
                                 //array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => 'day_1___', 'event_pid' => 0, 'event_length' => 600));
-                                array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $segment['rec_type'], 'event_pid' => (int) $segment['event_pid'], 'event_length' => (int) $segment['event_length'], 'entryId' => $segment['entryId'], 'repeat' => (bool) $segment['repeat'], 'pcid' => (int) $segment['pcid'], 'live_segment_id' => (int) $segment['id']));
+                                array_push($data['data'], array('channel_id' => $channel['id'], 'text' => $segment['name'], 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $segment['rec_type'], 'event_pid' => (int) $segment['event_pid'], 'event_length' => (int) $segment['event_length'], 'entryId' => $segment['entryId'], 'thumbId' => $segment['thumbId'], 'repeat' => (bool) $segment['repeat'], 'pcid' => (int) $segment['pcid'], 'live_segment_id' => (int) $segment['id']));
                             }
                         }
                         //syslog(LOG_NOTICE, "SMH DEBUG : get_channels: " . print_r($channel['thumbnailUrl'], true));
@@ -290,6 +290,7 @@ class Channel_config_model extends CI_Model {
                     $description = $entry_details['entry_info']['desc'];
                     $status = (int) $res['status'];
                     $created_at = $res['created_at'];
+                    $thumbId = $entry_details['entry_info']['thumbnail_entryid'];
                     $thumbnail = $entry_details['entry_info']['thumbnailUrl'];
                     $start_date = $res['start_date'];
                     $end_date = $res['end_date'];
@@ -297,7 +298,7 @@ class Channel_config_model extends CI_Model {
                     $event_pid = (int) $res['event_pid'];
                     $event_length = (int) $res['event_length'];
                     $repeat = ($res['repeat']) ? true : false;
-                    array_push($segments, array('pcid' => $pcid, 'id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $rec_type, 'event_pid' => $event_pid, 'event_length' => $event_length, 'created_at' => $created_at, 'repeat' => (bool) $repeat));
+                    array_push($segments, array('pcid' => $pcid, 'id' => $id, 'name' => $name, 'description' => $description, 'entryId' => $entry_id, 'thumbId' => $thumbId, 'thumbnail' => $thumbnail, 'status' => $status, 'start_date' => $start_date, 'end_date' => $end_date, 'rec_type' => $rec_type, 'event_pid' => $event_pid, 'event_length' => $event_length, 'created_at' => $created_at, 'repeat' => (bool) $repeat));
                     //syslog(LOG_NOTICE, "SMH DEBUG : get_live_channel_segment: entry_details: " . print_r($entry_details, true));
                 } else {
                     $sid = (int) $res['live_segment_id'];
@@ -1056,12 +1057,12 @@ class Channel_config_model extends CI_Model {
                             $add_live_segment_id = $this->add_live_segment_id($pid, $add_live_segment['id'], $add_custom_data['id']);
                             syslog(LOG_NOTICE, "SMH DEBUG : add_program: add_live_segment_id:" . print_r($add_live_segment_id, true));
                             if ($add_live_segment_id['success']) {
-                                $insert_into_push_queue = $this->insert_into_push_queue($pid);
-                                if ($insert_into_push_queue['success']) {
+//                                $insert_into_push_queue = $this->insert_into_push_queue($pid);
+//                                if ($insert_into_push_queue['success']) {
                                     $success = array('success' => true);
-                                } else {
-                                    $success = array('success' => false, 'message' => 'Could not insert into push queue');
-                                }
+//                                } else {
+//                                    $success = array('success' => false, 'message' => 'Could not insert into push queue');
+//                                }
                             } else {
                                 $success = array('success' => false, 'message' => 'Could not add custom data id');
                             }
