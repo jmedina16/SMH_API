@@ -604,6 +604,7 @@ class SMPortal {
             $entry_info['endDate'] = $results->endDate;
             $entry_info['status'] = $results->status;
             $entry_info['type'] = $results->type;
+            $entry_info['playlistContent'] = ($results->type == 5)? $results->playlistContent : null;
             $entry_info['thumbnail_entryid'] = ($results->type == 5)? $this->get_ott_playlist_thumb($results->playlistContent) : $results->id;
             $entry_info['countdown'] = ($partnerData) ? ((isset($partnerData->ppvConfig)) ? $partnerData->ppvConfig[0]->countdown : null) : null;
             $entry_info['timezone'] = ($partnerData) ? ((isset($partnerData->ppvConfig)) ? $partnerData->ppvConfig[0]->timezone : null) : null;
