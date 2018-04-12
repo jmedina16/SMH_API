@@ -456,6 +456,7 @@ class Channel_config_model extends CI_Model {
                     $ready_channels = array();
                     $playlist = array();
                     $now_date = $date->format('Y-m-d H:i:s');
+                    $diffInSeconds = 0;
                     foreach ($live_channels as $channel) {
                         $programs = $this->get_program_dates($partner_id, null, $channel, $start_date, $end_date);
                         if (count($programs['nonrepeat_programs']) > 0) {
@@ -476,13 +477,28 @@ class Channel_config_model extends CI_Model {
                                             //TODO Playlist
                                             $pexplode = explode(',', $entry_details['entry_info']['playlistContent']);
                                             $remianing_plist_duration = (int) $nonrepeat_program['event_length'];
+                                            if ($now_date >= $nonrepeat_program['start_date']) {
+                                                $date1 = new DateTime($nonrepeat_program['start_date']);
+                                                $date2 = new DateTime($now_date);
+                                                $diffInSeconds = $date2->getTimestamp() - $date1->getTimestamp();
+                                                $remianing_plist_duration -= (int) $diffInSeconds;
+                                            }
                                             foreach ($pexplode as $eid) {
                                                 syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: remianing_plist_duration " . print_r($remianing_plist_duration, true));
                                                 if ($remianing_plist_duration > 0) {
                                                     $eid_details = $this->smportal->get_ott_entry_details($partner_id, $eid);
-                                                    $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $eid, $entry_details['entry_info']['type'], $eid_details['entry_info']['duration'], $remianing_plist_duration, $nonrepeat_program['start_date'], $now_date);
-                                                    array_push($video_srcs, $video_src);
-                                                    $remianing_plist_duration -= (int) $eid_details['entry_info']['duration'];
+                                                    if ($diffInSeconds > 0) {
+                                                        if ($diffInSeconds >= (int) $eid_details['entry_info']['duration']) {
+                                                            $diffInSeconds -= (int) $eid_details['entry_info']['duration'];
+                                                            continue;
+                                                        } else {
+                                                            
+                                                        }
+                                                    } else {
+                                                        $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $eid, $entry_details['entry_info']['type'], $eid_details['entry_info']['duration'], $remianing_plist_duration, $nonrepeat_program['start_date'], $now_date);
+                                                        array_push($video_srcs, $video_src);
+                                                        $remianing_plist_duration -= (int) $eid_details['entry_info']['duration'];
+                                                    }
                                                 } else {
                                                     break;
                                                 }
