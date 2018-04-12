@@ -479,13 +479,13 @@ class Channel_config_model extends CI_Model {
                                             foreach ($pexplode as $eid) {
                                                 syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: remianing_plist_duration " . print_r($remianing_plist_duration, true));
                                                 if ($remianing_plist_duration > 0) {
-                                                    $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $eid, $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $remianing_plist_duration, $nonrepeat_program['start_date'], $now_date);
+                                                    $eid_details = $this->smportal->get_ott_entry_details($partner_id, $eid);
+                                                    $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $eid, $entry_details['entry_info']['type'], $eid_details['entry_info']['duration'], $remianing_plist_duration, $nonrepeat_program['start_date'], $now_date);
                                                     array_push($video_srcs, $video_src);
+                                                    $remianing_plist_duration -= (int) $eid_details['entry_info']['duration'];
                                                 } else {
                                                     break;
                                                 }
-                                                $eid_details = $this->smportal->get_ott_entry_details($partner_id, $eid);
-                                                $remianing_plist_duration -= (int) $eid_details['entry_info']['duration'];
                                             }
                                             $repeat = false;
                                         }
@@ -637,7 +637,7 @@ class Channel_config_model extends CI_Model {
             } else {
                 $video_src = '';
             }
-            $length = ((int) $entryDuration >= (int) $event_length) ? -1 : $event_length;
+            $length = ((int) $entryDuration <= (int) $event_length) ? -1 : $event_length;
         }
 
         $sources['video_src'] = $video_src;
