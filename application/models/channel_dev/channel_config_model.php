@@ -474,6 +474,20 @@ class Channel_config_model extends CI_Model {
                                             $repeat = true;
                                         } else if ($entry_details['entry_info']['type'] === 5) {
                                             //TODO Playlist
+                                            $pexplode = explode(',', $entry_details['entry_info']['playlistContent']);
+                                            $remianing_plist_duration = (int) $nonrepeat_program['event_length'];
+                                            foreach ($pexplode as $eid) {
+                                                syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: remianing_plist_duration " . print_r($remianing_plist_duration, true));
+                                                if ($remianing_plist_duration > 0) {
+                                                    $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $eid, $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $remianing_plist_duration, $nonrepeat_program['start_date'], $now_date);
+                                                    array_push($video_srcs, $video_src);
+                                                } else {
+                                                    break;
+                                                }
+                                                $eid_details = $this->smportal->get_ott_entry_details($partner_id, $eid);
+                                                $remianing_plist_duration -= (int) $eid_details['entry_info']['duration'];
+                                            }
+                                            $repeat = false;
                                         }
                                         array_push($playlist, array('name' => 'pl' . $plist_num, 'playOnStream' => $channel, 'repeat' => $repeat, 'scheduled' => $nonrepeat_program['start_date'], 'video_srcs' => $video_srcs));
                                         $plist_num++;
@@ -614,6 +628,16 @@ class Channel_config_model extends CI_Model {
             }
             $start = -2;
             $length = -1;
+        } else if ($entryType === 5) {
+            if ($entryId) {
+                $flavor = $this->smportal->ott_get_flavor($pid, $entryId);
+                $file_path = $this->ott_get_raw_file($pid, $flavor['flavorId'], $flavor['flavorVersion']);
+                $filename = $flavor['fileExt'] . ':' . $file_path['file_path'];
+                $video_src = 'httpcache1/' . $pid . '/content/' . $filename;
+            } else {
+                $video_src = '';
+            }
+            $length = ((int) $entryDuration >= (int) $event_length) ? -1 : $event_length;
         }
 
         $sources['video_src'] = $video_src;
@@ -939,7 +963,7 @@ class Channel_config_model extends CI_Model {
                     }
 //                    $insert_into_push_queue = $this->insert_into_push_queue($pid);
 //                    if ($insert_into_push_queue['success']) {
-                        $success = array('success' => true);
+                    $success = array('success' => true);
 //                    } else {
 //                        $success = array('success' => false, 'message' => 'Could not insert into push queue');
 //                    }
@@ -952,7 +976,7 @@ class Channel_config_model extends CI_Model {
                             if ($update_program_config_status['success']) {
 //                                $insert_into_push_queue = $this->insert_into_push_queue($pid);
 //                                if ($insert_into_push_queue['success']) {
-                                    $success = array('success' => true);
+                                $success = array('success' => true);
 //                                } else {
 //                                    $success = array('success' => false, 'message' => 'Could not insert into push queue');
 //                                }
