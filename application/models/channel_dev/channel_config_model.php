@@ -501,7 +501,7 @@ class Channel_config_model extends CI_Model {
                                                             continue;                                                            
                                                         } else {
                                                             $plist_start = (int) $eid_details['entry_info']['duration'] - (int) $diffInSeconds;
-                                                            $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $eid, $eid_details['entry_info']['type'], $eid_details['entry_info']['duration'], $remianing_plist_duration, $nonrepeat_program['start_date'], $now_date, $is_plist, $plist_start);
+                                                            $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $eid, $eid_details['entry_info']['type'], $eid_details['entry_info']['duration'], $remianing_plist_duration, $nonrepeat_program['start_date'], $now_date, $is_plist, $diffInSeconds);
                                                             array_push($video_srcs, $video_src);
                                                             $remianing_plist_duration -= (int) $plist_start;
                                                             $diffInSeconds = 0;
