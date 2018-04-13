@@ -498,7 +498,7 @@ class Channel_config_model extends CI_Model {
                                                         if ((int) $diffInSeconds >= (int) $eid_details['entry_info']['duration']) {
                                                             $diffInSeconds -= (int) $eid_details['entry_info']['duration'];
                                                             syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: p_entry was skipped ");
-                                                            continue;                                                            
+                                                            continue;
                                                         } else {
                                                             $plist_start = (int) $eid_details['entry_info']['duration'] - (int) $diffInSeconds;
                                                             $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $eid, $eid_details['entry_info']['type'], $eid_details['entry_info']['duration'], $remianing_plist_duration, $nonrepeat_program['start_date'], $now_date, $is_plist, $diffInSeconds);
@@ -509,7 +509,7 @@ class Channel_config_model extends CI_Model {
                                                     } else {
                                                         $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $eid, $eid_details['entry_info']['type'], $eid_details['entry_info']['duration'], $remianing_plist_duration, $nonrepeat_program['start_date'], $now_date, $is_plist, $plist_start);
                                                         array_push($video_srcs, $video_src);
-                                                        //$remianing_plist_duration -= (int) $eid_details['entry_info']['duration'];
+                                                        $remianing_plist_duration -= (int) $eid_details['entry_info']['duration'];
                                                     }
                                                 } else {
                                                     break;
@@ -1120,12 +1120,12 @@ class Channel_config_model extends CI_Model {
                             $add_live_segment_id = $this->add_live_segment_id($pid, $add_live_segment['id'], $add_custom_data['id']);
                             syslog(LOG_NOTICE, "SMH DEBUG : add_program: add_live_segment_id:" . print_r($add_live_segment_id, true));
                             if ($add_live_segment_id['success']) {
-//                                $insert_into_push_queue = $this->insert_into_push_queue($pid);
-//                                if ($insert_into_push_queue['success']) {
-                                $success = array('success' => true);
-//                                } else {
-//                                    $success = array('success' => false, 'message' => 'Could not insert into push queue');
-//                                }
+                                $insert_into_push_queue = $this->insert_into_push_queue($pid);
+                                if ($insert_into_push_queue['success']) {
+                                    $success = array('success' => true);
+                                } else {
+                                    $success = array('success' => false, 'message' => 'Could not insert into push queue');
+                                }
                             } else {
                                 $success = array('success' => false, 'message' => 'Could not add custom data id');
                             }
