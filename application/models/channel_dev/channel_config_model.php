@@ -457,20 +457,22 @@ class Channel_config_model extends CI_Model {
                     $playlist = array();
                     $now_date = $date->format('Y-m-d H:i:s');
                     $diffInSeconds = 0;
+                    $plist_start = null;
                     foreach ($live_channels as $channel) {
                         $programs = $this->get_program_dates($partner_id, null, $channel, $start_date, $end_date);
                         if (count($programs['nonrepeat_programs']) > 0) {
                             foreach ($programs['nonrepeat_programs'] as $nonrepeat_program) {
                                 if ($nonrepeat_program['end_date'] >= $now_date) {
+                                    $plist_start = null;
                                     $video_srcs = array();
                                     $entry_details = $this->smportal->get_ott_entry_details($partner_id, $nonrepeat_program['entry_id']);
                                     if ($entry_details['success']) {
                                         if ($entry_details['entry_info']['type'] === 1) {
-                                            $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $nonrepeat_program['entry_id'], $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date);
+                                            $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $nonrepeat_program['entry_id'], $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date, $plist_start);
                                             array_push($video_srcs, $video_src);
                                             $repeat = false;
                                         } else if ($entry_details['entry_info']['type'] === 7) {
-                                            $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $nonrepeat_program['entry_id'], $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date);
+                                            $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $nonrepeat_program['entry_id'], $entry_details['entry_info']['type'], $entry_details['entry_info']['duration'], $nonrepeat_program['event_length'], $nonrepeat_program['start_date'], $now_date, $plist_start);
                                             array_push($video_srcs, $video_src);
                                             $repeat = true;
                                         } else if ($entry_details['entry_info']['type'] === 5) {
@@ -484,20 +486,24 @@ class Channel_config_model extends CI_Model {
                                                 $remianing_plist_duration -= (int) $diffInSeconds;
                                             }
                                             foreach ($pexplode as $eid) {
+                                                $plist_start = null;
                                                 syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: remianing_plist_duration " . print_r($remianing_plist_duration, true));
                                                 if ($remianing_plist_duration > 0) {
                                                     $eid_details = $this->smportal->get_ott_entry_details($partner_id, $eid);
                                                     if ($diffInSeconds > 0) {
-                                                        if ($diffInSeconds >= (int) $eid_details['entry_info']['duration']) {
+                                                        if ((int) $diffInSeconds >= (int) $eid_details['entry_info']['duration']) {
                                                             $diffInSeconds -= (int) $eid_details['entry_info']['duration'];
                                                             continue;
                                                         } else {
-                                                            
+                                                            $plist_start = (int) $eid_details['entry_info']['duration'] - (int) $diffInSeconds;
+                                                            $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $eid, $eid_details['entry_info']['type'], $eid_details['entry_info']['duration'], $remianing_plist_duration, $nonrepeat_program['start_date'], $now_date, $plist_start);
+                                                            $remianing_plist_duration -= (int) $plist_start;
+                                                            $diffInSeconds = 0;
                                                         }
                                                     } else {
-                                                        $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $eid, $entry_details['entry_info']['type'], $eid_details['entry_info']['duration'], $remianing_plist_duration, $nonrepeat_program['start_date'], $now_date);
+                                                        $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $eid, $eid_details['entry_info']['type'], $remianing_plist_duration, $remianing_plist_duration, $nonrepeat_program['start_date'], $now_date, $plist_start);
                                                         array_push($video_srcs, $video_src);
-                                                        $remianing_plist_duration -= (int) $eid_details['entry_info']['duration'];
+                                                        //$remianing_plist_duration -= (int) $eid_details['entry_info']['duration'];
                                                     }
                                                 } else {
                                                     break;
@@ -609,7 +615,7 @@ class Channel_config_model extends CI_Model {
     }
 
     //SMH UPDATE
-    public function buildVideoSrcs($pid, $ks, $entryId, $entryType, $entryDuration, $event_length, $start_date, $now_date) {
+    public function buildVideoSrcs($pid, $ks, $entryId, $entryType, $entryDuration, $event_length, $start_date, $now_date, $plist_start) {
         $sources = array();
         $video_src = '';
         $start = 0;
@@ -623,13 +629,18 @@ class Channel_config_model extends CI_Model {
                 $video_src = '';
             }
 
-            if ($now_date >= $start_date) {
-                $date1 = new DateTime($start_date);
-                $date2 = new DateTime($now_date);
-                $diffInSeconds = $date2->getTimestamp() - $date1->getTimestamp();
-                $start = $diffInSeconds;
+            if ($plist_start) {
+                $start = $plist_start;
+                $length = ((int) $entryDuration <= (int) $event_length) ? -1 : $event_length;
+            } else {
+                if ($now_date >= $start_date) {
+                    $date1 = new DateTime($start_date);
+                    $date2 = new DateTime($now_date);
+                    $diffInSeconds = $date2->getTimestamp() - $date1->getTimestamp();
+                    $start = $diffInSeconds;
+                }
+                $length = ((int) $entryDuration === (int) $event_length) ? -1 : $event_length;
             }
-            $length = ((int) $entryDuration === (int) $event_length) ? -1 : $event_length;
         } else if ($entryType === 7) {
             if ($entryId) {
                 $getStreamName = $this->smportal->get_highest_bitrate($pid, $ks, $entryId);
@@ -644,17 +655,18 @@ class Channel_config_model extends CI_Model {
             }
             $start = -2;
             $length = -1;
-        } else if ($entryType === 5) {
-            if ($entryId) {
-                $flavor = $this->smportal->ott_get_flavor($pid, $entryId);
-                $file_path = $this->ott_get_raw_file($pid, $flavor['flavorId'], $flavor['flavorVersion']);
-                $filename = $flavor['fileExt'] . ':' . $file_path['file_path'];
-                $video_src = 'httpcache1/' . $pid . '/content/' . $filename;
-            } else {
-                $video_src = '';
-            }
-            $length = ((int) $entryDuration <= (int) $event_length) ? -1 : $event_length;
-        }
+        } 
+//        else if ($entryType === 5) {
+//            if ($entryId) {
+//                $flavor = $this->smportal->ott_get_flavor($pid, $entryId);
+//                $file_path = $this->ott_get_raw_file($pid, $flavor['flavorId'], $flavor['flavorVersion']);
+//                $filename = $flavor['fileExt'] . ':' . $file_path['file_path'];
+//                $video_src = 'httpcache1/' . $pid . '/content/' . $filename;
+//            } else {
+//                $video_src = '';
+//            }
+//            $length = ((int) $entryDuration <= (int) $event_length) ? -1 : $event_length;
+//        }
 
         $sources['video_src'] = $video_src;
         $sources['start'] = (int) $start;
