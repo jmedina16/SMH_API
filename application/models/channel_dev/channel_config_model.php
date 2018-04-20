@@ -492,24 +492,26 @@ class Channel_config_model extends CI_Model {
                                                 syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: remianing_plist_duration: " . print_r($remianing_plist_duration, true));
                                                 if ($remianing_plist_duration > 0) {
                                                     $eid_details = $this->smportal->get_ott_entry_details($partner_id, $eid);
-                                                    if ($diffInSeconds > 0) {
-                                                        syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: diffInSeconds: " . print_r($diffInSeconds, true));
-                                                        syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: e_duration " . print_r($eid_details['entry_info']['duration'], true));
-                                                        if ((int) $diffInSeconds >= (int) $eid_details['entry_info']['duration']) {
-                                                            $diffInSeconds -= (int) $eid_details['entry_info']['duration'];
-                                                            syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: p_entry was skipped ");
-                                                            continue;
+                                                    if ($eid_details['entry_info']['type'] != 7) {
+                                                        if ($diffInSeconds > 0) {
+                                                            syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: diffInSeconds: " . print_r($diffInSeconds, true));
+                                                            syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: e_duration " . print_r($eid_details['entry_info']['duration'], true));
+                                                            if ((int) $diffInSeconds >= (int) $eid_details['entry_info']['duration']) {
+                                                                $diffInSeconds -= (int) $eid_details['entry_info']['duration'];
+                                                                syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: p_entry was skipped ");
+                                                                continue;
+                                                            } else {
+                                                                $plist_start = (int) $eid_details['entry_info']['duration'] - (int) $diffInSeconds;
+                                                                $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $eid, $eid_details['entry_info']['type'], $eid_details['entry_info']['duration'], $remianing_plist_duration, $nonrepeat_program['start_date'], $now_date, $is_plist, $diffInSeconds);
+                                                                array_push($video_srcs, $video_src);
+                                                                $remianing_plist_duration -= (int) $plist_start;
+                                                                $diffInSeconds = 0;
+                                                            }
                                                         } else {
-                                                            $plist_start = (int) $eid_details['entry_info']['duration'] - (int) $diffInSeconds;
-                                                            $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $eid, $eid_details['entry_info']['type'], $eid_details['entry_info']['duration'], $remianing_plist_duration, $nonrepeat_program['start_date'], $now_date, $is_plist, $diffInSeconds);
+                                                            $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $eid, $eid_details['entry_info']['type'], $eid_details['entry_info']['duration'], $remianing_plist_duration, $nonrepeat_program['start_date'], $now_date, $is_plist, $plist_start);
                                                             array_push($video_srcs, $video_src);
-                                                            $remianing_plist_duration -= (int) $plist_start;
-                                                            $diffInSeconds = 0;
+                                                            $remianing_plist_duration -= (int) $eid_details['entry_info']['duration'];
                                                         }
-                                                    } else {
-                                                        $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $eid, $eid_details['entry_info']['type'], $eid_details['entry_info']['duration'], $remianing_plist_duration, $nonrepeat_program['start_date'], $now_date, $is_plist, $plist_start);
-                                                        array_push($video_srcs, $video_src);
-                                                        $remianing_plist_duration -= (int) $eid_details['entry_info']['duration'];
                                                     }
                                                 } else {
                                                     break;
@@ -666,17 +668,6 @@ class Channel_config_model extends CI_Model {
             $start = -2;
             $length = -1;
         }
-//        else if ($entryType === 5) {
-//            if ($entryId) {
-//                $flavor = $this->smportal->ott_get_flavor($pid, $entryId);
-//                $file_path = $this->ott_get_raw_file($pid, $flavor['flavorId'], $flavor['flavorVersion']);
-//                $filename = $flavor['fileExt'] . ':' . $file_path['file_path'];
-//                $video_src = 'httpcache1/' . $pid . '/content/' . $filename;
-//            } else {
-//                $video_src = '';
-//            }
-//            $length = ((int) $entryDuration <= (int) $event_length) ? -1 : $event_length;
-//        }
 
         $sources['video_src'] = $video_src;
         $sources['start'] = (int) $start;
@@ -806,24 +797,26 @@ class Channel_config_model extends CI_Model {
                                         syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: remianing_plist_duration: " . print_r($remianing_plist_duration, true));
                                         if ($remianing_plist_duration > 0) {
                                             $eid_details = $this->smportal->get_ott_entry_details($partner_id, $eid);
-                                            if ($diffInSeconds > 0) {
-                                                syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: diffInSeconds: " . print_r($diffInSeconds, true));
-                                                syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: e_duration " . print_r($eid_details['entry_info']['duration'], true));
-                                                if ((int) $diffInSeconds >= (int) $eid_details['entry_info']['duration']) {
-                                                    $diffInSeconds -= (int) $eid_details['entry_info']['duration'];
-                                                    syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: p_entry was skipped ");
-                                                    continue;
+                                            if ($eid_details['entry_info']['type'] != 7) {
+                                                if ($diffInSeconds > 0) {
+                                                    syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: diffInSeconds: " . print_r($diffInSeconds, true));
+                                                    syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: e_duration " . print_r($eid_details['entry_info']['duration'], true));
+                                                    if ((int) $diffInSeconds >= (int) $eid_details['entry_info']['duration']) {
+                                                        $diffInSeconds -= (int) $eid_details['entry_info']['duration'];
+                                                        syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: p_entry was skipped ");
+                                                        continue;
+                                                    } else {
+                                                        $plist_start = (int) $eid_details['entry_info']['duration'] - (int) $diffInSeconds;
+                                                        $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $eid, $eid_details['entry_info']['type'], $eid_details['entry_info']['duration'], $remianing_plist_duration, $nonrepeat_program['start_date'], $now_date, $is_plist, $diffInSeconds);
+                                                        array_push($video_srcs, $video_src);
+                                                        $remianing_plist_duration -= (int) $plist_start;
+                                                        $diffInSeconds = 0;
+                                                    }
                                                 } else {
-                                                    $plist_start = (int) $eid_details['entry_info']['duration'] - (int) $diffInSeconds;
-                                                    $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $eid, $eid_details['entry_info']['type'], $eid_details['entry_info']['duration'], $remianing_plist_duration, $nonrepeat_program['start_date'], $now_date, $is_plist, $diffInSeconds);
+                                                    $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $eid, $eid_details['entry_info']['type'], $eid_details['entry_info']['duration'], $remianing_plist_duration, $nonrepeat_program['start_date'], $now_date, $is_plist, $plist_start);
                                                     array_push($video_srcs, $video_src);
-                                                    $remianing_plist_duration -= (int) $plist_start;
-                                                    $diffInSeconds = 0;
+                                                    $remianing_plist_duration -= (int) $eid_details['entry_info']['duration'];
                                                 }
-                                            } else {
-                                                $video_src = $this->buildVideoSrcs($partner_id, $entry_details['entry_info']['ks'], $eid, $eid_details['entry_info']['type'], $eid_details['entry_info']['duration'], $remianing_plist_duration, $nonrepeat_program['start_date'], $now_date, $is_plist, $plist_start);
-                                                array_push($video_srcs, $video_src);
-                                                $remianing_plist_duration -= (int) $eid_details['entry_info']['duration'];
                                             }
                                         } else {
                                             break;
