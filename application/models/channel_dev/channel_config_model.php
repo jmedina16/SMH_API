@@ -446,7 +446,6 @@ class Channel_config_model extends CI_Model {
             $final_schedules = array();
             $schedules = array();
             foreach ($accounts['partner_ids'] as $partner_id) {
-                syslog(LOG_NOTICE, "SMH DEBUG : build_schedules: partner_id: " . print_r($partner_id, true));
                 $live_channels = $this->get_channel_ids($partner_id);
                 if (count($live_channels) > 0) {
                     $date = new DateTime('now');
