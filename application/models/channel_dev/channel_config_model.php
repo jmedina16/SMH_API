@@ -14,7 +14,7 @@ class Channel_config_model extends CI_Model {
         $this->load->library('when_api');
     }
 
-    public function get_public_channels($pid) {
+    public function get_public_channels($pid, $tz) {
         $imgs_url = '';
         $cdn = json_decode($this->getCDN($pid), true);
         if ($cdn[0]['edgecast'] || $cdn[0]['custom']) {
@@ -24,7 +24,7 @@ class Channel_config_model extends CI_Model {
         }
         $ks = $this->smportal->impersonate($pid);
         $tz_from = 'UTC';
-        $tz_to = $this->get_int_timezone($pid, $ks);
+        $tz_to = $tz;
         $live_channels = $this->smportal->get_public_channels($pid, $ks);
         $data = array();
         $channels = array();
