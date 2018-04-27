@@ -1120,12 +1120,12 @@ class Channel_config_model extends CI_Model {
                             $success = array('success' => false, 'message' => 'Could not delete live segment');
                         }
                     }
-//                    $insert_into_push_queue = $this->insert_into_push_queue($pid);
-//                    if ($insert_into_push_queue['success']) {
-                    $success = array('success' => true);
-//                    } else {
-//                        $success = array('success' => false, 'message' => 'Could not insert into push queue');
-//                    }
+                    $insert_into_push_queue = $this->insert_into_push_queue($pid);
+                    if ($insert_into_push_queue['success']) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not insert into push queue');
+                    }
                 } else {
                     $delete_live_segment = $this->smportal->delete_live_segment($pid, $ks, $sid);
                     if ($delete_live_segment['success']) {
@@ -1133,12 +1133,12 @@ class Channel_config_model extends CI_Model {
                         if ($get_program_config_id['success']) {
                             $update_program_config_status = $this->update_program_config_status($pid, $get_program_config_id['pcid'], 3);
                             if ($update_program_config_status['success']) {
-//                                $insert_into_push_queue = $this->insert_into_push_queue($pid);
-//                                if ($insert_into_push_queue['success']) {
-                                $success = array('success' => true);
-//                                } else {
-//                                    $success = array('success' => false, 'message' => 'Could not insert into push queue');
-//                                }
+                                $insert_into_push_queue = $this->insert_into_push_queue($pid);
+                                if ($insert_into_push_queue['success']) {
+                                    $success = array('success' => true);
+                                } else {
+                                    $success = array('success' => false, 'message' => 'Could not insert into push queue');
+                                }
                             } else {
                                 $success = array('success' => false, 'message' => 'Could not delete program config');
                             }
