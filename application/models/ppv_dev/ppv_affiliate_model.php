@@ -1,6 +1,6 @@
 <?php
 
-//error_reporting(0);
+error_reporting(0);
 
 class Ppv_affiliate_model extends CI_Model {
 
