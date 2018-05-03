@@ -670,11 +670,18 @@ class Channel_config_model extends CI_Model {
         $sources = array();
         $video_src = '';
         $start = 0;
+        $file_flag = 'mp4';
         if ($entryType === 1) {
             if ($entryId) {
                 $flavor = $this->smportal->ott_get_flavor($pid, $entryId);
                 $file_path = $this->ott_get_raw_file($pid, $flavor['flavorId'], $flavor['flavorVersion']);
-                $filename = $flavor['fileExt'] . ':' . $file_path['file_path'];
+                if ($flavor['fileExt'] === 'mp3') {
+                    $file_flag = 'mp3';
+                }
+                if ($flavor['fileExt'] === 'flv') {
+                    $file_flag = 'flv';
+                }
+                $filename = $file_flag . ':' . $file_path['file_path'];
                 $video_src = 'httpcache1/' . $pid . '/content/' . $filename;
             } else {
                 $video_src = '';
