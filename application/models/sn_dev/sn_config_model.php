@@ -3290,6 +3290,8 @@ class Sn_config_model extends CI_Model {
             $temp_partnerData['snConfig'] = $platforms_config;
             if ($vr['vrSettings']) {
                 $temp_partnerData['vrSettings'] = $vr['settings'];
+            } else {
+                unset($temp_partnerData['vrSettings']);
             }
             $update_partnerData = $this->smportal->update_entry_partnerData($pid, $eid, $temp_partnerData);
             if ($update_partnerData['success']) {
@@ -5174,6 +5176,8 @@ class Sn_config_model extends CI_Model {
                     $vr['settings'] = array();
                     $settings = array('stereo_mode' => $stereo_mode);
                     array_push($vr['settings'], $settings);
+                } else {
+                    $vr['vrSettings'] = false;
                 }
 
                 $partnerData = $this->update_sn_partnerData($pid, $eid, $config, $vr);
