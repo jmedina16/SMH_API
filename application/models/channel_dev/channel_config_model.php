@@ -385,7 +385,7 @@ class Channel_config_model extends CI_Model {
         $schedule = $this->build_account_schedule($pid, $ks);
         if ($schedule['success']) {
             if (count($schedule['schedule']) > 0) {
-                $url = 'http://10.5.22.94:1935/ott/update';
+                $url = 'http://10.5.25.34:1935/ott/update';
                 $this->curlPost($url, json_encode($schedule['schedule']));
                 $success = array('success' => true, 'schedule' => $schedule['schedule']);
                 syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . json_encode($schedule['schedule']));
@@ -396,7 +396,7 @@ class Channel_config_model extends CI_Model {
                 $schedule['ks'] = $ks;
                 $schedule['streams'] = array();
                 $schedule['playlists'] = array();
-                $url = 'http://10.5.22.94:1935/ott/update';
+                $url = 'http://10.5.25.34:1935/ott/update';
                 $this->curlPost($url, json_encode($schedule));
                 $success = array('success' => true, 'schedule' => $schedule);
                 syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule, true));
@@ -414,7 +414,7 @@ class Channel_config_model extends CI_Model {
             $schedule['ks'] = $ks;
             $schedule['streams'] = array();
             $schedule['playlists'] = array();
-            $url = 'http://10.5.22.94:1935/ott/update';
+            $url = 'http://10.5.25.34:1935/ott/update';
             $this->curlPost($url, json_encode($schedule));
             $success = array('success' => true, 'schedule' => $schedule);
             syslog(LOG_NOTICE, "SMH DEBUG : push_schedule: " . print_r($schedule, true));
