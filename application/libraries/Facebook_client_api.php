@@ -22,7 +22,7 @@ class Facebook_client_api {
     public function getRedirectURL($pid, $ks) {
         $state = $pid . "|" . $ks;
         $redirect_uri = 'http://devplatform.streamingmediahosting.com/apps/sn/v1.0/fb-callback.php';
-        $scope = 'publish_actions,manage_pages,publish_pages,user_managed_groups,user_events,publish_video';
+        $scope = 'manage_pages,publish_pages,publish_to_groups,user_events,publish_video';
         $authUrl = 'https://www.facebook.com/v2.8/dialog/oauth?client_id=' . $this->OAUTH2_CLIENT_ID . '&state=' . $state . '&response_type=code&sdk=php-sdk-5.4.4&redirect_uri=' . $redirect_uri . '&scope=' . $scope;
         return $authUrl;
     }
