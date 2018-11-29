@@ -124,6 +124,7 @@ class Google_client_api {
     }
 
     public function validateToken($token) {
+        syslog(LOG_NOTICE, "SMH DEBUG : validateToken: " . $token);
         $valid = false;
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, "https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=" . $token);
