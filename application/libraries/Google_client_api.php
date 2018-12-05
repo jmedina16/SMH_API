@@ -1209,6 +1209,9 @@ class Google_client_api {
                     } else {
                         $success = array('success' => false);
                     }
+                    
+                    syslog(LOG_NOTICE, "SMH DEBUG : get_account_details: " . print_r($success, true));
+                    
                     return $success;
                 } catch (Google_Service_Exception $e) {
                     $date = date('Y-m-d H:i:s');
