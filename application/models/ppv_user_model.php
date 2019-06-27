@@ -548,8 +548,7 @@ class Ppv_user_model extends CI_Model {
                             if (crypt($this->accounts->escape_str($pswd), $hash) == $hash) {
                                 $success = $this->create_auth_key($un, $userId, $sm_ak);
                             } else {
-                                $success = $this->create_auth_key($un, $userId, $sm_ak);
-                                //$success = array('success' => false, 'au' => false);
+                                $success = array('success' => false, 'au' => false);
                             }
                         } else {
                             $success = array('success' => false, 'au' => false);
