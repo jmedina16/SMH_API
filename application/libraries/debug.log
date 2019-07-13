@@ -5994,3 +5994,4 @@ Stack trace:
 #3 /var/www/vhosts/api/application/controllers/api_dev/ppv_orders.php(1406): Ppv_orders_model->insert_ipn_recurr_order('1471081808:0 D:...', 'I-72796G1VEAR9', 'Active', 'merchant1@strea...', '92654YYUEBVTN', 'Jorge', 'Medina', 'jmedina616@gmai...', '853NLG6TBL9TC', 'US', 'Pending', '62B69637YV99437...', 'instant', '06:00:25 Jun 13...')
 #4 [internal function]: in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 1191
 [24-Nov-2018 06:30:03 America/Los_Angeles] PHP Fatal error:  Call to a member function result_array() on boolean in /var/www/vhosts/api/application/models/sn_dev/sn_config_model.php on line 5714
+[12-Jul-2019 21:21:05 America/Los_Angeles] PHP Fatal error:  Call to a member function result_array() on boolean in /var/www/vhosts/api/application/models/sn_dev/sn_config_model.php on line 5714
