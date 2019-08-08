@@ -11,6 +11,7 @@ class Cache_config_model extends CI_Model {
         $this->_ci = & get_instance();
         $this->_ci->load->library("curl");
         $this->load->library('SMPortal');
+        $this->load->library('centurylink_cache_api');
     }
 
     public function purge_cache($pid, $ks, $asset) {
@@ -33,6 +34,13 @@ class Cache_config_model extends CI_Model {
                         $success = array('success' => true);
                     } else {
                         $success = array('success' => false, 'message' => 'Could not purge highwinds');
+                    }
+                } else if ($cdn[0]['level3']) {
+                    $purge_hw = json_decode($this->purge_cl($pid));
+                    if (isset($purge_hw->accessGroup->id)) {
+                        $success = array('success' => true);
+                    } else {
+                        $success = array('success' => false, 'message' => 'Could not purge centurylink');
                     }
                 } else {
                     $success = array('success' => true, 'message' => 'No CDN to purged');
@@ -92,6 +100,16 @@ class Cache_config_model extends CI_Model {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         $output = curl_exec($ch);
         curl_close($ch);
+        return $output;
+    }
+
+    public function purge_cl($pid) {
+        $accept = "application/json";
+        $contentType = "application/json";
+        $dateStr = gmdate("D, d M Y H:i:s T");
+        $postBody = '{"paths":["/p/' . $pid . '/*"]}';
+        $url = 'https://ws.level3.com/invalidations/v1.0/258770/BBBF79915/cl.streamingmediahosting.com?force=true&ignoreCase=true';
+        $output = $this->centurylink_cache_api->sendAPICallPOST($accept, $contentType, $dateStr, $postBody, $url);
         return $output;
     }
 
