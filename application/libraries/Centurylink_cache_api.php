@@ -1,9 +1,5 @@
 <?php
 
-ini_set('display_errors', 'On');
-ini_set('log_errors', true);
-ini_set('error_log', dirname(__FILE__) . '/debug.log');
-
 class Centurylink_cache_api {
 
     private $keyId;
@@ -69,16 +65,7 @@ class Centurylink_cache_api {
         $result = curl_exec($ch);
         curl_close($ch);
 
-        //Printing information of post request to screen
-//        echo "<b>Authentication property:</b>" . $authString . '<br/>';
-//        echo '<br/><b>Header Properties------</b><pre>';
-//        print_r($headerProperties);
-//        echo '</pre><b>------------------</b><br/><br/>';
-//        echo '<br/><b>Results------</b><pre>';
-//        print_r($result);
-//        echo '</pre><b>------------------</b><br/><br/>';
-
-        syslog(LOG_NOTICE, "[Centurylink_cache_api->sendAPICallPOST]: " . print_r($result, true));
+        return $result;
     }
 
 }
