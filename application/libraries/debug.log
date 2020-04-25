@@ -5995,3 +5995,4 @@ Stack trace:
 #4 [internal function]: in /var/www/vhosts/api/application/libraries/kaltura/KalturaClientBase.php on line 1191
 [24-Nov-2018 06:30:03 America/Los_Angeles] PHP Fatal error:  Call to a member function result_array() on boolean in /var/www/vhosts/api/application/models/sn_dev/sn_config_model.php on line 5714
 [12-Jul-2019 21:21:05 America/Los_Angeles] PHP Fatal error:  Call to a member function result_array() on boolean in /var/www/vhosts/api/application/models/sn_dev/sn_config_model.php on line 5714
+[25-Apr-2020 08:01:04 America/Los_Angeles] PHP Fatal error:  Call to a member function result_array() on boolean in /var/www/vhosts/api/application/models/sn_dev/sn_config_model.php on line 5582
